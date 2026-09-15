@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meus Cursos</title>
+
+    <link rel="stylesheet" href="./css/meus-cursos.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div id="overlay"></div>
+    <div class="container">
+      <aside class="sidebar">
+        <div>
+          <div class="logo-side">
+            <h2>HABILITA.SAÚDE</h2>
+            <p>Plataforma de Cursos em Saúde</p>
+          </div>
+
+          <ul>
+            <li>
+              <a href="./dashboard.html">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+
+            <li>
+              <a href="./meus-cursos.html" class="menu-ativo">
+                <i class="fa-solid fa-book"></i>
+                Meus Cursos
+              </a>
+            </li>
+
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+
+            <li>
+              <a href="./criar-curso.html">
+                <i class="fa-solid fa-plus"></i>
+                Criar Curso
+              </a>
+            </li>
+
+            <li>
+              <a href="./usuarios.html">
+                <i class="fa-solid fa-users"></i>
+                Usuários
+              </a>
+            </li>
+
+            <li>
+              <a href="./relatorios.html">
+                <i class="fa-solid fa-chart-line"></i>
+                Relatórios
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="perfil">
+          <div class="foto-wrapper">
+            <a href="./perfil.html">
+              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
+            </a>
+
+            <span class="online"></span>
+          </div>
+
+          <span id="nomeUsuarioSidebar"></span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile">☰</button>
+          <div>
+            <h1>PROFESSOR</h1>
+            <p>Acompanhe e gerencie todos os cursos cadastrados.</p>
+          </div>
+
+          <div class="icons">
+            <a href="suporte.html">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+            <a href="notificacoes.html" class="notification">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+
+            <div class="user-top">
+              <div class="foto-wrapper">
+                <a href="perfil.html">
+                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
+                </a>
+
+                <span class="online"></span>
+              </div>
+
+              <span id="nomeUsuarioTop"></span>
+            </div>
+          </div>
+        </header>
+
+        <div class="suporte-header">
+          <div>
+            <h2>Meus Cursos</h2>
+            <p>Gerencie, acompanhe e analise seus cursos.</p>
+          </div>
+        </div>
+
+        <div class="filtros">
+          <input id="buscaCurso" type="text" placeholder="Buscar curso..." />
+
+          <select id="categoria">
+            <option value="Todas">Todas Categorias</option>
+            <option value="Urgência">Urgência</option>
+            <option value="Enfermagem">Enfermagem</option>
+            <option value="Nutrição">Nutrição</option>
+            <option value="Fisioterapia">Fisioterapia</option>
+            <option value="Saúde Mental">Saúde Mental</option>
+          </select>
+
+          <select id="filtroCarga">
+            <option value="Todas">Todas Cargas Horárias</option>
+          </select>
+
+          <select id="filtroPublico">
+            <option value="Todos">Todos os Públicos</option>
+          </select>
+        </div>
+
+        <section id="cursosGrid" class="cursos-grid"></section>
+      </main>
+      <div id="modalCurso" class="modal">
+        <div class="modal-content">
+          <button id="fechar">×</button>
+
+          <div id="detalhesCurso"></div>
+        </div>
+      </div>
+    </div>
+    <script src="./js/meus-cursos.js"></script>
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+  </body>
+</html>

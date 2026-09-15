@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Dashboard</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div class="container">
+      <aside class="sidebar">
+        <div>
+          <div class="logo-side">
+            <h2>HABILITA.SAÚDE</h2>
+            <p>Plataforma De Cursos em Saúde</p>
+          </div>
+
+          <ul>
+            <li>
+              <a href="./dashboard.html">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+
+            <li>
+              <a href="./meus-cursos.html">
+                <i class="fa-solid fa-book"></i>
+                Meus Cursos
+              </a>
+            </li>
+
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+
+            <li>
+              <a href="./criar-curso.html" class="menu-ativo">
+                <i class="fa-solid fa-plus"></i>
+                Criar Curso
+              </a>
+            </li>
+
+            <li>
+              <a href="./usuarios.html">
+                <i class="fa-solid fa-users"></i>
+                Usuários
+              </a>
+            </li>
+
+            <li>
+              <a href="./relatorios.html">
+                <i class="fa-solid fa-chart-line"></i>
+                Relatórios
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="perfil">
+          <div class="foto-wrapper">
+            <a href="./perfil.html">
+              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
+            </a>
+
+            <span class="online"></span>
+          </div>
+
+          <span id="nomeUsuarioSidebar"></span>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile">☰</button>
+          <div>
+            <h1>PROFESSOR</h1>
+            <p>Cadastre um novo curso na plataforma.</p>
+          </div>
+
+          <div class="icons">
+            <a href="suporte.html">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+            <a href="notificacoes.html" class="notification">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+
+            <div class="user-top">
+              <div class="foto-wrapper">
+                <a href="perfil.html">
+                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
+                </a>
+
+                <span class="online"></span>
+              </div>
+
+              <span id="nomeUsuarioTop"></span>
+            </div>
+          </div>
+        </header>
+
+        <form id="formCurso">
+          <section class="criar-curso-grid">
+            <div class="coluna-esquerda">
+              <div class="campo">
+                <label for="nomeCurso">Nome do Curso*</label>
+                <input
+                  id="nomeCurso"
+                  type="text"
+                  placeholder="Ex: Primeiros Socorros"
+                  required
+                />
+              </div>
+
+              <div class="campo">
+                <label for="subtituloCurso">Subtítulo*</label>
+                <input
+                  id="subtituloCurso"
+                  type="text"
+                  placeholder="Ex: Do Básico ao Avançado"
+                  required
+                />
+              </div>
+
+              <div class="campo">
+                <label for="descricaoCurso">
+                  Descrição e Pré-requisitos*
+                </label>
+
+                <textarea id="descricaoCurso" rows="8" required></textarea>
+              </div>
+
+              <div class="campo">
+                <label for="areaCurso">Área Temática*</label>
+
+                <select id="areaCurso" required>
+                  <option value="">Selecione a Área</option>
+
+                  <option>Enfermagem</option>
+                  <option>Nutrição</option>
+                  <option>Urgência</option>
+                  <option>Fisioterapia</option>
+                  <option>Saúde Mental</option>
+                </select>
+              </div>
+
+              <div class="campo">
+                <label for="publicoCurso"> Público Alvo* </label>
+
+                <input
+                  id="publicoCurso"
+                  type="text"
+                  placeholder="Ex: Enfermeiros"
+                  required
+                />
+              </div>
+
+              <div class="campo">
+                <label for="cargaHoraria"> Carga Horária* </label>
+
+                <input
+                  type="number"
+                  id="cargaHoraria"
+                  min="1"
+                  placeholder="Ex: 30"
+                />
+              </div>
+            </div>
+
+            <div class="coluna-direita">
+              <div class="campo">
+                <label for="categoriaCurso"> Categoria (Certificação)* </label>
+
+                <select id="categoriaCurso" required>
+                  <option value="">Selecione a Categoria</option>
+
+                  <option>Silver</option>
+                  <option>Gold</option>
+                  <option>Platinum</option>
+                </select>
+                <small class="comentario">
+                  Escolha a área principal em que o curso será exibido.
+                </small>
+              </div>
+
+              <div class="campo">
+                <label>Imagem da Capa*</label>
+
+                <div class="upload-box" id="uploadBox">
+                  <input type="file" id="imagemCurso" accept="image/*" hidden />
+
+                  <img id="previewImagem" class="preview-imagem" />
+
+                  <i class="fa-regular fa-image"></i>
+
+                  <p>Clique ou arraste uma imagem</p>
+
+                  <small> Formatos: JPG, PNG • Máx. 5MB </small>
+                </div>
+              </div>
+
+              <div class="campo">
+                <label for="precoCurso"> Preço do Curso* </label>
+
+                <input type="text" id="precoCurso" placeholder="R$ 0,00" />
+              </div>
+
+              <div class="campo">
+                <label>Certificado*</label>
+
+                <div class="radio-group">
+                  <label>
+                    <input
+                      type="radio"
+                      name="certificado"
+                      value="Com Certificado"
+                      required
+                    />
+                    Com Certificado
+                  </label>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name="certificado"
+                      value="Sem Certificado"
+                    />
+                    Sem Certificado
+                  </label>
+
+                  <label>
+                    <input
+                      type="radio"
+                      name="certificado"
+                      value="Certificação Profissional"
+                    />
+                    Certificação Profissional
+                  </label>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <div class="conteudos-card">
+            <h2>Conteúdos do Curso</h2>
+
+            <div class="conteudos-grid">
+              <div class="conteudo-item" data-tipo="video">
+                <i class="fa-solid fa-video"></i>
+                <span>Vídeos</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="pdf">
+                <i class="fa-solid fa-file-pdf"></i>
+                <span>PDF</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="ebook">
+                <i class="fa-solid fa-book"></i>
+                <span>E-books</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="slide">
+                <i class="fa-solid fa-display"></i>
+                <span>Slides</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="mapa">
+                <i class="fa-solid fa-sitemap"></i>
+                <span>Mapas Mentais</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="quiz">
+                <i class="fa-solid fa-circle-question"></i>
+                <span>Quiz</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="caso">
+                <i class="fa-solid fa-stethoscope"></i>
+                <span>Casos Clínicos</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="material">
+                <i class="fa-solid fa-folder-open"></i>
+                <span>Materiais</span>
+              </div>
+
+              <div class="conteudo-item" data-tipo="link">
+                <i class="fa-solid fa-link"></i>
+                <span>Links Externos</span>
+              </div>
+            </div>
+            <div id="listaConteudos"></div>
+          </div>
+
+          <input type="file" id="arquivoConteudo" hidden />
+
+          <div class="acoes-formulario">
+            <button type="button" id="btnRascunho" class="btn-secundario">
+              <i class="fa-regular fa-floppy-disk"></i>
+              Salvar Rascunho
+            </button>
+
+            <button type="submit" class="btn-publicar">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              Publicar Curso
+            </button>
+          </div>
+        </form>
+      </main>
+    </div>
+    <script src="./js/criar-curso.js"></script>
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+  </body>
+</html>

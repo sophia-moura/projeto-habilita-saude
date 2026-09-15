@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Início - Área do Aluno</title>
+
+    <link rel="stylesheet" href="./css/aluno.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div id="overlay"></div>
+
+    <div class="container">
+      <aside class="sidebar">
+        <div>
+          <div class="logo-side">
+            <h2>HABILITA.SAÚDE</h2>
+            <p>Área do Aluno</p>
+          </div>
+
+          <ul>
+            <li>
+              <a href="./aluno-inicio.html" class="menu-ativo">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+
+            <li>
+              <a href="./aluno-meus-cursos.html">
+                <i class="fa-solid fa-book"></i>
+                Meus Cursos
+              </a>
+            </li>
+
+            <li>
+              <a href="./aluno-suporte.html">
+                <i class="fa-regular fa-circle-question"></i>
+                Suporte
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="perfil">
+            <div class="foto-wrapper">
+              <img
+                id="fotoUsuarioSidebar"
+                src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
+                alt="Foto do aluno"
+              />
+              <span class="online"></span>
+            </div>
+            <span id="nomeUsuarioSidebar"></span>
+          </div>
+
+          <div class="logout-container">
+            <button id="btnLogout">Sair</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile">☰</button>
+
+          <div>
+            <h1 id="saudacaoAluno">Olá!</h1>
+            <p>Continue sua jornada de aprendizado</p>
+          </div>
+
+          <div class="icons">
+            <a href="aluno-suporte.html">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+
+            <a href="#" class="notification">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+
+            <div class="user-top">
+              <div class="foto-wrapper">
+                <img
+                  id="fotoUsuarioTop"
+                  src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
+                  alt="Foto do aluno"
+                />
+                <span class="online"></span>
+              </div>
+              <span id="nomeUsuarioTop"></span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Atalho: continuar estudando de onde parou -->
+        <section class="atalho-continuar" id="atalhoContinuar">
+          <div class="atalho-info">
+            <small>Continue de onde parou</small>
+            <h2 id="atalhoCursoNome">Nenhum curso em andamento</h2>
+
+            <div class="atalho-progresso">
+              <span id="atalhoProgressoTexto">0%</span>
+              <div class="barra-progresso">
+                <div id="atalhoProgressoBarra" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn-continuar" id="btnAtalhoContinuar">
+            <i class="fa-solid fa-play"></i>
+            Continuar estudando
+          </button>
+        </section>
+
+        <!-- Resumo: em andamento / concluídos / progresso médio / certificados -->
+        <section class="metricas-aluno">
+          <div class="card-metrica">
+            <i class="fa-solid fa-book-open icone-andamento"></i>
+            <div>
+              <span>Cursos em andamento</span>
+              <strong id="qtdEmAndamento">0</strong>
+            </div>
+          </div>
+
+          <div class="card-metrica">
+            <i class="fa-solid fa-circle-check icone-concluidos"></i>
+            <div>
+              <span>Cursos concluídos</span>
+              <strong id="qtdConcluidos">0</strong>
+            </div>
+          </div>
+
+          <div class="card-metrica">
+            <i class="fa-solid fa-chart-line icone-progresso"></i>
+            <div>
+              <span>Progresso médio</span>
+              <strong id="progressoMedio">0%</strong>
+            </div>
+          </div>
+
+          <div class="card-metrica">
+            <i class="fa-solid fa-award icone-certificados"></i>
+            <div>
+              <span>Certificados disponíveis</span>
+              <strong id="qtdCertificados">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <!-- Últimos cursos acessados + Avisos e notificações -->
+        <section class="grid-inicio">
+          <div class="card">
+            <div class="card-topo">
+              <h3>Últimos cursos acessados</h3>
+              <a href="./aluno-meus-cursos.html">Ver meus cursos</a>
+            </div>
+
+            <div id="listaUltimosAcessados"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-topo">
+              <h3>Avisos e notificações</h3>
+            </div>
+
+            <div id="listaAvisos"></div>
+          </div>
+        </section>
+
+        <!-- Cursos recomendados + Certificados disponíveis -->
+        <section class="grid-inicio">
+          <div class="card">
+            <div class="card-topo">
+              <h3>Cursos recomendados para você</h3>
+            </div>
+
+            <div id="listaRecomendados" class="recomendados-grid"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-topo">
+              <h3>Certificados disponíveis</h3>
+            </div>
+
+            <div id="listaCertificados" class="certificados-lista"></div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+    <script src="./js/aluno-dados.js"></script>
+    <script src="./js/aluno-inicio.js"></script>
+  </body>
+</html>

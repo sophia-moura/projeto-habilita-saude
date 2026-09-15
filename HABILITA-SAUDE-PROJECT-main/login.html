@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Login</title>
+
+    <link rel="stylesheet" href="./css/login.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="login-container">
+      <div class="login-box">
+        <div class="logo">
+          <h1>HABILITA<span>.SAÚDE</span></h1>
+          <p>Plataforma de Cursos Em Saúde</p>
+        </div>
+
+        <!-- ETAPA 1: escolha do perfil -->
+        <div id="etapaSelecao">
+          <p class="pergunta-perfil">Entrar como:</p>
+
+          <div class="seletor-perfil">
+            <button
+              type="button"
+              class="opcao-perfil"
+              id="opcaoProfessor"
+              data-tipo="professor"
+            >
+              <i class="fa-solid fa-chalkboard-user"></i>
+              <span>Professor</span>
+              <small>Gerenciar cursos e alunos</small>
+            </button>
+
+            <button
+              type="button"
+              class="opcao-perfil"
+              id="opcaoAluno"
+              data-tipo="aluno"
+            >
+              <i class="fa-solid fa-graduation-cap"></i>
+              <span>Aluno</span>
+              <small>Estudar e acompanhar cursos</small>
+            </button>
+          </div>
+        </div>
+
+        <!-- ETAPA 2: dados de login (aparece após escolher o perfil) -->
+        <div id="etapaLogin" class="etapa-login">
+          <button type="button" class="btn-voltar" id="btnVoltar">
+            <i class="fa-solid fa-arrow-left"></i>
+            Voltar
+          </button>
+
+          <div class="perfil-selecionado">
+            <i id="iconePerfilSelecionado" class="fa-solid fa-chalkboard-user"></i>
+            <span id="textoPerfilSelecionado">Entrar como Professor</span>
+          </div>
+
+          <div class="input-box">
+            <label>E-mail</label>
+
+            <div class="input">
+              <i class="fa-regular fa-envelope"></i>
+
+              <input
+                type="email"
+                id="emailLogin"
+                placeholder="seuemail@exemplo.com"
+              />
+            </div>
+          </div>
+
+          <div class="input-box">
+            <label>Senha</label>
+
+            <div class="input">
+              <i class="fa-solid fa-lock"></i>
+
+              <input type="password" id="senhaLogin" placeholder="********" />
+            </div>
+          </div>
+
+          <p id="erroLogin" class="erro-login"></p>
+
+          <button id="btnEntrar" onclick="entrar()">Entrar</button>
+        </div>
+
+        <!--
+<p id="abrirCadastro" class="criar-conta">Criar Conta</p>
+-->
+      </div>
+    </div>
+    <!--
+    <div id="modalCadastro" class="modal-cadastro">
+      <div class="cadastro-box">
+        <h2>Criar Conta</h2>
+
+        <input type="text" id="nomeCadastro" placeholder="Nome completo" />
+
+        <input type="email" id="emailCadastro" placeholder="E-mail" />
+
+        <input type="password" id="senhaCadastro" placeholder="Senha" />
+
+        <input
+          type="password"
+          id="confirmarSenha"
+          placeholder="Confirmar senha"
+        />
+
+        <button onclick="criarConta()">Criar Conta</button>
+        <input type="file" id="fotoCadastro" accept="image/*" />
+      </div>
+    </div>
+    -->
+
+    <script>
+      // ==================================================
+      // ETAPA 1: SELEÇÃO DE PERFIL (Professor ou Aluno)
+      // ==================================================
+
+      let tipoSelecionado = null;
+
+      const etapaSelecao = document.getElementById("etapaSelecao");
+      const etapaLogin = document.getElementById("etapaLogin");
+
+      const opcoesPerfil = document.querySelectorAll(".opcao-perfil");
+
+      const iconePerfilSelecionado = document.getElementById(
+        "iconePerfilSelecionado",
+      );
+      const textoPerfilSelecionado = document.getElementById(
+        "textoPerfilSelecionado",
+      );
+
+      const emailLogin = document.getElementById("emailLogin");
+      const senhaLogin = document.getElementById("senhaLogin");
+      const erroLogin = document.getElementById("erroLogin");
+      const btnEntrar = document.getElementById("btnEntrar");
+      const btnVoltar = document.getElementById("btnVoltar");
+
+      const dadosPerfil = {
+        professor: {
+          icone: "fa-solid fa-chalkboard-user",
+          texto: "Entrar como Professor",
+        },
+        aluno: {
+          icone: "fa-solid fa-graduation-cap",
+          texto: "Entrar como Aluno",
+        },
+      };
+
+      function abrirEtapaLogin(tipo) {
+        tipoSelecionado = tipo;
+
+        iconePerfilSelecionado.className = dadosPerfil[tipo].icone;
+        textoPerfilSelecionado.textContent = dadosPerfil[tipo].texto;
+
+        erroLogin.textContent = "";
+        emailLogin.value = "";
+        senhaLogin.value = "";
+
+        etapaSelecao.style.display = "none";
+        etapaLogin.classList.add("ativa");
+
+        emailLogin.focus();
+      }
+
+      opcoesPerfil.forEach((opcao) => {
+        opcao.addEventListener("click", () => {
+          abrirEtapaLogin(opcao.dataset.tipo);
+        });
+      });
+
+      btnVoltar.addEventListener("click", () => {
+        etapaLogin.classList.remove("ativa");
+        etapaSelecao.style.display = "block";
+        tipoSelecionado = null;
+      });
+
+      // ==================================================
+      // ETAPA 2: LOGIN
+      // Direciona para dashboard.html (professor) ou
+      // aluno-inicio.html (aluno), conforme o perfil escolhido.
+      // ==================================================
+
+      function entrar() {
+        if (!tipoSelecionado) return;
+
+        if (!emailLogin.value.trim() || !senhaLogin.value.trim()) {
+          erroLogin.textContent = "Preencha e-mail e senha para continuar.";
+          return;
+        }
+
+        erroLogin.textContent = "";
+
+        if (tipoSelecionado === "professor") {
+          const usuarioDemo = {
+            nome: "Professor Demo",
+            email: emailLogin.value.trim(),
+            foto: "./img/professor.png",
+            tipo: "professor",
+            online: true,
+          };
+
+          localStorage.setItem("usuario", JSON.stringify(usuarioDemo));
+          localStorage.setItem("usuarioLogado", "true");
+
+          window.location.href = "dashboard.html";
+        } else {
+          const usuarioDemo = {
+            nome: "Aluno Demo",
+            email: emailLogin.value.trim(),
+            foto:
+              "https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff",
+            tipo: "aluno",
+            online: true,
+          };
+
+          localStorage.setItem("usuario", JSON.stringify(usuarioDemo));
+          localStorage.setItem("usuarioLogado", "true");
+
+          window.location.href = "aluno-inicio.html";
+        }
+      }
+
+      senhaLogin.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") entrar();
+      });
+    </script>
+
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+  </body>
+</html>

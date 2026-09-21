@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Suporte - Área do Aluno</title>
+
+    <link rel="stylesheet" href="./css/aluno.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+  </head>
+
+  <body>
+    <div id="overlay"></div>
+
+    <div class="container">
+      <aside class="sidebar">
+        <div>
+          <div class="logo-side">
+            <h2>HABILITA.SAÚDE</h2>
+            <p>Área do Aluno</p>
+          </div>
+
+          <ul>
+            <li>
+              <a href="./aluno-inicio.html">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+
+            <li>
+              <a href="./aluno-meus-cursos.html">
+                <i class="fa-solid fa-book"></i>
+                Meus Cursos
+              </a>
+            </li>
+
+            <li>
+              <a href="./aluno-suporte.html" class="menu-ativo">
+                <i class="fa-regular fa-circle-question"></i>
+                Suporte
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="perfil">
+            <div class="foto-wrapper">
+              <img
+                id="fotoUsuarioSidebar"
+                src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
+                alt="Foto do aluno"
+              />
+              <span class="online"></span>
+            </div>
+            <span id="nomeUsuarioSidebar"></span>
+          </div>
+
+          <div class="logout-container">
+            <button id="btnLogout">Sair</button>
+          </div>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile">☰</button>
+
+          <div>
+            <h1>SUPORTE</h1>
+            <p>Tire suas dúvidas ou fale com nossa equipe</p>
+          </div>
+
+          <div class="icons">
+            <a href="aluno-suporte.html">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+
+            <a href="#" class="notification">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+
+            <div class="user-top">
+              <div class="foto-wrapper">
+                <img
+                  id="fotoUsuarioTop"
+                  src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
+                  alt="Foto do aluno"
+                />
+                <span class="online"></span>
+              </div>
+              <span id="nomeUsuarioTop"></span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Canais de atendimento -->
+        <section class="canais-suporte">
+          <div class="canal-card">
+            <i class="fa-regular fa-envelope canal-email"></i>
+            <div>
+              <strong>E-mail</strong>
+              <small>suporte@habilitasaude.com</small>
+              <span class="canal-prazo">Resposta em até 24h</span>
+            </div>
+          </div>
+
+          <div class="canal-card">
+            <i class="fa-brands fa-whatsapp canal-whatsapp"></i>
+            <div>
+              <strong>WhatsApp</strong>
+              <small>(61) 9 9999-0000</small>
+              <span class="canal-prazo">Seg a sex, 8h às 18h</span>
+            </div>
+          </div>
+
+          <div class="canal-card">
+            <i class="fa-solid fa-chalkboard-user canal-professor"></i>
+            <div>
+              <strong>Falar com o professor</strong>
+              <small>Dúvidas sobre o conteúdo</small>
+              <span class="canal-prazo">Pela sala de aula do curso</span>
+            </div>
+          </div>
+        </section>
+
+        <div class="grid-suporte">
+          <!-- FAQ -->
+          <div class="card">
+            <div class="card-topo">
+              <h3>Perguntas frequentes (FAQ)</h3>
+            </div>
+
+            <div class="busca busca-faq">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input
+                type="text"
+                id="buscaFaq"
+                placeholder="Buscar uma dúvida..."
+              />
+            </div>
+
+            <div id="listaFaq" class="lista-faq"></div>
+          </div>
+
+          <!-- Abrir chamado -->
+          <div class="card">
+            <div class="card-topo">
+              <h3>Abrir um chamado</h3>
+            </div>
+
+            <div class="input-box-suporte">
+              <label for="assuntoChamado">Assunto</label>
+              <select id="assuntoChamado">
+                <option value="">Selecione o assunto</option>
+                <option value="Acesso e login">Acesso e login</option>
+                <option value="Conteúdo do curso">Conteúdo do curso</option>
+                <option value="Certificado">Certificado</option>
+                <option value="Pagamento e matrícula">
+                  Pagamento e matrícula
+                </option>
+                <option value="Problema técnico">Problema técnico</option>
+                <option value="Outro">Outro</option>
+              </select>
+            </div>
+
+            <div class="input-box-suporte">
+              <label for="cursoChamado">Curso relacionado (opcional)</label>
+              <select id="cursoChamado">
+                <option value="">Não relacionado a um curso</option>
+              </select>
+            </div>
+
+            <div class="input-box-suporte">
+              <label for="mensagemChamado">Descreva sua dúvida</label>
+              <textarea
+                id="mensagemChamado"
+                rows="5"
+                placeholder="Conte com detalhes o que aconteceu..."
+              ></textarea>
+            </div>
+
+            <p id="mensagemRetorno" class="mensagem-retorno"></p>
+
+            <button id="btnEnviarChamado" class="btn-enviar-chamado">
+              <i class="fa-solid fa-paper-plane"></i>
+              Enviar chamado
+            </button>
+          </div>
+        </div>
+
+        <!-- Meus chamados -->
+        <section class="card">
+          <div class="card-topo">
+            <h3>Meus chamados</h3>
+          </div>
+
+          <div id="listaChamados" class="lista-chamados"></div>
+        </section>
+      </main>
+    </div>
+
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+    <script src="./js/aluno-dados.js"></script>
+    <script src="./js/aluno-suporte.js"></script>
+  </body>
+</html>

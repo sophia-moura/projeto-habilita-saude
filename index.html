@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Habilita Saúde</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./css/index.css" />
+  </head>
+  <body>
+    <header class="navbar">
+      <div class="logo">
+        <h2>Habilita Saúde</h2>
+        <span>PLATAFORMA DE CURSOS</span>
+      </div>
+
+      <button class="menu-mobile" id="menuMobile">☰</button>
+
+      <nav id="menu">
+        <a href="#inicio">Início</a>
+        <a href="#sobre">Sobre</a>
+        <a href="#publico">Para quem é</a>
+        <a href="#funciona">Como funciona</a>
+
+        <span class="menu-indicator"></span>
+      </nav>
+
+      <div class="acoes">
+        <a href="login.html" class="btn-outline"> Entrar </a>
+
+        <a href="login.html" class="btn-primary"> Cadastre-se </a>
+      </div>
+    </header>
+
+    <section id="inicio" class="hero">
+      <div class="hero-left">
+        <span class="tag"> Plataforma online • Área da saúde </span>
+
+        <h1>
+          Crie e venda
+          <span>cursos de saúde.</span>
+        </h1>
+
+        <p>
+          O Habilita Saúde conecta professores especialistas a alunos da área da
+          saúde. Publique seu curso, acompanhe vendas e matrículas, tudo em um
+          só painel.
+        </p>
+
+        <div class="hero-buttons">
+          <a href="login.html" class="btn-primary"> Comece a vender → </a>
+
+          <a href="login.html" class="btn-outline"> Já tenho conta </a>
+        </div>
+
+        <div class="stats">
+          <div>
+            <h3>+320</h3>
+            <span>professores parceiros</span>
+          </div>
+
+          <div>
+            <h3>+40k</h3>
+            <span>alunos matriculados</span>
+          </div>
+
+          <div>
+            <h3>0%</h3>
+            <span>custo para começar</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="hero-right">
+        <div class="dashboard-card">
+          <small>Painel do Professor</small>
+
+          <h4>Bem-vindo(a) de volta</h4>
+          <div class="linha"></div>
+          <div class="curso">
+            <div>
+              <span class="curso-nome">Cardiologia na Prática</span>
+              <div class="publicado">• Publicado</div>
+            </div>
+
+            <strong>128</strong>
+          </div>
+
+          <div class="grafico">
+            <div></div>
+            <div></div>
+            <div></div>
+            <div></div>
+          </div>
+        </div>
+
+        <div class="floating venda">
+          <small>Vendas no mês</small>
+
+          <h3>R$ 18.4k</h3>
+
+          <span class="crescimento">+24% vs. mês anterior</span>
+        </div>
+
+        <div class="floating avaliacao">
+          <small>Avaliação média</small>
+          <h3>4.8 ★</h3>
+          <span class="crescimento">312 avaliações</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="sobre" class="secao">
+      <h2>Sobre</h2>
+
+      <p>
+        O Habilita Saúde é uma plataforma digital de ensino que conecta
+        profissionais e estudantes da área da saúde a conteúdos educacionais de
+        qualidade. Nosso objetivo é oferecer um ambiente moderno, seguro e
+        organizado para criação, publicação e gestão de cursos online,
+        permitindo que especialistas compartilhem conhecimento e ampliem seu
+        alcance profissional.
+      </p>
+
+      <p>
+        A plataforma também centraliza recursos de acompanhamento, gestão de
+        matrículas, avaliações e desempenho dos cursos, proporcionando uma
+        experiência completa para professores e alunos.
+      </p>
+    </section>
+
+    <section id="publico" class="secao">
+      <h2>Para quem é</h2>
+
+      <p>
+        O Habilita Saúde atende profissionais, estudantes e especialistas da
+        área da saúde que buscam aperfeiçoamento contínuo e acesso a conteúdos
+        atualizados. É ideal para médicos, enfermeiros, fisioterapeutas,
+        nutricionistas, farmacêuticos, psicólogos, terapeutas e técnicos da
+        saúde.
+      </p>
+
+      <p>
+        Também é uma ótima oportunidade para professores e especialistas que
+        desejam transformar sua experiência em cursos online, alcançando novos
+        alunos e gerando renda com educação digital.
+      </p>
+    </section>
+
+    <section id="funciona" class="secao">
+      <h2>Como funciona</h2>
+
+      <p>
+        O processo é simples e intuitivo. Professores criam cursos, organizam
+        módulos, adicionam conteúdos e publicam suas aulas na plataforma. Após
+        isso, os cursos ficam disponíveis para matrícula e acompanhamento dos
+        alunos.
+      </p>
+
+      <p>
+        Durante o uso, o professor acompanha métricas como matrículas, vendas,
+        avaliações e desempenho. Os alunos acessam os conteúdos, acompanham o
+        progresso, realizam atividades e desenvolvem suas habilidades em um
+        único ambiente digital.
+      </p>
+    </section>
+
+    <script>
+      const sections = document.querySelectorAll("section");
+      const links = document.querySelectorAll("#menu a");
+      const indicator = document.querySelector(".menu-indicator");
+
+      function moveIndicator(link) {
+        indicator.style.left = link.offsetLeft + "px";
+        indicator.style.width = link.offsetWidth + "px";
+      }
+
+      window.addEventListener("scroll", () => {
+        let current = "";
+
+        sections.forEach((section) => {
+          const top = section.offsetTop - 150;
+
+          if (window.scrollY >= top) {
+            current = section.id;
+          }
+        });
+
+        links.forEach((link) => {
+          if (link.getAttribute("href") === "#" + current) {
+            moveIndicator(link);
+          }
+        });
+      });
+
+      moveIndicator(links[0]);
+    </script>
+
+    <script>
+      const menuMobile = document.getElementById("menuMobile");
+
+      const menu = document.getElementById("menu");
+
+      menuMobile.addEventListener("click", () => {
+        menu.classList.toggle("ativo");
+      });
+    </script>
+  </body>
+</html>

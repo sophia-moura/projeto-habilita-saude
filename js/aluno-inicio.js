@@ -215,9 +215,12 @@ function renderizarCertificados() {
           <small>Carga horária: ${curso.cargaHoraria}h</small>
         </div>
 
-        <button class="btn-baixar-certificado" title="Baixar certificado">
-          <i class="fa-solid fa-download"></i>
-        </button>
+  <button
+      class="btn-baixar-certificado"
+      title="Baixar certificado"
+      onclick="baixarCertificado('${curso.nome}')">
+      <i class="fa-solid fa-download"></i>
+  </button>
       </div>
     `;
   });
@@ -234,3 +237,118 @@ renderizarUltimosAcessados();
 renderizarRecomendados();
 renderizarAvisos();
 renderizarCertificados();
+
+
+function baixarCertificado(nomeCurso) {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+
+  const nomeAluno =
+    usuario && usuario.nome ? usuario.nome : "Aluno";
+
+  const curso = cursosAluno.find((c) => c.nome === nomeCurso);
+  const cargaHoraria = curso ? curso.cargaHoraria : "";
+
+  // ===== BORDA =====
+  doc.setLineWidth(2);
+  doc.rect(10, 10, 190, 277);
+
+  doc.setLineWidth(0.5);
+  doc.rect(15, 15, 180, 267);
+
+  // ===== TÍTULO =====
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(26);
+  doc.text("HABILITA SAÚDE", 105, 50, {
+    align: "center",
+  });
+
+  doc.setFontSize(20);
+  doc.text("CERTIFICADO DE CONCLUSÃO", 105, 70, {
+    align: "center",
+  });
+
+  // ===== TEXTO =====
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+  doc.text("Certificamos que", 105, 100, {
+    align: "center",
+  });
+
+  // ===== NOME DO ALUNO =====
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(24);
+  doc.text(nomeAluno, 105, 120, {
+    align: "center",
+  });
+
+  // ===== CURSO =====
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(14);
+  doc.text("concluiu com êxito o curso", 105, 145, {
+    align: "center",
+  });
+
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(19);
+
+  // Divide o nome do curso caso seja muito grande
+  const linhasCurso = doc.splitTextToSize(nomeCurso, 150);
+
+  doc.text(linhasCurso, 105, 165, {
+    align: "center",
+  });
+
+  // ===== CARGA HORÁRIA =====
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(13);
+
+  const posicaoCargaHoraria = 165 + linhasCurso.length * 10;
+
+  doc.text(
+    `Carga horária: ${cargaHoraria} horas`,
+    105,
+    posicaoCargaHoraria,
+    {
+      align: "center",
+    }
+  );
+
+  // ===== DATA =====
+  const dataAtual = new Date().toLocaleDateString("pt-BR");
+
+  doc.setFontSize(12);
+  doc.text(
+    `Data de conclusão: ${dataAtual}`,
+    105,
+    posicaoCargaHoraria + 25,
+    {
+      align: "center",
+    }
+  );
+
+  // ===== ASSINATURA =====
+  const linhaAssinaturaY = posicaoCargaHoraria + 55;
+
+  doc.line(65, linhaAssinaturaY, 145, linhaAssinaturaY);
+
+  doc.setFontSize(11);
+  doc.text("Habilita Saúde", 105, linhaAssinaturaY + 8, {
+    align: "center",
+  });
+
+  // ===== RODAPÉ =====
+  doc.setFontSize(10);
+  doc.text(
+    "Plataforma de Educação em Saúde",
+    105,
+    270,
+    {
+      align: "center",
+    }
+  );
+
+  // ===== DOWNLOAD =====
+  doc.save(`Certificado-${nomeCurso}.pdf`);
+}
+

@@ -1,253 +1,147 @@
-<!doctype html>
-<html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habilita.Saúde — Suporte</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="suporte.css">
+</head>
+<body>
 
-    <title>Suporte</title>
+<div class="topbar">
+  <div class="brand"><div class="mark">H</div><div class="name">HABILITA<span>.SAÚDE</span></div></div>
+  <div class="nav-links">
+    <span>Meus cursos</span>
+    <span>Certificados</span>
+    <b>Suporte</b>
+  </div>
+  <div class="topbar-right"><div class="avatar">AL</div></div>
+</div>
 
-    <link rel="stylesheet" href="./css/style.css" />
+<div class="wrap">
+  <div class="page-head">
+    <h1>Central de suporte</h1>
+    <p>Fale com a gente por aqui ou escolha um dos canais rápidos abaixo.</p>
+  </div>
 
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    />
-  </head>
-
-  <body>
-    <div class="container">
-      <aside class="sidebar">
-        <div>
-          <div class="logo-side">
-            <h2>HABILITA.SAÚDE</h2>
-            <p>Plataforma De Cursos em Saúde</p>
-          </div>
-
-          <ul>
-            <li>
-              <a href="./dashboard.html">
-                <i class="fa-solid fa-house"></i>
-                Início
-              </a>
-            </li>
-
-            <li>
-              <a href="./meus-cursos.html">
-                <i class="fa-solid fa-book"></i>
-                Meus Cursos
-              </a>
-            </li>
-
-            <li>
-              <a href="./financas.html">
-                <i class="fa-solid fa-chart-pie"></i>
-                Finanças
-              </a>
-            </li>
-
-            <li>
-              <a href="./criar-curso.html">
-                <i class="fa-solid fa-plus"></i>
-                Criar Curso
-              </a>
-            </li>
-
-            <li>
-              <a href="./usuarios.html">
-                <i class="fa-solid fa-users"></i>
-                Usuários
-              </a>
-            </li>
-
-            <li>
-              <a href="./relatorios.html">
-                <i class="fa-solid fa-chart-line"></i>
-                Relatórios
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div class="perfil">
-          <div class="foto-wrapper">
-            <a href="./perfil.html">
-              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
-            </a>
-
-            <span class="online"></span>
-          </div>
-
-          <span id="nomeUsuarioSidebar"></span>
-        </div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <button id="menuMobile" class="menu-mobile">☰</button>
-          <div>
-            <h1>PROFESSOR</h1>
-            <p>Bem-vindo(a) ao seu painel</p>
-          </div>
-
-          <div class="icons">
-            <a href="suporte.html">
-              <i class="fa-regular fa-circle-question active-icon"></i>
-            </a>
-            <a href="notificacoes.html" class="notification">
-              <i class="fa-regular fa-bell"></i>
-              <span id="badgeNotificacao"></span>
-            </a>
-
-            <div class="user-top">
-              <div class="foto-wrapper">
-                <a href="perfil.html">
-                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
-                </a>
-
-                <span class="online"></span>
-              </div>
-
-              <span id="nomeUsuarioTop"></span>
-            </div>
-          </div>
-        </header>
-
-        <section class="suporte-header">
-          <h2>Suporte ao Professor</h2>
-          <p>
-            Estamos aqui para ajudá-lo. Tire suas dúvidas ou abra um chamado
-          </p>
-        </section>
-
-        <section class="acoes-suporte">
-          <button>
-            <i class="fa-solid fa-ticket"></i>
-            Meus Tickets
-          </button>
-          <button id="btnNovoTicket">
-            <i class="fa-solid fa-plus"></i>
-            Novo Ticket
-          </button>
-
-          <button>
-            <i class="fa-solid fa-book"></i>
-            FAQ
-          </button>
-
-          <button>
-            <i class="fa-solid fa-phone"></i>
-            Contato
-          </button>
-        </section>
-
-        <select id="filtroStatus">
-          <option value="Todos">Todos</option>
-          <option value="Aberto">Aberto</option>
-          <option value="Andamento">Andamento</option>
-          <option value="Resolvido">Resolvido</option>
-        </select>
-
-        <section class="metricas-suporte">
-          <div class="card-metrica">
-            <i class="fa-solid fa-ticket"></i>
-
-            <div>
-              <h3>Tickets Abertos</h3>
-              <strong id="totalAbertos">0</strong>
-            </div>
-          </div>
-
-          <div class="card-metrica">
-            <i class="fa-solid fa-clock"></i>
-
-            <div>
-              <h3>Em Andamento</h3>
-              <strong id="totalAndamento">0</strong>
-            </div>
-          </div>
-
-          <div class="card-metrica">
-            <i class="fa-solid fa-circle-check"></i>
-
-            <div>
-              <h3>Resolvidos</h3>
-              <strong id="totalResolvidos">0</strong>
-            </div>
-          </div>
-
-          <div class="card-metrica">
-            <i class="fa-solid fa-comments"></i>
-
-            <div>
-              <h3>Mensagens</h3>
-              <strong id="totalMensagens">0</strong>
-            </div>
-          </div>
-        </section>
-
-        <section id="listaTickets"></section>
-
-        <div id="modalTicket" class="modal">
-          <div class="modal-content">
-            <h2>Novo Ticket</h2>
-
-            <input type="text" id="tituloTicket" placeholder="Título" />
-
-            <select id="prioridadeTicket">
-              <option>Baixa</option>
-              <option>Média</option>
-              <option>Alta</option>
-            </select>
-
-            <textarea
-              id="mensagemTicket"
-              rows="6"
-              placeholder="Descreva seu problema"
-            ></textarea>
-
-            <button id="salvarTicket">Abrir Chamado</button>
-          </div>
-        </div>
-
-        <div id="modalChat" class="modal">
-          <div class="modal-content">
-            <h2>Ticket</h2>
-
-            <div id="mensagensTicket"></div>
-
-            <div class="enviar-mensagem">
-              <input
-                type="text"
-                id="novaMensagem"
-                placeholder="Digite sua mensagem"
-              />
-
-              <button id="btnEnviarMensagem">Enviar</button>
-            </div>
-          </div>
-        </div>
-
-        <div id="modalChat" class="modal">
-          <div class="modal-content">
-            <h2>Ticket</h2>
-
-            <div id="mensagensTicket"></div>
-
-            <div class="enviar-mensagem">
-              <input
-                type="text"
-                id="novaMensagem"
-                placeholder="Digite sua mensagem"
-              />
-
-              <button id="btnEnviarMensagem">Enviar</button>
-            </div>
-          </div>
-        </div>
-      </main>
+  <div class="channels">
+    <div class="channel wpp" onclick="window.open('https://wa.me/5511999999999','_blank')">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12c0 1.85.5 3.58 1.36 5.07L2 22l5.06-1.33A9.94 9.94 0 0 0 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2Zm0 18c-1.6 0-3.1-.44-4.38-1.2l-.31-.19-3 .79.8-2.93-.2-.3A7.94 7.94 0 0 1 4 12c0-4.41 3.59-8 8-8s8 3.59 8 8-3.59 8-8 8Zm4.4-5.9c-.24-.12-1.43-.7-1.65-.79-.22-.08-.38-.12-.54.12-.16.24-.62.79-.76.95-.14.16-.28.18-.52.06-.24-.12-1-.37-1.9-1.17-.7-.62-1.18-1.39-1.32-1.63-.14-.24-.02-.37.1-.49.11-.11.24-.28.36-.42.12-.14.16-.24.24-.4.08-.16.04-.3-.02-.42-.06-.12-.54-1.3-.74-1.78-.2-.47-.4-.4-.54-.41h-.46c-.16 0-.42.06-.64.3-.22.24-.84.82-.84 2s.86 2.32.98 2.48c.12.16 1.7 2.6 4.12 3.64.58.25 1.03.4 1.38.51.58.18 1.11.16 1.53.1.47-.07 1.43-.58 1.63-1.15.2-.57.2-1.05.14-1.15-.06-.1-.22-.16-.46-.28Z"/></svg></div>
+      <div>
+        <h3>WhatsApp</h3>
+        <p>Resposta rápida, direto no seu celular</p>
+        <span class="dot-status"><i></i>Online agora</span>
+      </div>
     </div>
-    <script src="./js/user.js"></script>
-    <script src="./js/suporte.js"></script>
-    <script src="./js/global.js"></script>
-  </body>
+
+    <div class="channel chat" onclick="alert('Abrindo chat ao vivo...')">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5h16v11H8l-4 4v-15Z"/></svg></div>
+      <div>
+        <h3>Chat ao vivo</h3>
+        <p>Fale com um atendente pelo site</p>
+        <span class="dot-status"><i></i>Online agora</span>
+      </div>
+    </div>
+
+    <div class="channel mail" onclick="window.location.href='mailto:suporte@habilitasaude.com.br'">
+      <div class="ci"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="14" rx="2"/><path d="M4 6.5l8 6.5 8-6.5"/></svg></div>
+      <div>
+        <h3>E-mail</h3>
+        <p>suporte@habilitasaude.com.br</p>
+        <span class="dot-status" style="color:var(--muted);"><i style="background:var(--muted);"></i>Resposta em até 24h</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>Abrir um chamado</h2>
+        <div class="row2">
+          <div class="field"><label>Categoria</label>
+            <select>
+              <option>Dúvida sobre um curso</option>
+              <option>Problema com pagamento</option>
+              <option>Certificado</option>
+              <option>Problema técnico</option>
+              <option>Outro assunto</option>
+            </select>
+          </div>
+          <div class="field"><label>Curso relacionado (opcional)</label>
+            <select>
+              <option>Nenhum curso específico</option>
+              <option>Nutrição Clínica Aplicada</option>
+              <option>Cardiologia na Prática</option>
+              <option>Primeiros Socorros Essenciais</option>
+              <option>Fisioterapia Ortopédica</option>
+            </select>
+          </div>
+        </div>
+        <div class="field"><label>Assunto</label><input placeholder="Resuma o que você precisa em poucas palavras"></div>
+        <div class="field"><label>Mensagem</label><textarea placeholder="Descreva com detalhes o que aconteceu..."></textarea></div>
+        <div class="field"><label>Anexo (opcional)</label>
+          <div class="attach"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12.5l-8.5 8.5a4.5 4.5 0 0 1-6.4-6.4l9-9a3 3 0 0 1 4.2 4.2l-9 9a1.5 1.5 0 0 1-2.1-2.1l8-8"/></svg>Clique ou arraste um arquivo (print, PDF, etc.)</div>
+        </div>
+        <button class="submit-btn" onclick="submitTicket()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5l16 7.5-16 7.5v-6l10-1.5-10-1.5v-6Z"/></svg>
+          Enviar chamado
+        </button>
+        <div class="success-note" id="successNote">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
+          Chamado enviado! Nosso time responde em até 24h úteis.
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2>Perguntas frequentes</h2>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">Como emito meu certificado? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="faq-a">Assim que você concluir 100% das aulas de um curso, o certificado fica disponível automaticamente na aba "Certificados".</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">Posso parcelar minha compra? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="faq-a">Sim, cursos no cartão de crédito podem ser parcelados em até 12x, sem juros para as primeiras parcelas.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">Tenho quanto tempo de acesso ao curso? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="faq-a">O acesso é vitalício a partir da data de matrícula, incluindo futuras atualizações de conteúdo.</div>
+        </div>
+        <div class="faq-item">
+          <div class="faq-q" onclick="toggleFaq(this)">Como valido um certificado emitido? <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg></div>
+          <div class="faq-a">Use o código de validação impresso no certificado na página "Certificados", na barra "Validar um certificado".</div>
+        </div>
+
+        <div class="hours-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>
+          <div><b>Horário de atendimento</b>Segunda a sexta, 8h às 19h · Sábado, 9h às 13h</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Meus chamados</h2>
+  <div class="tickets">
+    <div class="t-row head"><div>Assunto</div><div class="col-date">Aberto em</div><div>Categoria</div><div>Status</div></div>
+    <div class="t-row">
+      <div class="subj">Dúvida sobre liberação do certificado<span>#HS-10245</span></div>
+      <div class="col-date">18/09/2026</div>
+      <div>Certificado</div>
+      <div><span class="pill done">Resolvido</span></div>
+    </div>
+    <div class="t-row">
+      <div class="subj">Cobrança em duplicidade no cartão<span>#HS-10298</span></div>
+      <div class="col-date">21/09/2026</div>
+      <div>Pagamento</div>
+      <div><span class="pill open">Em andamento</span></div>
+    </div>
+  </div>
+</div>
+
+<script src="suporte.js"></script>
+</body>
 </html>

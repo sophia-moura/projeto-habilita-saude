@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habilita.Saúde — Certificados</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,500&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="certificados.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="mark">H</div><div class="name">HABILITA<span>.SAÚDE</span></div></div>
+  <div class="nav-links">
+    <span>Meus cursos</span>
+    <b>Certificados</b>
+    <span>Suporte</span>
+  </div>
+  <div class="topbar-right"><div class="avatar">AL</div></div>
+</div>
+
+<div class="wrap">
+  <div class="page-head">
+    <div>
+      <h1>Certificados</h1>
+      <p>Visualize, baixe e compartilhe os certificados dos seus cursos concluídos.</p>
+    </div>
+    <div class="stats-row">
+      <div class="stat-chip"><div class="n">2</div><div class="l">Emitidos</div></div>
+      <div class="stat-chip"><div class="n">30h</div><div class="l">Carga horária</div></div>
+    </div>
+  </div>
+
+  <div class="verify-bar">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z"/><path d="M9 12.5l2 2 4-4.5"/></svg>
+    <span class="lbl">Validar um certificado</span>
+    <input id="verifyInput" placeholder="Cole o código de validação, ex: HS-4F82-9K21">
+    <button onclick="verifyCode()">Verificar</button>
+  </div>
+  <div id="verifyResult" class="verify-result"></div>
+
+  <h2 class="section-title">Meus certificados</h2>
+  <div class="cert-grid">
+
+    <div class="cert-card" id="cert-psocorros" data-course="Primeiros Socorros Essenciais" data-student="Aluno Demo" data-date="12/08/2026" data-hours="12h" data-code="HS-4F82-9K21">
+      <div class="cert-visual">
+        <div class="brandline">HABILITA · SAÚDE</div>
+        <div class="seal">✓</div>
+        <div class="kicker">CERTIFICADO DE CONCLUSÃO</div>
+        <div class="grants">é concedido a</div>
+        <div class="student">Aluno Demo</div>
+        <div class="course">Primeiros Socorros Essenciais</div>
+        <div class="sign"><b>Prof. Marcos Lima</b>Direção Acadêmica · 12h</div>
+      </div>
+      <div class="cert-body">
+        <div class="cert-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>Concluído em 12/08/2026</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>12h</span>
+        </div>
+        <div class="code-row">
+          <span class="code">HS-4F82-9K21</span>
+          <span class="copy" onclick="copyCode(this,'HS-4F82-9K21')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M5 15V5.5A1.5 1.5 0 0 1 6.5 4H15"/></svg><span class="copy-txt">Copiar</span></span>
+        </div>
+        <div class="cert-actions">
+          <button class="btn primary" onclick="downloadCert('cert-psocorros')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-4.5-4.5M12 16l4.5-4.5"/><path d="M4 18v1.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V18"/></svg>Baixar PDF</button>
+          <button class="btn" onclick="viewCert('cert-psocorros')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>Visualizar</button>
+          <button class="btn linkedin" onclick="shareLinkedin('cert-psocorros')"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M6.94 8.5H3.56V20h3.38V8.5ZM5.25 3.5a1.96 1.96 0 1 0 0 3.92 1.96 1.96 0 0 0 0-3.92ZM20.5 20h-3.37v-5.9c0-1.4-.03-3.2-1.95-3.2-1.96 0-2.26 1.53-2.26 3.1V20H9.55V8.5h3.24v1.57h.05c.45-.86 1.55-1.77 3.2-1.77 3.43 0 4.46 2.26 4.46 5.2V20Z"/></svg>Compartilhar</button>
+        </div>
+        <div class="share-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>Disponível para compartilhamento profissional</div>
+      </div>
+    </div>
+
+    <div class="cert-card" id="cert-fisio" data-course="Fisioterapia Ortopédica" data-student="Aluno Demo" data-date="02/09/2026" data-hours="18h" data-code="HS-7A13-P042">
+      <div class="cert-visual">
+        <div class="brandline">HABILITA · SAÚDE</div>
+        <div class="seal">✓</div>
+        <div class="kicker">CERTIFICADO DE CONCLUSÃO</div>
+        <div class="grants">é concedido a</div>
+        <div class="student">Aluno Demo</div>
+        <div class="course">Fisioterapia Ortopédica</div>
+        <div class="sign"><b>Prof. Rafael Torres</b>Direção Acadêmica · 18h</div>
+      </div>
+      <div class="cert-body">
+        <div class="cert-meta">
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 9.5h17M8 3v4M16 3v4"/></svg>Concluído em 02/09/2026</span>
+          <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg>18h</span>
+        </div>
+        <div class="code-row">
+          <span class="code">HS-7A13-P042</span>
+          <span class="copy" onclick="copyCode(this,'HS-7A13-P042')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M5 15V5.5A1.5 1.5 0 0 1 6.5 4H15"/></svg><span class="copy-txt">Copiar</span></span>
+        </div>
+        <div class="cert-actions">
+          <button class="btn primary" onclick="downloadCert('cert-fisio')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v13m0 0l-4.5-4.5M12 16l4.5-4.5"/><path d="M4 18v1.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V18"/></svg>Baixar PDF</button>
+          <button class="btn" onclick="viewCert('cert-fisio')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg>Visualizar</button>
+        </div>
+        <div class="no-share-note">Compartilhamento profissional indisponível para este curso.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <h2 class="section-title">Histórico de cursos concluídos</h2>
+  <div class="history">
+    <div class="h-row head">
+      <div>Curso</div><div>Concluído em</div><div class="col-hours">Carga horária</div><div>Status</div>
+    </div>
+    <div class="h-row">
+      <div class="course-name">Primeiros Socorros Essenciais<span>Prof. Marcos Lima</span></div>
+      <div>12/08/2026</div>
+      <div class="col-hours">12h</div>
+      <div><span class="status-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>Emitido</span> <span class="h-link" onclick="goToCert('cert-psocorros')">Ver</span></div>
+    </div>
+    <div class="h-row">
+      <div class="course-name">Fisioterapia Ortopédica<span>Prof. Rafael Torres</span></div>
+      <div>02/09/2026</div>
+      <div class="col-hours">18h</div>
+      <div><span class="status-pill"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>Emitido</span> <span class="h-link" onclick="goToCert('cert-fisio')">Ver</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="certModal" onclick="if(event.target===this) closeModal()">
+  <div class="modal-box">
+    <div class="modal-close" onclick="closeModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </div>
+    <div class="modal-cert">
+      <div class="brandline">HABILITA · SAÚDE</div>
+      <div class="seal">✓</div>
+      <div class="kicker">CERTIFICADO DE CONCLUSÃO</div>
+      <div class="grants">é concedido a</div>
+      <div class="student" id="modalStudent">—</div>
+      <div class="course" id="modalCourse">—</div>
+      <div class="meta" id="modalMeta">—</div>
+      <div class="code" id="modalCode">—</div>
+    </div>
+  </div>
+</div>
+
+<script src="certificados.js"></script>
+</body>
+</html>

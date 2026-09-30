@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Habilita.Saúde — Finalizar compra</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="pagamento.css">
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">H</div>
+    <div class="name">HABILITA<span>.SAÚDE</span></div>
+  </div>
+  <div class="secure-note">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z"/></svg>
+    Ambiente seguro
+  </div>
+</div>
+
+<div class="wrap">
+  <a class="back">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l-7 7 7 7"/></svg>
+    Voltar ao curso
+  </a>
+
+  <div class="steps">
+    <div class="step done"><div class="n">✓</div>Seus dados</div>
+    <div class="step-sep"></div>
+    <div class="step active"><div class="n">2</div>Pagamento</div>
+    <div class="step-sep"></div>
+    <div class="step"><div class="n">3</div>Confirmação</div>
+  </div>
+
+  <h1 class="page-title">Finalizar compra</h1>
+
+  <div class="grid">
+    <div class="main-col">
+
+      <div class="card">
+        <h2><span class="num">1</span>Forma de pagamento</h2>
+        <div class="paytabs">
+          <div class="paytab active" onclick="selectPay('card')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5.5" width="19" height="13" rx="2.2"/><path d="M2.5 9.5h19"/></svg>
+            Cartão
+          </div>
+          <div class="paytab" onclick="selectPay('pix')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8.5 4.5l4 4 4-4M8.5 19.5l4-4 4 4M4.5 8.5l4 4-4 4M19.5 8.5l-4 4 4 4"/></svg>
+            Pix
+          </div>
+          <div class="paytab" onclick="selectPay('boleto')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5v15M8 4.5v15M11 4.5v15M15 4.5v15M18 4.5v15M20.5 4.5v15"/></svg>
+            Boleto
+          </div>
+        </div>
+
+        <div id="card-pane">
+          <div class="card-preview">
+            <div class="top-row"><div class="chip"></div><div class="brandmark">VISA</div></div>
+            <div class="num" id="prevNum">•••• •••• •••• ••••</div>
+            <div class="bot"><span>Titular<br><b id="prevName">NOME NO CARTÃO</b></span><span>Val.<br><b id="prevExp">••/••</b></span></div>
+          </div>
+
+          <div class="field card-num-field">
+            <label>Número do cartão</label>
+            <input id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric">
+            <div class="card-brands">
+              <svg viewBox="0 0 38 24"><rect width="38" height="24" rx="4" fill="#EEF1F7"/><text x="19" y="15" font-size="8" text-anchor="middle" fill="#68738F" font-family="Sora">VISA</text></svg>
+              <svg viewBox="0 0 38 24"><rect width="38" height="24" rx="4" fill="#EEF1F7"/><circle cx="15" cy="12" r="6" fill="#EB8B2E" opacity=".8"/><circle cx="23" cy="12" r="6" fill="#D9342B" opacity=".8"/></svg>
+            </div>
+          </div>
+          <div class="field"><label>Nome impresso no cartão</label><input id="cardName" placeholder="Como está no cartão"></div>
+          <div class="row3">
+            <div class="field"><label>Validade</label><input id="cardExp" placeholder="MM/AA" maxlength="5"></div>
+            <div class="field"><label>CVV</label><input placeholder="000" maxlength="4" inputmode="numeric"></div>
+            <div class="field"><label>CPF do titular</label><input placeholder="000.000.000-00"></div>
+          </div>
+          <div class="installments">
+            Parcelamento
+            <select id="installSelect">
+              <option data-badge="12x de R$ 24,92">12x de R$ 24,92 sem juros</option>
+              <option data-badge="10x de R$ 29,90">10x de R$ 29,90 sem juros</option>
+              <option data-badge="6x de R$ 49,83">6x de R$ 49,83 sem juros</option>
+              <option data-badge="3x de R$ 99,67" selected>3x de R$ 99,67 sem juros</option>
+              <option data-badge="2x de R$ 149,50">2x de R$ 149,50</option>
+              <option data-badge="1x de R$ 299,00">1x de R$ 299,00</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="pix-pane" class="pix-box">
+          <div class="qr"></div>
+          <p>Escaneie o QR Code com o app do seu banco. A confirmação é automática e o acesso ao curso é liberado na hora.</p>
+        </div>
+
+        <div id="boleto-pane" class="boleto-box">
+          <p>O boleto vence em 3 dias úteis. Após o pagamento, a compensação pode levar até 2 dias úteis para liberar o acesso.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="num">2</span>Dados de cobrança</h2>
+        <div class="row2">
+          <div class="field"><label>Nome completo</label><input placeholder="Seu nome"></div>
+          <div class="field"><label>E-mail</label><input placeholder="voce@email.com"></div>
+        </div>
+        <div class="row2">
+          <div class="field"><label>CPF</label><input placeholder="000.000.000-00"></div>
+          <div class="field"><label>CEP</label><input placeholder="00000-000"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="summary">
+      <div class="card">
+        <div class="course-row">
+          <div class="course-thumb"></div>
+          <div>
+            <div class="t">Nutrição Clínica Aplicada</div>
+            <div class="s">Dra. Carla Souza · 18h de conteúdo</div>
+          </div>
+        </div>
+
+        <div class="line-item"><span>Valor do curso</span><span>R$ 397,00</span></div>
+        <div class="line-item discount" id="couponLine"><span>Cupom BEMVINDO20 aplicado</span><span>− R$ 98,00</span></div>
+        <div class="coupon-applied">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
+          BEMVINDO20 aplicado <span class="remove">remover</span>
+        </div>
+
+        <div class="total-row">
+          <span class="lbl">Total</span>
+          <span class="val" id="totalVal">R$ 299,00</span>
+        </div>
+        <div class="installment-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5.5" width="19" height="13" rx="2.2"/><path d="M2.5 9.5h19"/></svg>
+          Parcela em até <b id="totalInstall">3x de R$ 99,67</b> sem juros
+        </div>
+
+        <button class="pay-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z"/></svg>
+          Confirmar pagamento
+        </button>
+
+        <div class="guarantee">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
+          Garantia de 7 dias ou seu dinheiro de volta
+        </div>
+
+        <div class="trust-row">
+          <div class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+            Dados criptografados
+          </div>
+          <div class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+            Compra parcelada
+          </div>
+          <div class="item">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12.5l2 2 4-4.5"/></svg>
+            Acesso imediato
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function selectPay(which){
+  document.querySelectorAll('.paytab').forEach(el=>el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  document.getElementById('card-pane').style.display = which==='card' ? 'block' : 'none';
+  document.getElementById('pix-pane').classList.toggle('show', which==='pix');
+  document.getElementById('boleto-pane').classList.toggle('show', which==='boleto');
+}
+
+const numInput = document.getElementById('cardNumber');
+const nameInput = document.getElementById('cardName');
+const expInput = document.getElementById('cardExp');
+const prevNum = document.getElementById('prevNum');
+const prevName = document.getElementById('prevName');
+const prevExp = document.getElementById('prevExp');
+
+numInput.addEventListener('input', e=>{
+  let v = e.target.value.replace(/\D/g,'').slice(0,16);
+  v = v.replace(/(.{4})/g,'$1 ').trim();
+  e.target.value = v;
+  prevNum.textContent = v.padEnd(19,'•').replace(/(.{4})(?=.)/g,'$1 ').slice(0,19) || '•••• •••• •••• ••••';
+});
+nameInput.addEventListener('input', e=>{
+  prevName.textContent = e.target.value.toUpperCase() || 'NOME NO CARTÃO';
+});
+expInput.addEventListener('input', e=>{
+  let v = e.target.value.replace(/\D/g,'').slice(0,4);
+  if(v.length>2) v = v.slice(0,2)+'/'+v.slice(2);
+  e.target.value = v;
+  prevExp.textContent = v || '••/••';
+});
+
+document.getElementById('installSelect').addEventListener('change', e=>{
+  document.getElementById('totalInstall').textContent = e.target.selectedOptions[0].dataset.badge;
+});
+</script>
+</body>
+</html>

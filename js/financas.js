@@ -1,13 +1,17 @@
 const cursos = JSON.parse(localStorage.getItem("cursos")) || [];
 
 const faturamentoBruto = cursos.reduce(
-  (acc, curso) => acc + curso.preco * curso.vendas,
+  (acc, curso) => acc + (curso.preco || 0) * (curso.vendas || 0),
   0,
 );
 
-const totalVendas = cursos.reduce((acc, curso) => acc + curso.vendas, 0);
+const totalVendas = cursos.reduce((acc, curso) => acc + (curso.vendas || 0), 0);
 
-const taxaPlataforma = faturamentoBruto * 0.1;
+const NV = HS.niveis();
+const taxaPlataforma = cursos.reduce(
+  (acc, c) => acc + (c.preco || 0) * (c.vendas || 0) * (100 - ((NV[c.nivel] || {}).docente || 90)) / 100,
+  0,
+);
 
 const impostos = faturamentoBruto * 0.15;
 
@@ -43,7 +47,7 @@ new Chart(document.getElementById("graficoGanhos"), {
       {
         label: "Receita",
 
-        data: cursos.map((c) => c.preco),
+        data: cursos.map((c) => (c.preco || 0) * (c.vendas || 0)),
 
         tension: 0.4,
       },
@@ -52,6 +56,7 @@ new Chart(document.getElementById("graficoGanhos"), {
 });
 
 document.getElementById("btnSaque").addEventListener("click", () => {
+  HS.notificar("Saque solicitado", "Sua solicitação de saque foi enviada.", "alerta", "professor");
   alert("Solicitação enviada!");
 });
 
@@ -62,10 +67,10 @@ cursos.forEach((curso) => {
     <tr>
       <td>08/06/2026</td>
       <td>${curso.nome}</td>
-      <td>${curso.preco}</td>
-      <td>10%</td>
+      <td>${formatarMoeda((curso.preco || 0) * (curso.vendas || 0))}</td>
+      <td>${100 - ((NV[curso.nivel] || {}).docente || 90)}%</td>
       <td>15%</td>
-      <td>${(curso.preco * 0.75).toFixed(2)}</td>
+      <td>${formatarMoeda((curso.preco || 0) * (curso.vendas || 0) * 0.75)}</td>
     </tr>
   `;
 });
@@ -133,7 +138,6 @@ salvarBanco.addEventListener("click", () => {
 
   alert("Dados bancários atualizados!");
 });
-
 
 document
   .getElementById("btnRelatorio")

@@ -1,5 +1,14 @@
 let conteudosCurso = [];
 
+const IMG_PADRAO =
+  "data:image/svg+xml;utf8," +
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240"><rect width="100%" height="100%" fill="#163b97"/><text x="50%" y="50%" fill="#fff" font-family="sans-serif" font-size="22" text-anchor="middle">Habilita Saúde</text></svg>');
+const usuarioAtual = JSON.parse(localStorage.getItem("usuario") || "{}");
+
+function lerPreco() {
+  return Number(precoCurso.value.replace("R$", "").replace(/\./g, "").replace(",", ".").trim()) || 0;
+}
+
 const form = document.getElementById("formCurso");
 
 const nomeCurso = document.getElementById("nomeCurso");
@@ -17,15 +26,30 @@ const previewImagem = document.getElementById("previewImagem");
 
 let imagemBase64 = "";
 
+const NIVEIS = HS.niveis();
+categoriaCurso.innerHTML = '<option value="">Selecione o nível</option>' +
+  Object.entries(NIVEIS).map(([k, n], i) => `<option value="${k}">Nível ${i + 1} — ${n.trilha} (${n.nome.replace("Nível ", "")})</option>`).join("");
+
+function moeda(v) { return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }); }
+
+function renderNivel() {
+  const k = categoriaCurso.value;
+  const info = document.getElementById("infoNivel");
+  const lista = document.getElementById("checklistNivel");
+  if (!k) { info.innerHTML = ""; lista.innerHTML = ""; return; }
+  const n = NIVEIS[k];
+  const ch = n.chMax >= 9999 ? `${n.chMin}h ou mais` : `${n.chMin} a ${n.chMax}h`;
+  info.innerHTML = `<b>${n.nome}</b><br>Carga horária: ${ch} · Preço: ${moeda(n.precoMin)} a ${moeda(n.precoMax)}<br>Repasse: ${n.docente}% professor / ${100 - n.docente}% portal · Curadoria em até ${n.prazo} dias úteis`;
+  lista.innerHTML = "<b>Autoavaliação — marque o que seu curso cumpre:</b>" +
+    HS.requisitos(k).map((r, i) => `<label style="display:block;margin-top:6px"><input type="checkbox" class="req-nivel" data-i="${i}"> ${r}</label>`).join("");
+}
+categoriaCurso.addEventListener("change", renderNivel);
+
 const cursoEditando = JSON.parse(localStorage.getItem("cursoEditando"));
 
 if (cursoEditando?.conteudos) {
   conteudosCurso = [...cursoEditando.conteudos];
 }
-
-// ========================
-// CARREGAR CURSO EM EDIÇÃO
-// ========================
 
 if (cursoEditando) {
   nomeCurso.value = cursoEditando.nome || "";
@@ -38,11 +62,12 @@ if (cursoEditando) {
 
   publicoCurso.value = cursoEditando.publico || "";
 
-  cargaHoraria.value = cursoEditando.cargaHoraria || "";
+  cargaHoraria.value = parseInt(cursoEditando.cargaHoraria) || "";
 
   categoriaCurso.value = cursoEditando.nivel || "";
+  renderNivel();
 
-  precoCurso.value = cursoEditando.preco || "";
+  precoCurso.value = Number(cursoEditando.preco || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
   imagemBase64 = cursoEditando.imagem || "";
 
@@ -62,10 +87,6 @@ if (cursoEditando) {
     if (descricao) descricao.style.display = "none";
   }
 }
-
-// ========================
-// UPLOAD DE IMAGEM
-// ========================
 
 uploadBox.addEventListener("click", () => {
   inputImagem.click();
@@ -100,10 +121,6 @@ function carregarImagem(e) {
 
   leitor.readAsDataURL(arquivo);
 }
-
-// ========================
-// DRAG AND DROP
-// ========================
 
 uploadBox.addEventListener("dragover", (e) => {
   e.preventDefault();
@@ -147,10 +164,6 @@ function criarNotificacao(titulo, descricao, tipo) {
   localStorage.setItem("notificacoes", JSON.stringify(notificacoes));
 }
 
-// ========================
-// AUTO RASCUNHO
-// ========================
-
 form.addEventListener("input", () => {
   const rascunho = {
     nome: nomeCurso.value,
@@ -158,17 +171,13 @@ form.addEventListener("input", () => {
     descricao: descricaoCurso.value,
     area: areaCurso.value,
     publico: publicoCurso.value,
-    cargaHoraria: `${cargaHoraria.value} horas`,
+    cargaHoraria: cargaHoraria.value,
     categoria: categoriaCurso.value,
     preco: precoCurso.value,
   };
 
   localStorage.setItem("rascunhoCurso", JSON.stringify(rascunho));
 });
-
-// ========================
-// CARREGAR RASCUNHO
-// ========================
 
 if (!cursoEditando) {
   const rascunho = JSON.parse(localStorage.getItem("rascunhoCurso"));
@@ -203,15 +212,24 @@ precoCurso.addEventListener("input", (e) => {
   e.target.value = valor;
 });
 
-// ========================
-// PUBLICAR CURSO
-// ========================
-
 form.addEventListener("submit", (e) => {
   e.preventDefault();
 
-  if (Number(precoCurso.value) < 0) {
-    alert("O valor não pode ser negativo.");
+  const nv = NIVEIS[categoriaCurso.value];
+  const ch = Number(cargaHoraria.value);
+  const reqs = [...document.querySelectorAll(".req-nivel")];
+  if (ch < nv.chMin || ch > nv.chMax) {
+    const sug = Object.entries(NIVEIS).find(([, x]) => ch >= x.chMin && ch <= x.chMax);
+    alert(`A carga horária de ${ch}h não se enquadra no ${nv.nome} (${nv.chMin}h${nv.chMax >= 9999 ? " ou mais" : " a " + nv.chMax + "h"}).` + (sug ? ` Sugestão: ${sug[1].nome}.` : ""));
+    return;
+  }
+  const preco = lerPreco();
+  if (preco < nv.precoMin || preco > nv.precoMax) {
+    alert(`O preço deve estar entre ${moeda(nv.precoMin)} e ${moeda(nv.precoMax)} para o ${nv.nome}.`);
+    return;
+  }
+  if (!reqs.length || !reqs.every((r) => r.checked)) {
+    alert("Marque todos os requisitos da autoavaliação para enviar à curadoria.");
     return;
   }
 
@@ -242,15 +260,11 @@ form.addEventListener("submit", (e) => {
 
     certificado: certificado ? certificado.value : "",
 
-    preco: Number(
-      precoCurso.value
-        .replace("R$", "")
-        .replace(/\./g, "")
-        .replace(",", ".")
-        .trim(),
-    ),
+    preco: lerPreco(),
 
-    imagem: imagemBase64 || "img/curso-padrao.jpg",
+    professor: usuarioAtual.nome || "Professor(a)",
+
+    imagem: imagemBase64 || IMG_PADRAO,
 
     alunos: cursoEditando?.alunos || 0,
 
@@ -262,6 +276,10 @@ form.addEventListener("submit", (e) => {
 
     dataCriacao: cursoEditando?.dataCriacao || new Date().toISOString(),
   };
+
+  novoCurso.curadoria = HS.curar(novoCurso, 1);
+  novoCurso.status = novoCurso.curadoria.aprovado ? "Publicado" : "Em ajuste";
+  novoCurso.publicadoEm = novoCurso.curadoria.aprovado ? (cursoEditando?.publicadoEm || new Date().toISOString()) : null;
 
   if (cursoEditando) {
     const index = cursos.findIndex((c) => c.id === cursoEditando.id);
@@ -277,17 +295,17 @@ form.addEventListener("submit", (e) => {
 
   localStorage.removeItem("rascunhoCurso");
 
-  criarNotificacao(
-    "Novo Curso Criado",
-    `O curso "${nomeCurso.value}" foi publicado com sucesso.`,
-    "curso",
-  );
+  const cur = novoCurso.curadoria;
+  if (cur.aprovado) {
+    sessionStorage.setItem("confete", "1");
+    HS.notificar("Curso aprovado e publicado", `"${nomeCurso.value}": ${cur.parecer}`, "curso", "professor");
+    if (!cursoEditando) HS.notificar("Novo curso disponível", `"${nomeCurso.value}" já pode ser feito. Veja na página inicial.`, "curso", "aluno");
+  } else {
+    HS.notificar("Curadoria: ajustes necessários", `"${nomeCurso.value}": ${cur.parecer}`, "alerta", "professor");
+    alert("Relatório de curadoria:\n\n" + cur.parecer + "\n\n" + cur.linhas.join("\n"));
+  }
   window.location.href = "meus-cursos.html";
 });
-
-// ========================
-// SALVAR RASCUNHO
-// ========================
 
 const btnRascunho = document.getElementById("btnRascunho");
 
@@ -314,9 +332,13 @@ if (btnRascunho) {
 
       conteudos: conteudosCurso,
 
-      preco: Number(precoCurso.value) || 0,
+      preco: lerPreco(),
 
-      imagem: imagemBase64 || "img/curso-padrao.jpg",
+      professor: usuarioAtual.nome || "Professor(a)",
+
+      certificado: document.querySelector('input[name="certificado"]:checked')?.value || "",
+
+      imagem: imagemBase64 || IMG_PADRAO,
 
       alunos: cursoEditando?.alunos || 0,
 
@@ -338,6 +360,9 @@ if (btnRascunho) {
     }
 
     localStorage.setItem("cursos", JSON.stringify(cursos));
+
+    localStorage.removeItem("cursoEditando");
+    localStorage.removeItem("rascunhoCurso");
 
     alert("Rascunho salvo!");
 
@@ -433,3 +458,22 @@ function removerConteudo(index) {
 
   renderizarConteudos();
 }
+
+inputConteudo.addEventListener("change", async () => {
+  const arq = inputConteudo.files[0];
+  inputConteudo.value = "";
+  if (!arq) return;
+  if (tipoAtual === "video" && !arq.type.startsWith("video/")) {
+    alert("Selecione um arquivo de vídeo (MP4 ou WebM).");
+    return;
+  }
+  try {
+    const arquivoId = await HSVideo.salvar(arq);
+    conteudosCurso.push({ tipo: tipoAtual, nome: arq.name, arquivoId, mime: arq.type, tamanho: arq.size });
+    renderizarConteudos();
+    HS.notificar("Arquivo anexado", `"${arq.name}" (${(arq.size / 1048576).toFixed(1)} MB) foi adicionado ao curso.`, "curso", "professor");
+  } catch (e) {
+    alert("Não foi possível salvar o arquivo neste navegador. Use um link do YouTube/Vimeo para vídeos muito grandes.");
+  }
+});
+renderizarConteudos();

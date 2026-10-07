@@ -3,8 +3,6 @@
   min-height: 100vh;
 }
 
-/* SIDEBAR */
-
 .sidebar {
   width: 300px;
   background: linear-gradient(to bottom, #163b97, #2249ad);
@@ -117,7 +115,6 @@
 .active-icon {
   color: #22c55e !important;
 }
-
 
 @media (max-width: 1000px) {
   .sidebar {
@@ -297,7 +294,6 @@
   border-radius: 10px;
   font-size: 14px;
 }
-
 
 .notification {
   position: relative;

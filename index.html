@@ -13,12 +13,28 @@
     />
 
     <link rel="stylesheet" href="./css/index.css" />
+  <link rel="icon" href="./img/favicon.png" />
+    <style>
+      .navbar .logo-img{height:50px!important;width:auto;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
+      .logo-img{display:block;animation:logoEntra 1s cubic-bezier(.2,1.3,.4,1) both}
+      .logo-img:hover{animation:logoPulso .6s}
+      .hero .tag,.hero h1,.hero p,.hero-buttons,.stats{animation:sobe .8s ease both}
+      .hero h1{animation-delay:.15s}.hero p{animation-delay:.3s}.hero-buttons{animation-delay:.45s}.stats{animation-delay:.6s}
+      .dashboard-card{animation:sobe 1s .3s ease both}
+      .floating{animation:flutua 5s ease-in-out infinite}
+      .floating.avaliacao{animation-delay:1.5s}
+      @keyframes logoEntra{from{opacity:0;transform:scale(.7) rotate(-4deg)}to{opacity:1;transform:none}}
+      @keyframes logoPulso{50%{transform:scale(1.08) rotate(2deg)}}
+      @keyframes sobe{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+      @keyframes flutua{50%{transform:translateY(-10px)}}
+      @media (prefers-reduced-motion:reduce){*{animation:none!important}}
+    </style>
+    <link rel="stylesheet" href="./css/animacoes.css" />
   </head>
   <body>
     <header class="navbar">
       <div class="logo">
-        <h2>Habilita Saúde</h2>
-        <span>PLATAFORMA DE CURSOS</span>
+        <img class="logo-img" src="./img/logo-claro.png" alt="Habilita Saúde" style="height:50px" />
       </div>
 
       <button class="menu-mobile" id="menuMobile">☰</button>
@@ -212,5 +228,6 @@
         menu.classList.toggle("ativo");
       });
     </script>
+    <script src="./js/animacoes.js"></script>
   </body>
 </html>

@@ -1,20 +1,16 @@
-const usuario = JSON.parse(localStorage.getItem("usuario"));
-
-if (usuario) {
-  const nomeSidebar = document.getElementById("nomeUsuarioSidebar");
-  const nomeTop = document.getElementById("nomeUsuarioTop");
-  const fotoSidebar = document.getElementById("fotoUsuarioSidebar");
-  const fotoTop = document.getElementById("fotoUsuarioTop");
-
-  const nomeCompleto = usuario.nome || "";
-
-  const nomeCurto = nomeCompleto.split(" ").slice(0, 2).join(" ");
-
-  if (nomeSidebar) nomeSidebar.textContent = nomeCurto;
-
-  if (nomeTop) nomeTop.textContent = nomeCurto;
-
-  if (fotoSidebar) fotoSidebar.src = usuario.foto;
-  if (fotoTop) fotoTop.src = usuario.foto;
-}
-
+(function () {
+  const u = JSON.parse(localStorage.getItem("usuario") || "null");
+  if (!u) return;
+  const avatar = "https://ui-avatars.com/api/?background=163b97&color=fff&name=" + encodeURIComponent(u.nome || "U");
+  const curto = (u.nome || "").split(" ").slice(0, 2).join(" ");
+  ["nomeUsuarioSidebar", "nomeUsuarioTop", "nomeUsuario"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el && el.tagName !== "INPUT") el.textContent = curto;
+  });
+  ["fotoUsuarioSidebar", "fotoUsuarioTop"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.onerror = () => { el.onerror = null; el.src = avatar; };
+    el.src = u.foto || avatar;
+  });
+})();

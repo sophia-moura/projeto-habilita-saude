@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="./css/animacoes.css" />
   </head>
 
   <body>
@@ -101,7 +102,6 @@
           </div>
         </header>
 
-        <!-- Abas por status -->
         <section class="abas-cursos">
           <button class="aba ativa" data-status="todos">
             Todos <span class="contador" id="contTodos">0</span>
@@ -120,7 +120,6 @@
           </button>
         </section>
 
-        <!-- Busca e filtros -->
         <section class="filtros-cursos">
           <div class="busca">
             <i class="fa-solid fa-magnifying-glass"></i>
@@ -147,14 +146,15 @@
           </select>
         </section>
 
-        <!-- Lista de cursos -->
         <section id="listaCursos" class="lista-cursos"></section>
       </main>
     </div>
 
     <script src="./js/user.js"></script>
     <script src="./js/global.js"></script>
+    <script src="./js/gamificacao.js"></script>
     <script src="./js/aluno-dados.js"></script>
     <script src="./js/aluno-meus-cursos.js"></script>
+    <script src="./js/animacoes.js"></script>
   </body>
 </html>

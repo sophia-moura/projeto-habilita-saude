@@ -1,11 +1,5 @@
-// ==========================================================
-// HABILITA SAÚDE — VISÃO DO ALUNO — MEUS CURSOS
-// Depende de js/aluno-dados.js (dados no localStorage).
-// ==========================================================
-
 const cursos = obterCursosAluno();
 
-// Estado atual dos filtros da tela
 const filtros = {
   status: "todos",
   busca: "",
@@ -14,7 +8,6 @@ const filtros = {
   ordenacao: "recentes",
 };
 
-// Elementos
 const listaCursos = document.getElementById("listaCursos");
 const campoBusca = document.getElementById("campoBusca");
 const filtroArea = document.getElementById("filtroArea");
@@ -22,16 +15,11 @@ const filtroCategoria = document.getElementById("filtroCategoria");
 const filtroOrdenacao = document.getElementById("filtroOrdenacao");
 const abas = document.querySelectorAll(".aba");
 
-// Rótulos dos status
 const rotulosStatus = {
   andamento: { texto: "Em andamento", classe: "status-andamento" },
   concluido: { texto: "Concluído", classe: "status-concluido" },
   "nao-iniciado": { texto: "Não iniciado", classe: "status-nao-iniciado" },
 };
-
-// ----------------------------------------------------------
-// CONTADORES DAS ABAS
-// ----------------------------------------------------------
 
 function atualizarContadores() {
   document.getElementById("contTodos").textContent = cursos.length;
@@ -49,11 +37,6 @@ function atualizarContadores() {
   ).length;
 }
 
-// ----------------------------------------------------------
-// PREENCHER OS SELECTS DE ÁREA E CATEGORIA
-// (gerados a partir dos próprios cursos do aluno)
-// ----------------------------------------------------------
-
 function preencherFiltros() {
   const areas = [...new Set(cursos.map((c) => c.area))].sort();
   const categorias = [...new Set(cursos.map((c) => c.categoria))].sort();
@@ -67,19 +50,13 @@ function preencherFiltros() {
   });
 }
 
-// ----------------------------------------------------------
-// APLICAR FILTROS E ORDENAÇÃO
-// ----------------------------------------------------------
-
 function filtrarCursos() {
   let resultado = [...cursos];
 
-  // Status (abas)
   if (filtros.status !== "todos") {
     resultado = resultado.filter((c) => c.status === filtros.status);
   }
 
-  // Busca por palavra-chave (nome, professor, categoria)
   if (filtros.busca) {
     const termo = filtros.busca.toLowerCase();
 
@@ -91,17 +68,14 @@ function filtrarCursos() {
     );
   }
 
-  // Área
   if (filtros.area) {
     resultado = resultado.filter((c) => c.area === filtros.area);
   }
 
-  // Categoria
   if (filtros.categoria) {
     resultado = resultado.filter((c) => c.categoria === filtros.categoria);
   }
 
-  // Ordenação
   if (filtros.ordenacao === "recentes") {
     resultado.sort((a, b) => {
       const dataA = a.ultimoAcesso ? new Date(a.ultimoAcesso) : 0;
@@ -120,10 +94,6 @@ function filtrarCursos() {
 
   return resultado;
 }
-
-// ----------------------------------------------------------
-// RENDERIZAR A LISTA DE CURSOS
-// ----------------------------------------------------------
 
 function renderizarCursos() {
   const resultado = filtrarCursos();
@@ -206,11 +176,6 @@ function renderizarCursos() {
   });
 }
 
-// ----------------------------------------------------------
-// EVENTOS
-// ----------------------------------------------------------
-
-// Abas de status
 abas.forEach((aba) => {
   aba.addEventListener("click", () => {
     abas.forEach((a) => a.classList.remove("ativa"));
@@ -222,34 +187,52 @@ abas.forEach((aba) => {
   });
 });
 
-// Busca
 campoBusca.addEventListener("input", (e) => {
   filtros.busca = e.target.value.trim();
   renderizarCursos();
 });
 
-// Filtro por área
 filtroArea.addEventListener("change", (e) => {
   filtros.area = e.target.value;
   renderizarCursos();
 });
 
-// Filtro por categoria
 filtroCategoria.addEventListener("change", (e) => {
   filtros.categoria = e.target.value;
   renderizarCursos();
 });
 
-// Ordenação
 filtroOrdenacao.addEventListener("change", (e) => {
   filtros.ordenacao = e.target.value;
   renderizarCursos();
 });
 
-// ----------------------------------------------------------
-// INICIALIZAÇÃO
-// ----------------------------------------------------------
-
 atualizarContadores();
 preencherFiltros();
 renderizarCursos();
+
+listaCursos.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-curso");
+  if (!btn) return;
+  const curso = cursos.find((c) => c.id === Number(btn.dataset.id));
+  if (!curso) return;
+  const prof = JSON.parse(localStorage.getItem("cursos") || "[]").find((c) => c.id === curso.id);
+  if (prof && (prof.conteudos || []).length) { location.href = "aula.html?id=" + curso.id; return; }
+  if (curso.status === "concluido") return;
+
+  curso.progresso = Math.min(100, curso.progresso + 20);
+  curso.ultimoAcesso = new Date().toISOString();
+  curso.status = curso.progresso >= 100 ? "concluido" : "andamento";
+  salvarCursosAluno(cursos);
+
+  HS.gam.xp(30, "Avançou em " + curso.nome);
+  if (curso.status === "concluido") {
+    HS.gam.xp(100, "Curso concluído");
+    HS.confete && HS.confete();
+    HS.notificar("Certificado emitido", `Seu certificado de ${curso.nome} já está disponível.`, "certificado", "aluno");
+    const u = JSON.parse(localStorage.getItem("usuario") || "{}");
+    HS.notificar("Curso concluído", `${u.nome} concluiu "${curso.nome}".`, "curso", "professor");
+  }
+  atualizarContadores();
+  renderizarCursos();
+});

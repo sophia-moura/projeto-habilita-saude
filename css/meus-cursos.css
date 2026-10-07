@@ -613,7 +613,6 @@ body {
     flex-shrink:0;
   }
 
-
   .user-top{
     gap:0;
   }
@@ -676,3 +675,6 @@ body {
   opacity:1;
   visibility:visible;
 }
+.tag.nivel-operacional{background:#e0f2fe;color:#0369a1}
+.tag.nivel-estrategico{background:#fef3c7;color:#b45309}
+.tag.nivel-expert{background:#ede9fe;color:#6d28d9}

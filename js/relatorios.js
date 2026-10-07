@@ -2,9 +2,12 @@ const cursos = JSON.parse(localStorage.getItem("cursos")) || [];
 
 const filtroCurso = document.getElementById("filtroCurso");
 
-// ========================
-// MÉTRICAS
-// ========================
+HS.matriculas();
+cursos.forEach((c) => {
+  const m = HS.matriculas().filter((x) => x.cursoId === c.id);
+  c.concluidos = m.filter((x) => x.status === "concluido").length;
+  c.atividadesPendentes = m.length - c.concluidos;
+});
 
 function atualizarMetricas() {
   const totalInscricoes = cursos.reduce(
@@ -41,10 +44,6 @@ function atualizarMetricas() {
     });
 }
 
-// ========================
-// FILTRO CURSOS
-// ========================
-
 function carregarCursosFiltro() {
   cursos.forEach((curso) => {
     filtroCurso.innerHTML += `
@@ -54,10 +53,6 @@ function carregarCursosFiltro() {
     `;
   });
 }
-
-// ========================
-// GRÁFICO CURSOS
-// ========================
 
 function criarGraficoCursos() {
   new Chart(document.getElementById("graficoCursos"), {
@@ -125,10 +120,6 @@ function criarGraficoStatus() {
   });
 }
 
-// ========================
-// GRÁFICO STATUS
-// ========================
-
 function atualizarStatus() {
   const concluidas = cursos.reduce((t, c) => t + (c.concluidos || 0), 0);
 
@@ -145,22 +136,7 @@ function atualizarStatus() {
     pendentes * 0.3,
   );
 
-  atualizarMetricas();
-
-  atualizarStatus();
-
-  carregarCursosFiltro();
-
-  criarGraficoCursos();
-
-  criarGraficoStatus();
-
-  renderRanking();
 }
-
-// ========================
-// RANKING
-// ========================
 
 function renderRanking() {
   const ranking = [...cursos]
@@ -205,18 +181,14 @@ function renderRanking() {
 }
 
 document.getElementById("btnRelatorio").addEventListener("click", () => {
-  criarNotificacao(
-    "Relatório Gerado",
-    "Relatório criado com sucesso",
-    "relatorio",
-  );
+  HS.notificar("Relatório Gerado", "Relatório criado com sucesso", "relatorio", "professor");
 
   alert("Relatório gerado com sucesso!");
 });
 
-// ========================
-
 atualizarMetricas();
+
+atualizarStatus();
 
 carregarCursosFiltro();
 

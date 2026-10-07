@@ -1,4 +1,6 @@
-let notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
+const visivel = HS.visivel;
+
+let notificacoes = (JSON.parse(localStorage.getItem("notificacoes")) || []).filter(visivel);
 
 function criarNotificacao(titulo, descricao, tipo) {
   const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
@@ -112,7 +114,7 @@ document.getElementById("filtroHoje").addEventListener("click", () => {
 });
 
 function atualizarMetricas() {
-  const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
+  const notificacoes = (JSON.parse(localStorage.getItem("notificacoes")) || []).filter(visivel);
 
   document.getElementById("totalNotificacoes").textContent =
     notificacoes.length;
@@ -141,7 +143,7 @@ function marcarComoLida(id) {
 
   localStorage.setItem("notificacoes", JSON.stringify(lista));
 
-  notificacoes = lista;
+  notificacoes = lista.filter(visivel);
 
   atualizarMetricas();
   renderizarNotificacoes(notificacoes);
@@ -156,7 +158,8 @@ function excluirTodasNotificacoes() {
 
   if (!confirmar) return;
 
-  localStorage.removeItem("notificacoes");
+  const todas = JSON.parse(localStorage.getItem("notificacoes")) || [];
+  localStorage.setItem("notificacoes", JSON.stringify(todas.filter((n) => !visivel(n))));
 
   notificacoes = [];
 

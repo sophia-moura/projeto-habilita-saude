@@ -1,0 +1,71 @@
+:root{--ease:cubic-bezier(.2,.8,.2,1);--pop:cubic-bezier(.2,1.5,.4,1)}
+
+body{animation:paginaEntra .5s var(--ease) both}
+body.saindo{opacity:0;transform:translateY(-8px);transition:opacity .22s ease,transform .22s ease}
+@keyframes paginaEntra{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+.rv{opacity:0;transform:translateY(24px) scale(.97)}
+.rv.in{opacity:1;transform:none;transition:opacity .6s var(--ease) var(--d,0s),transform .7s var(--pop) var(--d,0s)}
+
+.sidebar li{animation:deslizaEntra .5s var(--ease) both}
+.sidebar li:nth-child(1){animation-delay:.05s}.sidebar li:nth-child(2){animation-delay:.1s}
+.sidebar li:nth-child(3){animation-delay:.15s}.sidebar li:nth-child(4){animation-delay:.2s}
+.sidebar li:nth-child(5){animation-delay:.25s}.sidebar li:nth-child(6){animation-delay:.3s}
+.sidebar li:nth-child(7){animation-delay:.35s}
+@keyframes deslizaEntra{from{opacity:0;transform:translateX(-22px)}to{opacity:1;transform:none}}
+.sidebar li a{transition:transform .25s var(--ease),background .25s}
+.sidebar li a:hover{transform:translateX(6px)}
+.sidebar li a i{transition:transform .3s var(--pop)}
+.sidebar li a:hover i{transform:scale(1.25) rotate(-8deg)}
+
+.card,.card-metrica,.card-relatorio,.curso-card,.ranking-card,.gam-card,.notificacao-card,.ticket-card,
+.curso-recomendado,.historico-card,.pagamento-card,.opcao-perfil{transition:transform .3s var(--ease),box-shadow .3s}
+.card:hover,.card-metrica:hover,.card-relatorio:hover,.curso-card:hover,.ranking-card:hover,.gam-card:hover,
+.notificacao-card:hover,.ticket-card:hover,.curso-recomendado:hover{transform:translateY(-5px);box-shadow:0 14px 30px rgba(22,59,151,.15)}
+.opcao-perfil:hover{transform:translateY(-5px) scale(1.04)}
+.curso-card img,.curso-recomendado img{transition:transform .6s var(--ease)}
+.curso-card:hover img,.curso-recomendado:hover img{transform:scale(1.07)}
+
+button,.btn-primary,.btn-outline{overflow:hidden;transition:transform .2s var(--ease),box-shadow .2s,filter .2s}
+button:not(#fechar):not(.menu-mobile):hover,.btn-primary:hover,.btn-outline:hover{transform:translateY(-2px);filter:brightness(1.06)}
+button:not(#fechar):not(.menu-mobile):active,.btn-primary:active,.btn-outline:active{transform:scale(.96)}
+.ripple{position:absolute;border-radius:50%;background:rgba(255,255,255,.55);transform:scale(0);animation:ripple .6s ease-out forwards;pointer-events:none}
+@keyframes ripple{to{transform:scale(4);opacity:0}}
+
+.bell-shake{display:inline-block;transform-origin:top center;animation:sino 2.8s ease-in-out 1s infinite}
+@keyframes sino{0%,12%,100%{transform:rotate(0)}3%{transform:rotate(14deg)}6%{transform:rotate(-12deg)}9%{transform:rotate(8deg)}}
+#badgeNotificacao{animation:badgePulsa 2s infinite}
+@keyframes badgePulsa{50%{transform:scale(1.2)}}
+
+.modal .modal-content{animation:modalPop .38s var(--pop) both}
+@keyframes modalPop{from{opacity:0;transform:translateY(30px) scale(.9)}to{opacity:1;transform:none}}
+
+.etapa-login.ativa{animation:paginaEntra .45s var(--ease) both}
+.login-box{animation:modalPop .7s var(--pop) both}
+
+.logo-wrap{position:relative;display:inline-block;line-height:0}
+.logo-wrap::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.9) 50%,transparent 65%);background-size:250% 100%;
+  -webkit-mask:var(--m) center/contain no-repeat;mask:var(--m) center/contain no-repeat;animation:brilho 4.5s ease-in-out 1.2s infinite}
+@keyframes brilho{0%{background-position:150% 0}45%,100%{background-position:-60% 0}}
+
+.navbar{transition:box-shadow .3s,padding .3s,background .3s}
+.navbar.scrolled{box-shadow:0 6px 24px rgba(22,59,151,.15)}
+.hero-right .dashboard-card,.hero-right .floating{will-change:transform;transition:transform .2s ease-out}
+.grafico>div{transform-origin:bottom;animation:barraSobe 1s var(--pop) both}
+.grafico>div:nth-child(2){animation-delay:.12s}.grafico>div:nth-child(3){animation-delay:.24s}.grafico>div:nth-child(4){animation-delay:.36s}
+@keyframes barraSobe{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+.publicado{animation:piscar 2s infinite}
+@keyframes piscar{50%{opacity:.5}}
+
+.gam-nivel b{animation:brilhoAnel 2.6s ease-in-out infinite}
+@keyframes brilhoAnel{0%,100%{box-shadow:0 0 0 0 rgba(79,124,255,.55)}50%{box-shadow:0 0 0 12px rgba(79,124,255,0)}}
+.gam-badge:not(.off){animation:conquista .7s var(--pop) both}
+.gam-badge:not(.off):hover span{animation:balanca .6s}
+.gam-badge span{display:block;transition:transform .3s var(--pop)}
+@keyframes conquista{from{transform:scale(.4) rotate(-20deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes balanca{25%{transform:rotate(-14deg) scale(1.2)}75%{transform:rotate(14deg) scale(1.2)}}
+@keyframes toastIn{from{transform:translateX(120%);opacity:0}to{transform:none;opacity:1}}
+#confete{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:99999}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}

@@ -1,15 +1,4 @@
-// ==========================================================
-// HABILITA SAÚDE — VISÃO DO ALUNO — SUPORTE
-// Depende de js/aluno-dados.js.
-// Os chamados são salvos no localStorage, já que o MVP
-// não possui backend nem banco de dados.
-// ==========================================================
-
 const CHAVE_CHAMADOS = "chamadosAluno";
-
-// ----------------------------------------------------------
-// FAQ
-// ----------------------------------------------------------
 
 const perguntasFaq = [
   {
@@ -86,7 +75,6 @@ function renderizarFaq(termo = "") {
     `;
   });
 
-  // Abrir e fechar as respostas
   document.querySelectorAll(".faq-item").forEach((item) => {
     item.querySelector(".faq-pergunta").addEventListener("click", () => {
       item.classList.toggle("aberto");
@@ -98,10 +86,6 @@ buscaFaq.addEventListener("input", (e) => {
   renderizarFaq(e.target.value.trim());
 });
 
-// ----------------------------------------------------------
-// SELECT DE CURSOS (preenchido com os cursos do aluno)
-// ----------------------------------------------------------
-
 const cursoChamado = document.getElementById("cursoChamado");
 
 function preencherCursos() {
@@ -111,10 +95,6 @@ function preencherCursos() {
     cursoChamado.innerHTML += `<option value="${curso.nome}">${curso.nome}</option>`;
   });
 }
-
-// ----------------------------------------------------------
-// ABRIR CHAMADO
-// ----------------------------------------------------------
 
 const assuntoChamado = document.getElementById("assuntoChamado");
 const mensagemChamado = document.getElementById("mensagemChamado");
@@ -173,10 +153,6 @@ function enviarChamado() {
 
 btnEnviarChamado.addEventListener("click", enviarChamado);
 
-// ----------------------------------------------------------
-// LISTA DE CHAMADOS
-// ----------------------------------------------------------
-
 const listaChamados = document.getElementById("listaChamados");
 
 const rotulosStatusChamado = {
@@ -225,10 +201,6 @@ function renderizarChamados() {
     `;
   });
 }
-
-// ----------------------------------------------------------
-// INICIALIZAÇÃO
-// ----------------------------------------------------------
 
 renderizarFaq();
 preencherCursos();

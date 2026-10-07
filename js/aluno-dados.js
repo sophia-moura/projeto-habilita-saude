@@ -1,19 +1,5 @@
-// ==========================================================
-// HABILITA SAÚDE — VISÃO DO ALUNO — DADOS COMPARTILHADOS
-// O MVP não possui backend nem banco de dados, então os dados
-// do aluno ficam no localStorage. Este arquivo cria os dados
-// de exemplo e é carregado por todas as páginas da área do aluno.
-// ==========================================================
-
-// Chave versionada: se a estrutura dos dados mudar, basta
-// alterar a versão para que o seed seja recriado.
 const CHAVE_CURSOS_ALUNO = "cursosAluno_v2";
 const CHAVE_RECOMENDADOS_ALUNO = "cursosRecomendadosAluno_v2";
-
-// ----------------------------------------------------------
-// CURSOS DO ALUNO
-// status: "andamento" | "concluido" | "nao-iniciado"
-// ----------------------------------------------------------
 
 function seedCursosAluno() {
   if (localStorage.getItem(CHAVE_CURSOS_ALUNO)) return;
@@ -108,10 +94,6 @@ function seedCursosAluno() {
   localStorage.setItem(CHAVE_CURSOS_ALUNO, JSON.stringify(cursosAluno));
 }
 
-// ----------------------------------------------------------
-// CURSOS RECOMENDADOS (usados na página inicial)
-// ----------------------------------------------------------
-
 function seedRecomendadosAluno() {
   if (localStorage.getItem(CHAVE_RECOMENDADOS_ALUNO)) return;
 
@@ -149,11 +131,6 @@ function seedRecomendadosAluno() {
   localStorage.setItem(CHAVE_RECOMENDADOS_ALUNO, JSON.stringify(recomendados));
 }
 
-// ----------------------------------------------------------
-// NOTIFICAÇÕES / AVISOS
-// Usa a mesma chave "notificacoes" já utilizada pelo global.js
-// ----------------------------------------------------------
-
 function seedNotificacoesAluno() {
   if (localStorage.getItem("notificacoes")) return;
 
@@ -163,6 +140,7 @@ function seedNotificacoesAluno() {
       titulo: "Novo módulo disponível",
       descricao: "O curso Cardiologia na Prática recebeu um novo módulo.",
       tipo: "curso",
+      para: "aluno",
       lida: false,
       data: new Date(Date.now() - 1000 * 60 * 60 * 5).toLocaleString("pt-BR"),
     },
@@ -172,6 +150,7 @@ function seedNotificacoesAluno() {
       descricao:
         "Você tem uma avaliação pendente em Nutrição Clínica Aplicada.",
       tipo: "avaliacao",
+      para: "aluno",
       lida: false,
       data: new Date(Date.now() - 1000 * 60 * 60 * 26).toLocaleString("pt-BR"),
     },
@@ -181,6 +160,7 @@ function seedNotificacoesAluno() {
       descricao:
         "Seu certificado de Primeiros Socorros Essenciais já está disponível.",
       tipo: "certificado",
+      para: "aluno",
       lida: true,
       data: new Date(Date.now() - 1000 * 60 * 60 * 72).toLocaleString("pt-BR"),
     },
@@ -193,10 +173,6 @@ seedCursosAluno();
 seedRecomendadosAluno();
 seedNotificacoesAluno();
 
-// ----------------------------------------------------------
-// FUNÇÕES DE ACESSO AOS DADOS
-// ----------------------------------------------------------
-
 function obterCursosAluno() {
   return JSON.parse(localStorage.getItem(CHAVE_CURSOS_ALUNO)) || [];
 }
@@ -206,14 +182,23 @@ function salvarCursosAluno(cursos) {
 }
 
 function obterRecomendadosAluno() {
-  return JSON.parse(localStorage.getItem(CHAVE_RECOMENDADOS_ALUNO)) || [];
+
+  const meus = obterCursosAluno().map((c) => c.id);
+  return HS.cursosPublicados()
+    .filter((c) => !meus.includes(c.id))
+    .map((c) => ({
+      id: c.id,
+      nome: c.nome,
+      categoria: c.categoria || c.nivel || "Curso",
+      imagem: c.imagem,
+      preco: c.preco || 0,
+    }));
 }
 
 function obterNotificacoesAluno() {
-  return JSON.parse(localStorage.getItem("notificacoes")) || [];
+  return (JSON.parse(localStorage.getItem("notificacoes")) || []).filter(HS.visivel);
 }
 
-// Formata "2026-06-10" para "10/06/2026"
 function formatarData(dataISO) {
   if (!dataISO) return "—";
 

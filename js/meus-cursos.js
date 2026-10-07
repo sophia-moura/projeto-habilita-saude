@@ -44,10 +44,6 @@ const filtroPublico = document.getElementById("filtroPublico");
 
 carregarFiltros();
 
-// ========================
-// RENDERIZAR CURSOS
-// ========================
-
 function renderCursos(lista) {
   grid.innerHTML = "";
 
@@ -65,7 +61,7 @@ function renderCursos(lista) {
   }
 
   lista.forEach((curso) => {
-    const nivel = curso.nivel || "Silver";
+    const nivel = (HS.niveis()[curso.nivel] || {}).nome || curso.nivel || "—";
 
     grid.innerHTML += `
       <div
@@ -83,14 +79,14 @@ function renderCursos(lista) {
           <div class="tags">
 
             <span
-              class="tag ${nivel.toLowerCase()}"
+              class="tag nivel-${(curso.nivel || "x")}"
             >
               ${nivel}
             </span>
 
             <span
               class="status ${
-                curso.status === "Privado" ? "privado" : "publicado"
+                curso.status === "Publicado" ? "publicado" : "privado"
               }"
             >
               ${curso.status}
@@ -154,7 +150,7 @@ function renderCursos(lista) {
 
         <div class="acoes">
 
-  <button>Ver Ganhos</button>
+  <button onclick="event.stopPropagation();location.href='financas.html'">Ver Ganhos</button>
 
   <button
     class="btn-editar"
@@ -176,10 +172,6 @@ function renderCursos(lista) {
     `;
   });
 }
-
-// ========================
-// MODAL
-// ========================
 
 function aplicarFiltros() {
   const texto = busca.value.toLowerCase();
@@ -265,17 +257,16 @@ function abrirDetalhes(curso) {
       ${curso.status}
     </p>
 
+    ${curso.nivel ? `<p><strong>Certificação:</strong> ${HS.rotulo(curso)}</p>` : ""}
+
+    ${curso.curadoria ? `<p><strong>Curadoria (nota ${curso.curadoria.nota}):</strong> ${curso.curadoria.parecer}</p><small>${curso.curadoria.linhas.join("<br>")}</small>` : ""}
+
   `;
 
   modalCurso.classList.add("show");
 }
 
-// ========================
-// CLIQUES
-// ========================
-
 document.addEventListener("click", (e) => {
-  // EDITAR
 
   if (e.target.classList.contains("btn-editar")) {
     e.stopPropagation();
@@ -293,7 +284,7 @@ document.addEventListener("click", (e) => {
     return;
   }
 
-  // ABRIR MODAL
+  if (e.target.closest(".acoes")) return;
 
   const card = e.target.closest(".curso-card");
 
@@ -308,17 +299,9 @@ document.addEventListener("click", (e) => {
   }
 });
 
-// ========================
-// FECHAR MODAL
-// ========================
-
 fechar.addEventListener("click", () => {
   modalCurso.classList.remove("show");
 });
-
-// ========================
-// BUSCA
-// ========================
 
 busca.addEventListener("input", aplicarFiltros);
 
@@ -327,14 +310,6 @@ categoria.addEventListener("change", aplicarFiltros);
 filtroCarga.addEventListener("change", aplicarFiltros);
 
 filtroPublico.addEventListener("change", aplicarFiltros);
-
-// ========================
-// FILTRO CATEGORIA
-// ========================
-
-// ========================
-// SALVAR
-// ========================
 
 function salvarCursos() {
   localStorage.setItem("cursos", JSON.stringify(cursos));
@@ -366,25 +341,3 @@ document.addEventListener("click", (e) => {
 
   aplicarFiltros();
 });
-
-const menuMobile = document.getElementById("menuMobile");
-
-const sidebar = document.querySelector(".sidebar");
-
-const overlay = document.getElementById("overlay");
-
-if (menuMobile) {
-  menuMobile.addEventListener("click", () => {
-    sidebar.classList.toggle("ativa");
-
-    overlay.classList.toggle("ativo");
-  });
-}
-
-if (overlay) {
-  overlay.addEventListener("click", () => {
-    sidebar.classList.remove("ativa");
-
-    overlay.classList.remove("ativo");
-  });
-}

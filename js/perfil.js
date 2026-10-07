@@ -9,7 +9,6 @@ document.getElementById("emailUsuario").value = usuarioPerfil.email || "";
 
 preview.src = usuarioPerfil.foto || "./img/perfil.jpg";
 
-// Preview da nova foto
 inputFoto.addEventListener("change", (e) => {
   const arquivo = e.target.files[0];
 
@@ -31,7 +30,6 @@ document.getElementById("salvarPerfil").addEventListener("click", () => {
 
   const arquivo = inputFoto.files[0];
 
-  // Se escolheu nova foto
   if (arquivo) {
     const leitor = new FileReader();
 
@@ -46,7 +44,7 @@ document.getElementById("salvarPerfil").addEventListener("click", () => {
 
     leitor.readAsDataURL(arquivo);
   } else {
-    // Salva apenas nome e email
+
     localStorage.setItem("usuario", JSON.stringify(usuarioPerfil));
 
     alert("Perfil atualizado!");

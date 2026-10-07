@@ -164,7 +164,7 @@ function renderizarUsuariosDashboard() {
 
   lista.innerHTML = "";
 
-  const usuarios = JSON.parse(localStorage.getItem("usuarios")) || [];
+  const usuarios = HS.alunos();
 
   if (usuarios.length === 0) {
     lista.innerHTML = `
@@ -177,13 +177,13 @@ function renderizarUsuariosDashboard() {
     lista.innerHTML += `
       <div class="usuario-dashboard">
         <img
-          src="${usuario.foto || "./img/perfil.jpg"}"
+          src="${usuario.foto || "https://ui-avatars.com/api/?background=163b97&color=fff&name=" + encodeURIComponent(usuario.nome)}"
           alt="${usuario.nome}"
         >
 
         <div class="usuario-info">
           <strong>${usuario.nome}</strong>
-          <small>${usuario.status || "Ativo"}</small>
+          <small>${usuario.cursoNome}</small>
         </div>
       </div>
     `;
@@ -210,8 +210,6 @@ function criarNotificacao(titulo, descricao, tipo) {
 const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
 
 const naoLidas = notificacoes.filter((n) => !n.lida).length;
-
-document.getElementById("badgeNotificacao").textContent = naoLidas;
 
 atualizarMetricas();
 
@@ -273,9 +271,7 @@ new Chart(ctx, {
 
     scales: {
       y: {
-        y: {
-  beginAtZero: true,
-},
+        beginAtZero: true,
 
         grid: {
           color: "#edf1f7",

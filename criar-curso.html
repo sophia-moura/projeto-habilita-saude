@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="./css/animacoes.css" />
   </head>
 
   <body>
@@ -182,18 +183,13 @@
 
             <div class="coluna-direita">
               <div class="campo">
-                <label for="categoriaCurso"> Categoria (Certificação)* </label>
-
-                <select id="categoriaCurso" required>
-                  <option value="">Selecione a Categoria</option>
-
-                  <option>Silver</option>
-                  <option>Gold</option>
-                  <option>Platinum</option>
-                </select>
+                <label for="categoriaCurso">Nível de Certificação pleiteado*</label>
+                <select id="categoriaCurso" required></select>
                 <small class="comentario">
-                  Escolha a área principal em que o curso será exibido.
+                  Você registra a intenção; o nível é validado pela curadoria do portal.
                 </small>
+                <div id="infoNivel" style="margin-top:10px;font-size:13px"></div>
+                <div id="checklistNivel" style="margin-top:10px;font-size:13px"></div>
               </div>
 
               <div class="campo">
@@ -322,8 +318,12 @@
         </form>
       </main>
     </div>
-    <script src="./js/criar-curso.js"></script>
     <script src="./js/user.js"></script>
     <script src="./js/global.js"></script>
+    <script src="./js/niveis.js"></script>
+    <script src="./js/videos.js"></script>
+    <script src="./js/criar-curso.js"></script>
+
+    <script src="./js/animacoes.js"></script>
   </body>
 </html>

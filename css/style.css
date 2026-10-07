@@ -913,8 +913,6 @@ body {
   color: #16a34a;
 }
 
-/* MÉTRICAS */
-
 .metricas-suporte {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -976,8 +974,6 @@ body {
   border-radius: 12px;
   cursor: pointer;
 }
-
-/* CHAT */
 
 #mensagensTicket {
   height: 350px;
@@ -2015,7 +2011,6 @@ body {
   margin-top: -5px;
 }
 
-
 .notification {
   position: relative;
   display: flex;
@@ -2237,7 +2232,6 @@ body {
     flex-shrink:0;
   }
 
-  /* Filtros */
   .filtros-relatorio{
     display:flex;
     flex-direction:column;
@@ -2249,7 +2243,6 @@ body {
     width:100%;
   }
 
-  /* Gráfico + progresso */
   .dashboard-relatorio{
     display:flex;
     flex-direction:column;
@@ -2269,7 +2262,6 @@ body {
     min-width:600px;
   }
 
-  /* Ranking */
   .ranking-header{
     display:flex;
     flex-direction:column;
@@ -2288,7 +2280,6 @@ body {
     font-size: 0.85rem;
   }
 
-  /* Botões */
   .acoes-suporte {
     display: flex;
     flex-wrap: wrap;
@@ -2300,13 +2291,11 @@ body {
     min-width: 140px;
   }
 
-  /* Select */
   #filtroStatus {
     width: 100%;
     margin-top: 15px;
   }
 
-  /* Cards de métricas */
   .metricas-suporte {
     display: grid;
     grid-template-columns: 1fr;
@@ -2317,7 +2306,6 @@ body {
     width: 100%;
   }
 
-  /* Tickets */
   #listaTickets {
     width: 100%;
   }
@@ -2339,7 +2327,6 @@ body {
     flex: 1;
   }
 
-  /* Modal */
   .modal-content {
     width: 95%;
     max-width: 400px;

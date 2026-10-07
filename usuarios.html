@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="./css/animacoes.css" />
   </head>
 
   <body>
@@ -112,8 +113,6 @@
           </div>
         </header>
 
-        <!-- MÉTRICAS -->
-
         <section class="metricas-dashboard">
           <div class="card-metrica azul">
             <div>
@@ -145,14 +144,12 @@
           <div class="card-metrica amarelo">
             <div>
               <span>NOVOS ESSA SEMANA</span>
-              <strong>0</strong>
+              <strong id="novosSemana">0</strong>
             </div>
 
             <i class="fa-solid fa-star"></i>
           </div>
         </section>
-
-        <!-- FILTROS -->
 
         <section class="filtros-modernos">
           <div class="busca">
@@ -171,8 +168,6 @@
             </select>
           </div>
         </section>
-
-        <!-- TABELA -->
 
         <section class="usuarios-card">
           <table>
@@ -195,28 +190,9 @@
         </section>
       </main>
     </div>
-    <script>
-      const filtroCurso = document.getElementById("filtroCurso");
-
-      function carregarCursosFiltro() {
-        const cursos = JSON.parse(localStorage.getItem("cursos")) || [];
-
-        filtroCurso.innerHTML = `<option value="">
-      Todos os Cursos
-    </option>`;
-
-        cursos.forEach((curso) => {
-          filtroCurso.innerHTML += `
-      <option value="${curso.id}">
-        ${curso.nome}
-      </option>
-    `;
-        });
-      }
-
-      carregarCursosFiltro();
-    </script>
     <script src="./js/user.js"></script>
     <script src="./js/global.js"></script>
+    <script src="./js/usuarios.js"></script>
+    <script src="./js/animacoes.js"></script>
   </body>
 </html>

@@ -1,139 +1,116 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Habilita.Saúde — Nutrição Clínica Aplicada</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="aula.css">
-</head>
-<body>
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<div class="topbar">
-  <div class="brand">
-    <div class="mark">H</div>
-    <div class="name">HABILITA<span>.SAÚDE</span></div>
-  </div>
-  <div class="crumbs">Nutrição Clínica Aplicada&nbsp;/&nbsp;<b>Avaliação Nutricional na Prática Clínica</b></div>
-  <div class="topbar-right">
-    <div class="icon-btn" title="Ajuda">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9.3"/><path d="M9.4 9.3a2.6 2.6 0 1 1 3.6 2.4c-.9.4-1 1.1-1 1.9" stroke-linecap="round"/><circle cx="12" cy="16.6" r=".2" fill="currentColor" stroke-width="1.2"/></svg>
-    </div>
-    <div class="icon-btn" title="Notificações">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5a6 6 0 0 1 12 0c0 4 1.4 5.2 1.4 5.2H4.6S6 13.5 6 9.5Z"/><path d="M10 19a2.2 2.2 0 0 0 4 0"/></svg>
-      <span class="badge">2</span>
-    </div>
-    <div class="who">
-      <div class="avatar-wrap">
-        <div class="avatar">AL</div>
-        <div class="status-dot"></div>
-      </div>
-      <span class="uname">Aluno Demo</span>
-    </div>
-  </div>
-</div>
+    <title>Aula - Área do Aluno</title>
 
-<div class="layout">
-  <div class="main">
-    <div class="player-card">
-      <div class="play-hint">
-        <svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8V4z"/></svg>
-      </div>
-      <div class="player-time">−02:21</div>
-    </div>
-    <div class="progressbar-wrap">
-      <div class="progressbar"><i></i></div>
-    </div>
+    <link rel="stylesheet" href="./css/aluno.css" />
 
-    <div class="lesson-head">
-      <div>
-        <h1>Interpretando exames laboratoriais no consultório</h1>
-        <div class="meta-row">
-          <span>Módulo 3 de 5</span><span class="sep">·</span>
-          <span>Avaliação Nutricional na Prática Clínica</span><span class="sep">·</span>
-          <span>14 min</span>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/animacoes.css" />
+  </head>
+
+  <body>
+    <div id="overlay"></div>
+
+    <div class="container">
+      <aside class="sidebar">
+        <div>
+          <div class="logo-side">
+            <h2>HABILITA.SAÚDE</h2>
+            <p>Área do Aluno</p>
+          </div>
+
+          <ul>
+            <li>
+              <a href="./aluno-inicio.html">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+
+            <li>
+              <a href="./aluno-meus-cursos.html" class="menu-ativo">
+                <i class="fa-solid fa-book"></i>
+                Meus Cursos
+              </a>
+            </li>
+
+            <li>
+              <a href="./aluno-suporte.html">
+                <i class="fa-regular fa-circle-question"></i>
+                Suporte
+              </a>
+            </li>
+          </ul>
         </div>
-      </div>
-      <div class="lesson-actions">
-        <button class="btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 3.5h12v17l-6-3.6-6 3.6v-17Z"/></svg>
-          Salvar
-        </button>
-        <button class="btn primary">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
-          Aula concluída
-        </button>
-      </div>
-    </div>
 
-    <div class="tabs">
-      <div class="tab active">Sobre a aula</div>
-    </div>
-    <div class="tab-body">
-      Nesta aula você vai aprender a ler hemograma, perfil lipídico e marcadores inflamatórios para embasar a conduta nutricional, com casos reais de consultório.
-    </div>
+        <div>
+          <div class="perfil">
+            <div class="foto-wrapper">
+              <img
+                id="fotoUsuarioSidebar"
+                src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
+                alt="Foto do aluno"
+              />
+              <span class="online"></span>
+            </div>
+            <span id="nomeUsuarioSidebar"></span>
+          </div>
 
-    <div class="instructor-strip">
-      <div class="pic">CS</div>
-      <div class="t"><b>Dra. Carla Souza</b><span>Nutrição Clínica · CRN 12345</span></div>
-    </div>
-  </div>
-
-  <div class="sidebar">
-    <div class="sidebar-top">
-      <span class="course-name">Nutrição Clínica Aplicada</span>
-      <span class="pct">30%</span>
-    </div>
-
-    <div class="module">
-      <div class="module-head">
-        <div class="module-num done">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
+          <div class="logout-container">
+            <button id="btnLogout">Sair</button>
+          </div>
         </div>
-        <div class="module-info"><div class="t">Fundamentos da Avaliação</div><div class="m">4 aulas · 38:10</div></div>
-      </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile">☰</button>
+          <a href="./aluno-meus-cursos.html" style="color:#163b97;font-weight:600;text-decoration:none">← Meus cursos</a>
+        </header>
+        <section class="aula">
+          <div class="aula-player">
+            <h1 id="tituloCurso"></h1>
+            <div id="palco" class="palco"></div>
+            <div class="aula-acoes"><strong id="tituloAula"></strong><button id="btnConcluir">Marcar como concluída</button></div>
+            <div class="aula-barra"><div id="barraAula"></div></div>
+            <small id="textoProgresso"></small>
+          </div>
+          <aside class="aula-lista"><h3>Conteúdo do curso</h3><div id="listaAulas"></div></aside>
+        </section>
+        <style>
+          .aula{display:grid;grid-template-columns:1fr 330px;gap:22px;padding:24px}
+          .aula h1{font-size:22px;color:#163b97;margin:0 0 14px}
+          .palco{background:#0b1b45;border-radius:16px;overflow:hidden;aspect-ratio:16/9;display:grid;place-items:center;color:#fff;text-align:center;box-shadow:0 12px 30px rgba(22,59,151,.25)}
+          .palco video,.palco iframe{width:100%;height:100%;border:0;background:#000}
+          .palco a{color:#fff;background:#3aa935;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600}
+          .aula-acoes{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px;gap:10px}
+          #btnConcluir{background:#163b97;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
+          .aula-barra{height:10px;background:#e8edf7;border-radius:8px;overflow:hidden}
+          #barraAula{height:100%;width:0;background:linear-gradient(90deg,#4f7cff,#3aa935);transition:width .8s}
+          .aula-lista{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);align-self:start}
+          .aula-lista h3{margin:0 0 12px;color:#163b97}
+          .item-aula{display:flex;gap:10px;align-items:center;padding:11px;border-radius:10px;cursor:pointer;font-size:14px;transition:background .2s}
+          .item-aula:hover{background:#f3f6fc}.item-aula.ativa{background:#e8edf7;font-weight:600}
+          .item-aula .ck{width:22px;height:22px;border-radius:50%;border:2px solid #ccd5e8;display:grid;place-items:center;font-size:12px;flex:none}
+          .item-aula.feita .ck{background:#3aa935;border-color:#3aa935;color:#fff}
+          @media(max-width:900px){.aula{grid-template-columns:1fr}}
+        </style>
+      </main>
     </div>
 
-    <div class="module">
-      <div class="module-head">
-        <div class="module-num done">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
-        </div>
-        <div class="module-info"><div class="t">Antropometria Clínica</div><div class="m">3 aulas · 29:22</div></div>
-      </div>
-    </div>
-
-    <div class="module">
-      <div class="module-head">
-        <div class="module-num current">3</div>
-        <div class="module-info"><div class="t">Exames e Biomarcadores</div><div class="m">5 aulas · 46:09</div></div>
-        <div class="chevron">⌄</div>
-      </div>
-      <div class="lesson-list">
-        <div class="lesson-row"><div class="l-left"><span class="dot done"></span><span class="txt">Hemograma na prática</span></div><span class="dur">12:21</span></div>
-        <div class="lesson-row active"><div class="l-left"><span class="dot current"></span><span class="txt">Interpretando exames laboratoriais</span></div><span class="dur">14:23</span></div>
-        <div class="lesson-row"><div class="l-left"><span class="dot"></span><span class="txt">Marcadores inflamatórios</span></div><span class="dur">13:48</span></div>
-        <div class="lesson-row"><div class="l-left"><span class="dot"></span><span class="txt">Perfil lipídico aplicado</span></div><span class="dur">14:10</span></div>
-        <div class="lesson-row"><div class="l-left"><span class="dot"></span><span class="txt">Estudo de caso final</span></div><span class="dur">11:27</span></div>
-      </div>
-    </div>
-
-    <div class="module">
-      <div class="module-head">
-        <div class="module-num">4</div>
-        <div class="module-info"><div class="t">Plano Alimentar Individualizado</div><div class="m">4 aulas · 41:05</div></div>
-      </div>
-    </div>
-
-    <div class="next-card">
-      <div class="tag">A SEGUIR</div>
-      <div class="title">Quiz — Exames e Biomarcadores</div>
-      <button>Continuar</button>
-    </div>
-  </div>
-</div>
-
-</body>
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+    <script src="./js/gamificacao.js"></script>
+    <script src="./js/aluno-dados.js"></script>
+    <script src="./js/videos.js"></script>
+    <script src="./js/aula.js"></script>
+    <script src="./js/animacoes.js"></script>
+  </body>
 </html>

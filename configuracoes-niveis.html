@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Perfil</title>
+    <title>Níveis de Certificação</title>
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -32,28 +32,41 @@
               </a>
             </li>
 
-            <ul>
-  <li>
-    <a href="./aluno-inicio.html">
-      <i class="fa-solid fa-house"></i>
-      Início
-    </a>
-  </li>
+            <li>
+              <a href="./meus-cursos.html">
+                <i class="fa-solid fa-book"></i>
+                Meus Cursos
+              </a>
+            </li>
 
-  <li>
-    <a href="./aluno-meus-cursos.html">
-      <i class="fa-solid fa-book"></i>
-      Meus Cursos
-    </a>
-  </li>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
 
-  <li>
-    <a href="./aluno-suporte.html">
-      <i class="fa-regular fa-circle-question"></i>
-      Suporte
-    </a>
-  </li>
-</ul>
+            <li>
+              <a href="./criar-curso.html">
+                <i class="fa-solid fa-plus"></i>
+                Criar Curso
+              </a>
+            </li>
+
+            <li>
+              <a href="./usuarios.html" class="menu-ativo">
+                <i class="fa-solid fa-users"></i>
+                Usuários
+              </a>
+            </li>
+
+            <li>
+              <a href="./relatorios.html">
+                <i class="fa-solid fa-chart-line"></i>
+                Relatórios
+              </a>
+            </li>
+          </ul>
         </div>
 
         <div class="perfil">
@@ -73,8 +86,8 @@
         <header class="topbar">
           <button id="menuMobile" class="menu-mobile">☰</button>
           <div>
-            <h1>ALUNO(A)</h1>
-            <p>Bem-vindo(a) ao seu painel</p>
+            <h1>PROFESSOR</h1>
+            <p>Ajuste preços, cargas horárias, repasses e critérios de cada nível.</p>
           </div>
 
           <div class="icons">
@@ -100,41 +113,21 @@
           </div>
         </header>
 
-        <section class="perfil-card">
-          <img
-            id="previewFoto"
-            src="./img/perfil.jpg"
-            alt="Foto do usuário"
-            class="foto-perfil-grande"
-          />
-          <h2>Meu Perfil</h2>
-
-          <input type="text" id="nomeUsuario" placeholder="Nome" />
-
-          <input type="email" id="emailUsuario" placeholder="E-mail" />
-
-          <label for="novaFoto" class="label-foto"> Foto de Perfil </label>
-
-          <input type="file" id="novaFoto" accept="image/*" />
-
-          <small class="texto-foto">
-            Escolha uma imagem para ser sua foto de perfil.
-          </small>
-          <button id="salvarPerfil">Salvar Alterações</button>
-          <div class="logout-container">
-            <button id="btnLogout" class="btn-logout">
-              <i class="fa-solid fa-right-from-bracket"></i>
-              Sair
-            </button>
+        <section class="usuarios-card" style="padding:24px">
+          <h2 style="margin-bottom:6px">Parâmetros dos níveis de certificação</h2>
+          <p style="margin-bottom:16px;color:#6b7a99">As alterações valem para novos cadastros de curso, validação de preço e cálculo de repasse.</p>
+          <div id="formNiveis" style="overflow-x:auto"></div>
+          <div style="margin-top:18px;display:flex;gap:10px">
+            <button id="salvarNiveis" class="btn-publicar" style="padding:10px 18px;border:0;border-radius:10px;background:#163b97;color:#fff;cursor:pointer">Salvar alterações</button>
+            <button id="restaurarNiveis" style="padding:10px 18px;border:1px solid #ccd5e8;border-radius:10px;background:#fff;cursor:pointer">Restaurar padrão do documento</button>
           </div>
         </section>
-        <section id="listaNotificacoes"></section>
       </main>
     </div>
-
     <script src="./js/user.js"></script>
-    <script src="./js/perfil.js"></script>
     <script src="./js/global.js"></script>
+    <script src="./js/niveis.js"></script>
+    <script src="./js/configuracoes-niveis.js"></script>
     <script src="./js/animacoes.js"></script>
   </body>
 </html>

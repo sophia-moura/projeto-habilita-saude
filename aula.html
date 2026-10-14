@@ -12,6 +12,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
+    <link rel="stylesheet" href="./css/aula.css" />
     <link rel="stylesheet" href="./css/animacoes.css" />
   </head>
 
@@ -38,6 +39,13 @@
               <a href="./aluno-meus-cursos.html" class="menu-ativo">
                 <i class="fa-solid fa-book"></i>
                 Meus Cursos
+              </a>
+            </li>
+
+            <li>
+              <a href="./certificados.html">
+                <i class="fa-solid fa-award"></i>
+                Certificados
               </a>
             </li>
 
@@ -72,36 +80,90 @@
       <main class="main">
         <header class="topbar">
           <button id="menuMobile" class="menu-mobile">☰</button>
-          <a href="./aluno-meus-cursos.html" style="color:#163b97;font-weight:600;text-decoration:none">← Meus cursos</a>
-        </header>
-        <section class="aula">
-          <div class="aula-player">
-            <h1 id="tituloCurso"></h1>
-            <div id="palco" class="palco"></div>
-            <div class="aula-acoes"><strong id="tituloAula"></strong><button id="btnConcluir">Marcar como concluída</button></div>
-            <div class="aula-barra"><div id="barraAula"></div></div>
-            <small id="textoProgresso"></small>
+
+          <div>
+            <h1 id="tituloCurso">AULA</h1>
+            <p id="subtituloCurso">Carregando conteúdo…</p>
           </div>
-          <aside class="aula-lista"><h3>Conteúdo do curso</h3><div id="listaAulas"></div></aside>
+
+          <div class="icons">
+            <a href="aluno-suporte.html">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+
+            <a href="#" class="notification">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+
+            <div class="user-top">
+              <div class="foto-wrapper">
+                <img
+                  id="fotoUsuarioTop"
+                  src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
+                  alt="Foto do aluno"
+                />
+                <span class="online"></span>
+              </div>
+              <span id="nomeUsuarioTop"></span>
+            </div>
+          </div>
+        </header>
+
+        <a href="./aluno-meus-cursos.html" class="aula-voltar">
+          <i class="fa-solid fa-arrow-left"></i> Meus cursos
+        </a>
+
+        <section class="aula" id="aulaConteudo">
+          <div class="aula-player">
+            <div id="palco" class="palco" aria-live="polite"></div>
+
+            <div class="aula-info">
+              <div>
+                <small id="tipoAula"></small>
+                <h2 id="tituloAula"></h2>
+              </div>
+            </div>
+
+            <div class="aula-acoes">
+              <button type="button" class="aula-btn" id="btnAnterior">
+                <i class="fa-solid fa-chevron-left"></i> Anterior
+              </button>
+              <button type="button" class="aula-btn aula-btn-primario" id="btnConcluir">
+                <i class="fa-solid fa-check"></i> <span>Marcar como concluída</span>
+              </button>
+              <button type="button" class="aula-btn" id="btnProxima">
+                Próxima <i class="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+
+            <div class="aula-progresso">
+              <div class="aula-barra"><div id="barraAula"></div></div>
+              <small id="textoProgresso"></small>
+            </div>
+
+            <div class="aula-fim" id="aulaFim" hidden>
+              <i class="fa-solid fa-award"></i>
+              <div>
+                <strong>Parabéns, você concluiu o curso!</strong>
+                <span id="aulaFimTexto">Revise os conteúdos quando quiser.</span>
+              </div>
+              <a href="./certificados.html" id="aulaFimLink" class="aula-btn aula-btn-primario">Ver certificado</a>
+            </div>
+          </div>
+
+          <aside class="aula-lista">
+            <h3>Conteúdo do curso</h3>
+            <div id="listaAulas"></div>
+          </aside>
         </section>
-        <style>
-          .aula{display:grid;grid-template-columns:1fr 330px;gap:22px;padding:24px}
-          .aula h1{font-size:22px;color:#163b97;margin:0 0 14px}
-          .palco{background:#0b1b45;border-radius:16px;overflow:hidden;aspect-ratio:16/9;display:grid;place-items:center;color:#fff;text-align:center;box-shadow:0 12px 30px rgba(22,59,151,.25)}
-          .palco video,.palco iframe{width:100%;height:100%;border:0;background:#000}
-          .palco a{color:#fff;background:#3aa935;padding:12px 20px;border-radius:12px;text-decoration:none;font-weight:600}
-          .aula-acoes{display:flex;justify-content:space-between;align-items:center;margin:14px 0 8px;gap:10px}
-          #btnConcluir{background:#163b97;color:#fff;border:0;border-radius:10px;padding:10px 16px;cursor:pointer}
-          .aula-barra{height:10px;background:#e8edf7;border-radius:8px;overflow:hidden}
-          #barraAula{height:100%;width:0;background:linear-gradient(90deg,#4f7cff,#3aa935);transition:width .8s}
-          .aula-lista{background:#fff;border-radius:16px;padding:18px;box-shadow:0 2px 12px rgba(0,0,0,.06);align-self:start}
-          .aula-lista h3{margin:0 0 12px;color:#163b97}
-          .item-aula{display:flex;gap:10px;align-items:center;padding:11px;border-radius:10px;cursor:pointer;font-size:14px;transition:background .2s}
-          .item-aula:hover{background:#f3f6fc}.item-aula.ativa{background:#e8edf7;font-weight:600}
-          .item-aula .ck{width:22px;height:22px;border-radius:50%;border:2px solid #ccd5e8;display:grid;place-items:center;font-size:12px;flex:none}
-          .item-aula.feita .ck{background:#3aa935;border-color:#3aa935;color:#fff}
-          @media(max-width:900px){.aula{grid-template-columns:1fr}}
-        </style>
+
+        <section class="aula-vazio" id="aulaVazio" hidden>
+          <i class="fa-regular fa-folder-open"></i>
+          <strong>Este curso ainda não tem conteúdos publicados.</strong>
+          <p>Assim que o professor adicionar as aulas, elas aparecerão aqui.</p>
+          <a href="./aluno-meus-cursos.html" class="aula-btn aula-btn-primario">Voltar para meus cursos</a>
+        </section>
       </main>
     </div>
 

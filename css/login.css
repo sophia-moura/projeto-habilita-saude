@@ -239,8 +239,8 @@ button:hover {
 .cadastro-box {
   background: white;
 
-  width: 400px;
-  max-width: 90%;
+  width: 440px;
+  max-width: 100%;
 
   padding: 30px;
 
@@ -252,12 +252,111 @@ button:hover {
   gap: 15px;
 }
 
-.cadastro-box input {
-  padding: 12px;
+/* ===== Cadastro ===== */
+.criar-conta {
+  margin-top: 22px;
+  font-size: 13px;
+  color: #6b7280;
+  cursor: default;
+}
 
-  border: 1px solid #ddd;
+.criar-conta a {
+  color: #163b97;
+  font-weight: 600;
+  text-decoration: none;
+}
 
-  border-radius: 10px;
+.criar-conta a:hover {
+  text-decoration: underline;
+}
+
+.modal-cadastro {
+  z-index: 1000;
+  padding: 20px;
+}
+
+.cadastro-box {
+  position: relative;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  gap: 0;
+}
+
+.fechar-modal {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  margin: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: #f1f5f9;
+  color: #64748b;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+}
+
+.fechar-modal:hover {
+  background: #e2e8f0;
+  color: #163b97;
+}
+
+.cabecalho-cadastro h2 {
+  color: #163b97;
+  font-size: 20px;
+}
+
+.cabecalho-cadastro p {
+  color: #777;
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.seletor-cadastro {
+  margin: 18px 0 20px;
+}
+
+.seletor-cadastro .opcao-perfil {
+  padding: 14px 10px;
+}
+
+.opcao-perfil.selecionada {
+  border-color: #163b97;
+  background: #eef2ff;
+  box-shadow: 0 0 0 3px rgba(22, 59, 151, 0.15);
+}
+
+.toggle-senha {
+  width: auto;
+  margin: 0;
+  padding: 0;
+  background: none;
+  color: #94a3b8;
+  font-size: 15px;
+}
+
+.toggle-senha:hover {
+  background: none;
+  color: #163b97;
+}
+
+.link-entrar {
+  text-align: center;
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 14px;
+}
+
+.link-entrar a {
+  color: #163b97;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.link-entrar a:hover {
+  text-decoration: underline;
 }
 
 @media (max-width: 480px) {

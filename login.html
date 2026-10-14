@@ -219,6 +219,10 @@
       senhaLogin.addEventListener("keydown", (e) => {
         if (e.key === "Enter") entrar();
       });
+
+      // Vindo da página inicial (?perfil=aluno | professor): já escolhe o perfil.
+      const perfilUrl = new URLSearchParams(location.search).get("perfil");
+      if (dadosPerfil[perfilUrl]) abrirEtapaLogin(perfilUrl);
     </script>
 
     <script src="./js/user.js"></script>

@@ -8,7 +8,7 @@
   const tipo = usuario && usuario.tipo;
   const home = (t) => (t === "aluno" ? "aluno-inicio.html" : "dashboard.html");
   const soProfessor = ["dashboard.html", "meus-cursos.html", "criar-curso.html", "financas.html", "usuarios.html", "relatorios.html", "suporte.html", "configuracoes-niveis.html"];
-  const soAluno = ["aluno-inicio.html", "aluno-meus-cursos.html", "aluno-suporte.html", "aula.html"];
+  const soAluno = ["aluno-inicio.html", "aluno-meus-cursos.html", "aluno-suporte.html", "aula.html", "certificados.html"];
   const publicas = ["index.html", "login.html", "validar.html"];
 
   if (!publicas.includes(pagina)) {

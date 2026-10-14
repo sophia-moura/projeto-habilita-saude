@@ -236,3 +236,8 @@ listaCursos.addEventListener("click", (e) => {
   atualizarContadores();
   renderizarCursos();
 });
+
+listaCursos.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-certificado");
+  if (btn) location.href = "./certificados.html?curso=" + btn.dataset.id;
+});

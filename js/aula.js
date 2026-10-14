@@ -1,67 +1,228 @@
 (function () {
-  const id = Number(new URLSearchParams(location.search).get("id"));
-  const u = JSON.parse(localStorage.getItem("usuario") || "{}");
-  const meus = JSON.parse(localStorage.getItem("cursosAluno_v2") || "[]");
-  const meu = meus.find((c) => c.id === id);
-  const prof = JSON.parse(localStorage.getItem("cursos") || "[]").find((c) => c.id === id);
-  if (!meu || !prof || !(prof.conteudos || []).length) return void location.replace("aluno-meus-cursos.html");
+  const ls = (k, d) => {
+    try {
+      return JSON.parse(localStorage.getItem(k)) ?? d;
+    } catch (e) {
+      return d;
+    }
+  };
+  const $ = (id) => document.getElementById(id);
+  const esc = (t) =>
+    String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-  const itens = prof.conteudos;
+  const id = Number(new URLSearchParams(location.search).get("id"));
+  const u = ls("usuario", {}) || {};
+  const meus = ls("cursosAluno_v2", []);
+  const meu = meus.find((c) => c.id === id);
+  const prof = ls("cursos", []).find((c) => c.id === id);
+
+  // Curso inexistente ou sem matrícula: volta para a lista.
+  if (!meu) return void location.replace("aluno-meus-cursos.html");
+
+  $("tituloCurso").textContent = meu.nome;
+  $("subtituloCurso").textContent = [meu.professor, meu.cargaHoraria ? meu.cargaHoraria + "h" : ""].filter(Boolean).join(" · ");
+
+  const itens = (prof && prof.conteudos) || [];
+
+  // Matriculado, mas o professor ainda não publicou conteúdos.
+  if (!itens.length) {
+    $("aulaConteudo").hidden = true;
+    $("aulaVazio").hidden = false;
+    return;
+  }
+
+  const TIPOS = {
+    video: ["Vídeo", "fa-circle-play"],
+    pdf: ["PDF", "fa-file-pdf"],
+    ebook: ["E-book", "fa-book"],
+    slide: ["Slides", "fa-display"],
+    mapa: ["Mapa mental", "fa-sitemap"],
+    quiz: ["Quiz", "fa-circle-question"],
+    caso: ["Estudo de caso", "fa-stethoscope"],
+    material: ["Material complementar", "fa-folder-open"],
+    link: ["Link externo", "fa-link"],
+  };
+  const tipoDe = (it) => TIPOS[it.tipo] || ["Conteúdo", "fa-file"];
+
   const chave = `aulas_${u.email}_${id}`;
-  const feitas = new Set(JSON.parse(localStorage.getItem(chave) || "[]"));
-  const ICONES = { video: "🎬", pdf: "📄", ebook: "📘", slide: "📊", mapa: "🗺️", quiz: "📝", caso: "🩺", material: "📎", link: "🔗" };
+  const feitas = new Set(ls(chave, []).filter((i) => Number.isInteger(i) && i >= 0 && i < itens.length));
   let atual = Math.max(0, itens.findIndex((_, i) => !feitas.has(i)));
   let urlObj = null;
+  let versao = 0; // descarta aberturas antigas quando o aluno troca de conteúdo rápido
 
-  document.getElementById("tituloCurso").textContent = meu.nome;
+  /* ---------- Utilidades ---------- */
+  const urlSegura = (url) => {
+    try {
+      const p = new URL(url);
+      return /^https?:$/.test(p.protocol) ? p.href : null;
+    } catch (e) {
+      return null;
+    }
+  };
 
-  const youtube = (url) => { const m = String(url).match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/); return m && m[1]; };
+  function incorporar(url) {
+    const yt = String(url).match(/(?:youtu\.be\/|v=|embed\/)([\w-]{11})/);
+    if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+    const vm = String(url).match(/vimeo\.com\/(?:video\/)?(\d+)/);
+    if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
+    return null;
+  }
 
+  function nomeExibido(it) {
+    if (it.tipo !== "link") return it.nome;
+    const url = urlSegura(it.nome);
+    if (!url) return "Link inválido";
+    return incorporar(url) ? "Vídeo online" : new URL(url).hostname.replace(/^www\./, "");
+  }
+
+  const chavePos = (i) => `aulaPos_${u.email}_${id}_${i}`;
+
+  function salvarCurso() {
+    localStorage.setItem("cursosAluno_v2", JSON.stringify(meus));
+  }
+
+  /* ---------- Progresso e lista ---------- */
   function progresso() {
     const p = Math.round((feitas.size / itens.length) * 100);
-    document.getElementById("barraAula").style.width = p + "%";
-    document.getElementById("textoProgresso").textContent = `${feitas.size} de ${itens.length} conteúdos concluídos · ${p}%`;
+    $("barraAula").style.width = p + "%";
+    $("textoProgresso").textContent = `${feitas.size} de ${itens.length} conteúdos concluídos · ${p}%`;
+    $("aulaFim").hidden = p < 100;
+    if (p >= 100) {
+      const cert = meu.certificado !== "Sem Certificado";
+      $("aulaFimLink").hidden = !cert;
+      $("aulaFimLink").href = "./certificados.html?curso=" + id;
+      $("aulaFimTexto").textContent = cert ? "Seu certificado já está disponível." : "Revise os conteúdos quando quiser.";
+    }
     return p;
   }
 
   function lista() {
-    document.getElementById("listaAulas").innerHTML = itens.map((it, i) =>
-      `<div class="item-aula ${i === atual ? "ativa" : ""} ${feitas.has(i) ? "feita" : ""}" data-i="${i}"><span class="ck">${feitas.has(i) ? "✓" : ""}</span>${ICONES[it.tipo] || "📎"} ${it.nome}</div>`).join("");
+    $("listaAulas").innerHTML = itens
+      .map((it, i) => {
+        const [, icone] = tipoDe(it);
+        return `<button type="button" class="item-aula ${i === atual ? "ativa" : ""} ${feitas.has(i) ? "feita" : ""}" data-i="${i}">
+          <span class="ck">${feitas.has(i) ? '<i class="fa-solid fa-check"></i>' : ""}</span>
+          <i class="tp fa-solid ${icone}"></i>
+          <span class="nm">${esc(nomeExibido(it))}</span>
+        </button>`;
+      })
+      .join("");
+  }
+
+  function botoes() {
+    const feita = feitas.has(atual);
+    const b = $("btnConcluir");
+    b.disabled = feita;
+    b.classList.toggle("feita", feita);
+    b.querySelector("span").textContent = feita ? "Concluída" : "Marcar como concluída";
+    b.querySelector("i").className = "fa-solid fa-check";
+    $("btnAnterior").disabled = atual === 0;
+    $("btnProxima").disabled = atual === itens.length - 1;
+  }
+
+  /* ---------- Palco ---------- */
+  function mensagem(palco, icone, texto, link) {
+    palco.innerHTML = `<div class="palco-msg"><i class="fa-solid ${icone}"></i><p>${esc(texto)}</p>${link || ""}</div>`;
   }
 
   async function abrir(i) {
     atual = i;
-    const it = itens[i], palco = document.getElementById("palco");
-    if (urlObj) { URL.revokeObjectURL(urlObj); urlObj = null; }
-    document.getElementById("tituloAula").textContent = `${i + 1}. ${it.nome}`;
+    const minha = ++versao;
+    const it = itens[i];
+    const palco = $("palco");
+
+    if (urlObj) {
+      URL.revokeObjectURL(urlObj);
+      urlObj = null;
+    }
+    $("tituloAula").textContent = `${i + 1}. ${nomeExibido(it)}`;
+    $("tipoAula").textContent = tipoDe(it)[0];
     palco.innerHTML = "";
+    lista();
+    botoes();
+
+    // Marca o curso como iniciado e atualiza o "último acesso".
+    meu.ultimoAcesso = new Date().toISOString();
+    if (meu.status === "nao-iniciado") meu.status = "andamento";
+    salvarCurso();
+
     if (it.arquivoId) {
-      const blob = await HSVideo.obter(it.arquivoId);
-      if (!blob) { palco.textContent = "Arquivo não encontrado neste navegador."; }
-      else {
-        urlObj = URL.createObjectURL(blob);
-        if ((it.mime || "").startsWith("video/")) {
-          const v = document.createElement("video");
-          v.src = urlObj; v.controls = true; v.controlsList = "nodownload";
-          v.addEventListener("ended", () => concluir(i, true));
-          palco.appendChild(v);
-        } else if (it.mime === "application/pdf") {
-          palco.innerHTML = `<iframe src="${urlObj}"></iframe>`;
-        } else {
-          palco.innerHTML = `<a href="${urlObj}" download="${it.nome}">Baixar ${it.nome}</a>`;
-        }
+      let blob = null;
+      try {
+        blob = await HSVideo.obter(it.arquivoId);
+      } catch (e) {
+        blob = null;
+      }
+      if (minha !== versao) return;
+      if (!blob) return mensagem(palco, "fa-triangle-exclamation", "Arquivo não encontrado neste navegador. Ele foi enviado de outro computador ou navegador.");
+
+      urlObj = URL.createObjectURL(blob);
+      const mime = it.mime || blob.type || "";
+      if (mime.startsWith("video/")) {
+        const v = document.createElement("video");
+        v.src = urlObj;
+        v.controls = true;
+        v.controlsList = "nodownload";
+        v.preload = "metadata";
+        const pos = Number(localStorage.getItem(chavePos(i))) || 0;
+        v.addEventListener("loadedmetadata", () => {
+          if (pos > 3 && pos < v.duration - 3) v.currentTime = pos;
+        });
+        let ultimo = 0;
+        v.addEventListener("timeupdate", () => {
+          if (v.currentTime - ultimo > 5 || v.currentTime < ultimo) {
+            ultimo = v.currentTime;
+            localStorage.setItem(chavePos(i), String(Math.floor(v.currentTime)));
+          }
+        });
+        v.addEventListener("ended", () => {
+          localStorage.removeItem(chavePos(i));
+          concluir(i, true);
+        });
+        palco.appendChild(v);
+      } else if (mime === "application/pdf") {
+        const f = document.createElement("iframe");
+        f.src = urlObj;
+        f.title = it.nome;
+        palco.appendChild(f);
+      } else if (mime.startsWith("image/")) {
+        const img = document.createElement("img");
+        img.src = urlObj;
+        img.alt = it.nome;
+        palco.appendChild(img);
+      } else {
+        mensagem(palco, tipoDe(it)[1], "Este conteúdo é um arquivo para download.");
+        const a = document.createElement("a");
+        a.href = urlObj;
+        a.download = it.nome;
+        a.textContent = "Baixar " + it.nome;
+        palco.querySelector(".palco-msg").appendChild(a);
       }
     } else if (it.tipo === "link") {
-      const yt = youtube(it.nome);
-      palco.innerHTML = yt
-        ? `<iframe src="https://www.youtube.com/embed/${yt}" allowfullscreen></iframe>`
-        : `<a href="${it.nome}" target="_blank" rel="noopener">Abrir material externo</a>`;
+      const url = urlSegura(it.nome);
+      const emb = url && incorporar(url);
+      if (emb) {
+        const f = document.createElement("iframe");
+        f.src = emb;
+        f.title = "Vídeo da aula";
+        f.allow = "accelerometer; autoplay; encrypted-media; picture-in-picture";
+        f.allowFullscreen = true;
+        palco.appendChild(f);
+      } else if (url) {
+        mensagem(palco, "fa-link", "Este material está em um site externo.", `<a href="${esc(url)}" target="_blank" rel="noopener noreferrer">Abrir material externo</a>`);
+      } else {
+        mensagem(palco, "fa-triangle-exclamation", "O endereço deste link não é válido.");
+      }
     } else {
-      palco.innerHTML = `<div style="padding:30px">${ICONES[it.tipo] || ""} ${it.tipo === "quiz" || it.tipo === "caso" ? "Atividade avaliativa: ao finalizar, marque como concluída." : "Conteúdo complementar."}</div>`;
+      mensagem(
+        palco,
+        tipoDe(it)[1],
+        it.tipo === "quiz" || it.tipo === "caso" ? "Atividade avaliativa: ao finalizar, marque como concluída." : "Conteúdo complementar.",
+      );
     }
-    lista();
   }
 
+  /* ---------- Conclusão ---------- */
   function concluir(i, auto) {
     if (!feitas.has(i)) {
       feitas.add(i);
@@ -70,7 +231,7 @@
       meu.progresso = p;
       meu.ultimoAcesso = new Date().toISOString();
       meu.status = p >= 100 ? "concluido" : "andamento";
-      localStorage.setItem("cursosAluno_v2", JSON.stringify(meus));
+      salvarCurso();
       HS.gam.xp(15, "Conteúdo concluído");
       if (p >= 100) {
         HS.gam.xp(100, "Curso concluído");
@@ -80,14 +241,24 @@
       }
     }
     lista();
-    if (auto && i + 1 < itens.length) setTimeout(() => abrir(i + 1), 1500);
+    botoes();
+    // Segue para o próximo conteúdo, a menos que o aluno já tenha trocado de aula.
+    if (auto && atual === i && i + 1 < itens.length) {
+      setTimeout(() => {
+        if (atual === i) abrir(i + 1);
+      }, 1200);
+    }
   }
 
-  document.getElementById("listaAulas").addEventListener("click", (e) => {
+  /* ---------- Eventos ---------- */
+  $("listaAulas").addEventListener("click", (e) => {
     const el = e.target.closest(".item-aula");
     if (el) abrir(Number(el.dataset.i));
   });
-  document.getElementById("btnConcluir").addEventListener("click", () => concluir(atual, true));
+  $("btnConcluir").addEventListener("click", () => concluir(atual, true));
+  $("btnAnterior").addEventListener("click", () => atual > 0 && abrir(atual - 1));
+  $("btnProxima").addEventListener("click", () => atual < itens.length - 1 && abrir(atual + 1));
+
   progresso();
   abrir(atual);
 })();

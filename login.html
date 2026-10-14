@@ -103,8 +103,84 @@
           <p id="erroLogin" class="erro-login"></p>
 
           <button id="btnEntrar" onclick="entrar()">Entrar</button>
+
+          <p class="criar-conta" id="linkCriarConta">
+            Não tem uma conta? <a href="#">Cadastre-se</a>
+          </p>
         </div>
 
+      </div>
+    </div>
+
+    <!-- ===== MODAL DE CADASTRO ===== -->
+    <div class="modal-cadastro" id="modalCadastro" role="dialog" aria-modal="true">
+      <div class="cadastro-box">
+        <button type="button" class="fechar-modal" id="btnFecharCadastro" aria-label="Fechar">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+
+        <div class="cabecalho-cadastro">
+          <h2>Criar conta</h2>
+          <p>Escolha seu perfil e preencha seus dados</p>
+        </div>
+
+        <div class="seletor-perfil seletor-cadastro">
+          <button type="button" class="opcao-perfil" data-tipo="professor">
+            <i class="fa-solid fa-chalkboard-user"></i>
+            <span>Professor</span>
+            <small>Quero publicar cursos</small>
+          </button>
+
+          <button type="button" class="opcao-perfil" data-tipo="aluno">
+            <i class="fa-solid fa-graduation-cap"></i>
+            <span>Aluno</span>
+            <small>Quero estudar</small>
+          </button>
+        </div>
+
+        <div class="input-box">
+          <label>Nome completo</label>
+          <div class="input">
+            <i class="fa-regular fa-user"></i>
+            <input type="text" id="nomeCadastro" placeholder="Seu nome completo" autocomplete="name" />
+          </div>
+        </div>
+
+        <div class="input-box">
+          <label>E-mail</label>
+          <div class="input">
+            <i class="fa-regular fa-envelope"></i>
+            <input type="email" id="emailCadastro" placeholder="seuemail@exemplo.com" autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="input-box">
+          <label>Senha</label>
+          <div class="input">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="senhaCadastro" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" />
+            <button type="button" class="toggle-senha" data-alvo="senhaCadastro" aria-label="Mostrar senha">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="input-box">
+          <label>Confirmar senha</label>
+          <div class="input">
+            <i class="fa-solid fa-lock"></i>
+            <input type="password" id="confirmarCadastro" placeholder="Repita a senha" autocomplete="new-password" />
+            <button type="button" class="toggle-senha" data-alvo="confirmarCadastro" aria-label="Mostrar senha">
+              <i class="fa-regular fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <p id="erroCadastro" class="erro-login"></p>
+
+        <button id="btnCriarConta" onclick="cadastrar()">Criar conta</button>
+
+        <p class="link-entrar">Já tem uma conta? <a href="#" id="linkVoltarLogin">Entrar</a></p>
       </div>
     </div>
 
@@ -172,57 +248,235 @@
       function entrar() {
         if (!tipoSelecionado) return;
 
-        if (!emailLogin.value.trim() || !senhaLogin.value.trim()) {
+        const email = emailLogin.value.trim().toLowerCase();
+        const senha = senhaLogin.value;
+
+        if (!email || !senha) {
           erroLogin.textContent = "Preencha e-mail e senha para continuar.";
           return;
         }
 
         erroLogin.textContent = "";
 
-        const salvo = JSON.parse(localStorage.getItem("usuario") || "null");
-        if (salvo && salvo.tipo === tipoSelecionado && salvo.email === emailLogin.value.trim()) {
-          localStorage.setItem("usuarioLogado", "true");
-          window.location.href = tipoSelecionado === "professor" ? "dashboard.html" : "aluno-inicio.html";
+        const lista = usuariosRegistrados();
+        const encontrado = lista.find(
+          (u) => u.email === email && u.tipo === tipoSelecionado,
+        );
+
+        if (!encontrado) {
+          erroLogin.textContent =
+            "E-mail não encontrado para este perfil. Crie sua conta abaixo.";
           return;
         }
 
-        if (tipoSelecionado === "professor") {
-          const usuarioDemo = {
-            nome: "Professor Demo",
-            email: emailLogin.value.trim(),
-            foto: "./img/professor.png",
-            tipo: "professor",
-            online: true,
-          };
-
-          localStorage.setItem("usuario", JSON.stringify(usuarioDemo));
-          localStorage.setItem("usuarioLogado", "true");
-
-          window.location.href = "dashboard.html";
-        } else {
-          const usuarioDemo = {
-            nome: "Aluno Demo",
-            email: emailLogin.value.trim(),
-            foto:
-              "https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff",
-            tipo: "aluno",
-            online: true,
-          };
-
-          localStorage.setItem("usuario", JSON.stringify(usuarioDemo));
-          localStorage.setItem("usuarioLogado", "true");
-
-          window.location.href = "aluno-inicio.html";
+        if (encontrado.senha !== senha) {
+          erroLogin.textContent = "Senha incorreta. Tente novamente.";
+          return;
         }
+
+        const usuario = {
+          nome: encontrado.nome,
+          email: encontrado.email,
+          senha: encontrado.senha,
+          foto:
+            encontrado.foto ||
+            (encontrado.tipo === "professor"
+              ? "./img/professor.png"
+              : gerarFoto(encontrado.nome)),
+          tipo: encontrado.tipo,
+          online: true,
+        };
+
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+        localStorage.setItem("usuarioLogado", "true");
+
+        window.location.href =
+          tipoSelecionado === "professor"
+            ? "dashboard.html"
+            : "aluno-inicio.html";
       }
+
+      emailLogin.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") entrar();
+      });
 
       senhaLogin.addEventListener("keydown", (e) => {
         if (e.key === "Enter") entrar();
       });
 
+      // ===== Cadastro =====
+      const modalCadastro = document.getElementById("modalCadastro");
+      const opcoesCadastro = modalCadastro.querySelectorAll(".opcao-perfil");
+      const nomeCadastro = document.getElementById("nomeCadastro");
+      const emailCadastro = document.getElementById("emailCadastro");
+      const senhaCadastro = document.getElementById("senhaCadastro");
+      const confirmarCadastro = document.getElementById("confirmarCadastro");
+      const erroCadastro = document.getElementById("erroCadastro");
+      let tipoCadastro = null;
+
+      function usuariosRegistrados() {
+        return JSON.parse(localStorage.getItem("usuarios") || "[]");
+      }
+
+      // Compatibilidade: migra o usuário salvo isoladamente para a lista
+      (function migrarUsuarioAntigo() {
+        const antigo = JSON.parse(localStorage.getItem("usuario") || "null");
+        if (!antigo || !antigo.email) return;
+        const lista = usuariosRegistrados();
+        if (!lista.some((u) => u.email === antigo.email && u.tipo === antigo.tipo)) {
+          lista.push({
+            nome: antigo.nome,
+            email: antigo.email,
+            senha: antigo.senha || "",
+            tipo: antigo.tipo,
+            foto: antigo.foto || "",
+          });
+          localStorage.setItem("usuarios", JSON.stringify(lista));
+        }
+      })();
+
+      function gerarFoto(nome) {
+        return (
+          "https://ui-avatars.com/api/?name=" +
+          encodeURIComponent(nome || "U") +
+          "&background=163b97&color=fff"
+        );
+      }
+
+      function abrirCadastro(tipo) {
+        erroCadastro.textContent = "";
+        if (tipo) selecionarTipoCadastro(tipo);
+        modalCadastro.classList.add("ativo");
+        document.body.style.overflow = "hidden";
+      }
+
+      function fecharCadastro() {
+        modalCadastro.classList.remove("ativo");
+        document.body.style.overflow = "";
+        erroCadastro.textContent = "";
+      }
+
+      function selecionarTipoCadastro(tipo) {
+        tipoCadastro = tipo;
+        opcoesCadastro.forEach((o) =>
+          o.classList.toggle("selecionada", o.dataset.tipo === tipo),
+        );
+      }
+
+      opcoesCadastro.forEach((opcao) => {
+        opcao.addEventListener("click", () => selecionarTipoCadastro(opcao.dataset.tipo));
+      });
+
+      function cadastrar() {
+        const nome = nomeCadastro.value.trim();
+        const email = emailCadastro.value.trim().toLowerCase();
+        const senha = senhaCadastro.value;
+        const confirmar = confirmarCadastro.value;
+
+        erroCadastro.textContent = "";
+
+        if (!tipoCadastro) {
+          erroCadastro.textContent = "Escolha seu perfil: Professor ou Aluno.";
+          return;
+        }
+        if (!nome) {
+          erroCadastro.textContent = "Informe seu nome completo.";
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          erroCadastro.textContent = "Informe um e-mail válido.";
+          return;
+        }
+        if (senha.length < 6) {
+          erroCadastro.textContent = "A senha deve ter no mínimo 6 caracteres.";
+          return;
+        }
+        if (senha !== confirmar) {
+          erroCadastro.textContent = "As senhas não coincidem.";
+          return;
+        }
+
+        const lista = usuariosRegistrados();
+        if (lista.some((u) => u.email === email)) {
+          erroCadastro.textContent =
+            "Este e-mail já está cadastrado. Faça login.";
+          return;
+        }
+
+        lista.push({ nome, email, senha, tipo: tipoCadastro });
+        localStorage.setItem("usuarios", JSON.stringify(lista));
+
+        const usuario = {
+          nome,
+          email,
+          senha,
+          foto:
+            tipoCadastro === "professor"
+              ? "./img/professor.png"
+              : gerarFoto(nome),
+          tipo: tipoCadastro,
+          online: true,
+        };
+
+        localStorage.setItem("usuario", JSON.stringify(usuario));
+        localStorage.setItem("usuarioLogado", "true");
+
+        window.location.href =
+          tipoCadastro === "professor"
+            ? "dashboard.html"
+            : "aluno-inicio.html";
+      }
+
+      confirmarCadastro.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") cadastrar();
+      });
+
+      // Mostrar / ocultar senha
+      document.querySelectorAll(".toggle-senha").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const input = document.getElementById(btn.dataset.alvo);
+          const mostrar = input.type === "password";
+          input.type = mostrar ? "text" : "password";
+          btn.querySelector("i").className = mostrar
+            ? "fa-regular fa-eye-slash"
+            : "fa-regular fa-eye";
+        });
+      });
+
+      // Abrir / fechar modal
+      document
+        .getElementById("linkCriarConta")
+        .addEventListener("click", () => abrirCadastro(tipoSelecionado));
+
+      document
+        .getElementById("btnFecharCadastro")
+        .addEventListener("click", fecharCadastro);
+
+      document
+        .getElementById("linkVoltarLogin")
+        .addEventListener("click", (e) => {
+          e.preventDefault();
+          fecharCadastro();
+        });
+
+      modalCadastro.addEventListener("click", (e) => {
+        if (e.target === modalCadastro) fecharCadastro();
+      });
+
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && modalCadastro.classList.contains("ativo"))
+          fecharCadastro();
+      });
+
       // Vindo da página inicial (?perfil=aluno | professor): já escolhe o perfil.
-      const perfilUrl = new URLSearchParams(location.search).get("perfil");
-      if (dadosPerfil[perfilUrl]) abrirEtapaLogin(perfilUrl);
+      // (?cadastro=1): abre direto o modal de cadastro.
+      const params = new URLSearchParams(location.search);
+      const perfilUrl = params.get("perfil");
+      if (params.get("cadastro") === "1") {
+        abrirCadastro(dadosPerfil[perfilUrl] ? perfilUrl : null);
+      } else if (dadosPerfil[perfilUrl]) {
+        abrirEtapaLogin(perfilUrl);
+      }
     </script>
 
     <script src="./js/user.js"></script>

@@ -37,14 +37,16 @@ O projeto foi inicialmente desenvolvido no Figma e posteriormente implementado u
 
 ## Equipe
 
-- Valter
-- Lethicia Hikary
-- Raphael
-- Luís
-- Lucas
-- Letícia Negreiros
-- Samuel
-- Victor
+- Paulo Vitor
+- Sophia
+- Rafael
+- Jayme
+- Maria Eduarda
+- Arthur
+- Sarah
+- Anna Luisa
+- Jhony
+- Vinicius
 
 ## Residência Porto Digital
 

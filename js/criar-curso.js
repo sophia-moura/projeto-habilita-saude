@@ -2,7 +2,7 @@ let conteudosCurso = [];
 
 const IMG_PADRAO =
   "data:image/svg+xml;utf8," +
-  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240"><rect width="100%" height="100%" fill="#163b97"/><text x="50%" y="50%" fill="#fff" font-family="sans-serif" font-size="22" text-anchor="middle">Habilita Saúde</text></svg>');
+  encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240"><rect width="100%" height="100%" fill="#0055c3"/><text x="50%" y="50%" fill="#fff" font-family="sans-serif" font-size="22" text-anchor="middle">Habilita Saúde</text></svg>');
 const usuarioAtual = JSON.parse(localStorage.getItem("usuario") || "{}");
 
 function lerPreco() {
@@ -304,7 +304,7 @@ form.addEventListener("submit", (e) => {
     HS.notificar("Curadoria: ajustes necessários", `"${nomeCurso.value}": ${cur.parecer}`, "alerta", "professor");
     alert("Relatório de curadoria:\n\n" + cur.parecer + "\n\n" + cur.linhas.join("\n"));
   }
-  window.location.href = "meus-cursos.html";
+  window.location.href = "professor-meus-cursos.html";
 });
 
 const btnRascunho = document.getElementById("btnRascunho");
@@ -366,7 +366,7 @@ if (btnRascunho) {
 
     alert("Rascunho salvo!");
 
-    window.location.href = "meus-cursos.html";
+    window.location.href = "professor-meus-cursos.html";
   });
 }
 
@@ -395,63 +395,95 @@ cardsConteudo.forEach((card) => {
       return;
     }
 
+    if (tipoAtual === "quiz" || tipoAtual === "texto") {
+      HSEditor.abrir(tipoAtual, null, (item) => {
+        conteudosCurso.push(item);
+        renderizarConteudos();
+      });
+      return;
+    }
+
     inputConteudo.click();
   });
 });
 
+const escHtml = (t) =>
+  String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+const ICONES_CONTEUDO = {
+  video: "fa-video",
+  pdf: "fa-file-pdf",
+  ebook: "fa-book",
+  slide: "fa-display",
+  mapa: "fa-sitemap",
+  quiz: "fa-circle-question",
+  caso: "fa-stethoscope",
+  material: "fa-folder-open",
+  link: "fa-link",
+  texto: "fa-file-lines",
+};
+
+const ROTULOS_CONTEUDO = {
+  video: "Vídeo",
+  pdf: "PDF",
+  ebook: "E-book",
+  slide: "Slides",
+  mapa: "Mapa mental",
+  quiz: "Quiz",
+  caso: "Estudo de caso",
+  material: "Material",
+  link: "Link externo",
+  texto: "Lição em texto",
+};
+
+function detalheConteudo(item) {
+  let r = ROTULOS_CONTEUDO[item.tipo] || item.tipo;
+  if (item.tipo === "quiz" && Array.isArray(item.perguntas)) {
+    r += ` · ${item.perguntas.length} ${item.perguntas.length === 1 ? "pergunta" : "perguntas"} · nota mínima ${item.notaMinima || 70}%`;
+  }
+  return r;
+}
+
 function renderizarConteudos() {
   const lista = document.getElementById("listaConteudos");
 
-  lista.innerHTML = "";
-
-  conteudosCurso.forEach((item, index) => {
-    let icone = "fa-file";
-
-    if (item.tipo === "video") icone = "fa-video";
-
-    if (item.tipo === "pdf") icone = "fa-file-pdf";
-
-    if (item.tipo === "ebook") icone = "fa-book";
-
-    if (item.tipo === "slide") icone = "fa-display";
-
-    if (item.tipo === "mapa") icone = "fa-sitemap";
-
-    if (item.tipo === "quiz") icone = "fa-circle-question";
-
-    if (item.tipo === "caso") icone = "fa-stethoscope";
-
-    if (item.tipo === "material") icone = "fa-folder-open";
-
-    if (item.tipo === "link") icone = "fa-link";
-
-    lista.innerHTML += `
+  lista.innerHTML = conteudosCurso
+    .map((item, index) => {
+      const icone = ICONES_CONTEUDO[item.tipo] || "fa-file";
+      const editavel = item.tipo === "texto" || (item.tipo === "quiz" && Array.isArray(item.perguntas));
+      const titulo =
+        item.tipo === "link"
+          ? `<a href="${escHtml(item.nome)}" target="_blank" rel="noopener noreferrer">${escHtml(item.nome)}</a>`
+          : `<strong>${escHtml(item.nome)}</strong>`;
+      return `
       <div class="item-conteudo">
-
         <div class="info-conteudo">
           <i class="fa-solid ${icone}"></i>
-
           <div>
-            ${
-              item.tipo === "link"
-                ? `<a href="${item.nome}" target="_blank">${item.nome}</a>`
-                : `<strong>${item.nome}</strong>`
-            }
-            <small>${item.tipo}</small>
+            ${titulo}
+            <small>${escHtml(detalheConteudo(item))}</small>
           </div>
         </div>
-
-        <button
-          type="button"
-          onclick="removerConteudo(${index})"
-        >
-          <i class="fa-solid fa-trash"></i>
-        </button>
-
-      </div>
-    `;
-  });
+        <div class="acoes-item-conteudo">
+          ${editavel ? `<button type="button" data-editar="${index}" aria-label="Editar conteúdo"><i class="fa-solid fa-pen"></i></button>` : ""}
+          <button type="button" onclick="removerConteudo(${index})" aria-label="Remover conteúdo"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>`;
+    })
+    .join("");
 }
+
+document.getElementById("listaConteudos").addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-editar]");
+  if (!btn) return;
+  const index = Number(btn.dataset.editar);
+  const item = conteudosCurso[index];
+  if (!item) return;
+  HSEditor.abrir(item.tipo, item, (novo) => {
+    conteudosCurso[index] = novo;
+    renderizarConteudos();
+  });
+});
 
 function removerConteudo(index) {
   conteudosCurso.splice(index, 1);

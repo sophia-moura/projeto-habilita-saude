@@ -206,7 +206,7 @@
   renderizarCertificados();
   renderizarProximos();
 
-  // Vindo de "Meus Cursos" (?curso=ID): rola até o certificado e o destaca.
+  // Vindo de "Meus cursos" (?curso=ID): rola até o certificado e o destaca.
   const alvo = new URLSearchParams(location.search).get("curso");
   const cartaoAlvo = alvo && $("cert-" + Number(alvo));
   if (cartaoAlvo) {

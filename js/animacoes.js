@@ -3,10 +3,10 @@
 
   function logos() {
     document.querySelectorAll(".logo-img,.logo-h").forEach((img) => {
-      if (img.parentElement.classList.contains("logo-wrap")) return;
+      if (img.parentElement.classList.contains("logo-wrap") || img.closest(".logo-side")) return;
       const w = document.createElement("span");
       w.className = "logo-wrap";
-      w.style.setProperty("--m", `url("${img.getAttribute("src")}")`);
+      w.style.setProperty("--m", `url("${img.src}")`);
       img.replaceWith(w);
       w.appendChild(img);
     });
@@ -119,7 +119,7 @@
     c.width = innerWidth; c.height = innerHeight;
     document.body.appendChild(c);
     const g = c.getContext("2d");
-    const cores = ["#163b97", "#4f7cff", "#3aa935", "#7ac943", "#ffd23f", "#ffffff"];
+    const cores = ["#0055c3", "#4f7cff", "#3aa935", "#7ac943", "#ffd23f", "#ffffff"];
     const ps = Array.from({ length: 160 }, () => ({
       x: innerWidth / 2, y: innerHeight * 0.35,
       vx: (Math.random() - 0.5) * 16, vy: Math.random() * -14 - 3,

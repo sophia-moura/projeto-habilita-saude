@@ -65,8 +65,8 @@ function criarGraficoCursos() {
         {
           label: "Inscrições",
           data: cursos.map((c) => c.alunos || 0),
-          borderColor: "#163b97",
-          backgroundColor: "#163b97",
+          borderColor: "#0055c3",
+          backgroundColor: "#0055c3",
           tension: 0.4,
           fill: false,
         },
@@ -101,7 +101,7 @@ function criarGraficoStatus() {
         {
           data: [concluidas, atrasadas, pendentes],
 
-          backgroundColor: ["#22c55e", "#f59e0b", "#163b97"],
+          backgroundColor: ["#3e9c2d", "#b7791f", "#0055c3"],
 
           borderWidth: 0,
         },
@@ -181,7 +181,7 @@ function renderRanking() {
 }
 
 document.getElementById("btnRelatorio").addEventListener("click", () => {
-  HS.notificar("Relatório Gerado", "Relatório criado com sucesso", "relatorio", "professor");
+  HS.notificar("Relatório gerado", "Relatório criado com sucesso", "relatorio", "professor");
 
   alert("Relatório gerado com sucesso!");
 });

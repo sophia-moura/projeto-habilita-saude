@@ -44,11 +44,11 @@
     <style>
       .gam{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin:20px 0}
       .gam-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-      .gam-card h3{margin:0 0 12px;font-size:15px;color:#163b97}
+      .gam-card h3{margin:0 0 12px;font-size:15px;color:#0055c3}
       .gam-nivel{display:flex;align-items:center;gap:14px}
-      .gam-nivel b{background:#163b97;color:#fff;border-radius:50%;width:56px;height:56px;display:grid;place-items:center;font-size:22px}
-      .gam-barra{height:10px;background:#e8edf7;border-radius:8px;overflow:hidden;margin-top:6px}
-      .gam-barra div{height:100%;background:linear-gradient(90deg,#4f7cff,#163b97)}
+      .gam-nivel b{background:#0055c3;color:#fff;border-radius:50%;width:56px;height:56px;display:grid;place-items:center;font-size:22px}
+      .gam-barra{height:10px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin-top:6px}
+      .gam-barra div{height:100%;background:linear-gradient(90deg,#4f7cff,#0055c3)}
       .gam-badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
       .gam-badge{text-align:center;padding:10px 6px;border-radius:12px;background:#f3f6fc;font-size:12px}
       .gam-badge span{display:block;font-size:26px}
@@ -68,7 +68,7 @@
       <div class="gam-card gam-rank">
         <h3>🏆 Alunos mais engajados</h3>
         ${alunos.length ? alunos.map((a, i) => `<div><span>${medalhas[i] || i + 1 + "º"} ${a.nome}</span><span>${a.xp} XP</span></div>`).join("") : "<small>Ainda não há alunos com XP.</small>"}
-        <small style="display:block;margin-top:10px;color:#6b7a99">Ganhe XP: curso publicado +50 · rascunho +10 · matrícula +10 · aluno concluiu +25 · conteúdo +5</small>
+        <small style="display:block;margin-top:10px;color:#718096">Ganhe XP: curso publicado +50 · rascunho +10 · matrícula +10 · aluno concluiu +25 · conteúdo +5</small>
       </div>
     </div>`;
 })();

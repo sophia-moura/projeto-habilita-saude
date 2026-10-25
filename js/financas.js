@@ -147,7 +147,7 @@ document
 
     const doc = new jsPDF();
 
-    doc.text("Relatório Financeiro", 20, 20);
+    doc.text("Relatório financeiro", 20, 20);
 
     doc.text(
       "Faturamento: " +

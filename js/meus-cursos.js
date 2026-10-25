@@ -150,7 +150,7 @@ function renderCursos(lista) {
 
         <div class="acoes">
 
-  <button onclick="event.stopPropagation();location.href='financas.html'">Ver Ganhos</button>
+  <button onclick="event.stopPropagation();location.href='financas.html'">Ver ganhos</button>
 
   <button
     class="btn-editar"
@@ -333,7 +333,7 @@ document.addEventListener("click", (e) => {
   localStorage.setItem("cursos", JSON.stringify(cursos));
 
   filtroCarga.innerHTML =
-    '<option value="Todas">Todas Cargas Horárias</option>';
+    '<option value="Todas">Todas as cargas horárias</option>';
 
   filtroPublico.innerHTML = '<option value="Todos">Todos os Públicos</option>';
 

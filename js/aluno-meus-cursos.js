@@ -216,8 +216,7 @@ listaCursos.addEventListener("click", (e) => {
   if (!btn) return;
   const curso = cursos.find((c) => c.id === Number(btn.dataset.id));
   if (!curso) return;
-  const prof = JSON.parse(localStorage.getItem("cursos") || "[]").find((c) => c.id === curso.id);
-  if (prof && (prof.conteudos || []).length) { location.href = "aula.html?id=" + curso.id; return; }
+  if (HS.conteudosDoCurso(curso.id).length) { location.href = "aula.html?id=" + curso.id; return; }
   if (curso.status === "concluido") return;
 
   curso.progresso = Math.min(100, curso.progresso + 20);

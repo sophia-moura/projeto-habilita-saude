@@ -184,7 +184,7 @@ salvarTicket.addEventListener("click", () => {
   });
 
   criarNotificacao(
-  "Novo Ticket Criado",
+  "Novo ticket criado",
   titulo,
   "ticket"
 );

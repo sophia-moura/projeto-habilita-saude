@@ -177,7 +177,7 @@ function renderizarUsuariosDashboard() {
     lista.innerHTML += `
       <div class="usuario-dashboard">
         <img
-          src="${usuario.foto || "https://ui-avatars.com/api/?background=163b97&color=fff&name=" + encodeURIComponent(usuario.nome)}"
+          src="${usuario.foto || "https://ui-avatars.com/api/?background=0055c3&color=fff&name=" + encodeURIComponent(usuario.nome)}"
           alt="${usuario.nome}"
         >
 
@@ -274,7 +274,7 @@ new Chart(ctx, {
         beginAtZero: true,
 
         grid: {
-          color: "#edf1f7",
+          color: "#f7f9fa",
         },
 
         border: {

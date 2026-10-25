@@ -15,8 +15,7 @@ function renderizarSaudacao() {
 
 // Abre a aula quando o professor já publicou conteúdos; senão, a lista de cursos.
 function urlCurso(id) {
-  const prof = (JSON.parse(localStorage.getItem("cursos") || "[]")).find((c) => c.id === id);
-  return prof && (prof.conteudos || []).length ? "./aula.html?id=" + id : "./aluno-meus-cursos.html";
+  return HS.conteudosDoCurso(id).length ? "./aula.html?id=" + id : "./aluno-meus-cursos.html";
 }
 
 function renderizarAtalhoContinuar() {
@@ -215,7 +214,7 @@ document.getElementById("listaRecomendados").addEventListener("click", (e) => {
   if (!btn) return;
   if (HS.matricular(Number(btn.dataset.matricular))) {
     HS.gam.xp(20, "Nova matrícula");
-    alert("Matrícula realizada! O curso já está em Meus Cursos.");
+    alert("Matrícula realizada! O curso já está em Meus cursos.");
     location.reload();
   }
 });

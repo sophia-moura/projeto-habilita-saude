@@ -4,12 +4,12 @@ const perguntasFaq = [
   {
     pergunta: "Como acesso os cursos em que estou matriculado?",
     resposta:
-      "Acesse o menu 'Meus Cursos' na barra lateral. Lá aparecem todos os cursos em andamento, concluídos e ainda não iniciados, com o percentual de progresso de cada um.",
+      "Acesse o menu 'Meus cursos' na barra lateral. Lá aparecem todos os cursos em andamento, concluídos e ainda não iniciados, com o percentual de progresso de cada um.",
   },
   {
     pergunta: "Como continuo um curso de onde parei?",
     resposta:
-      "Na página inicial há o atalho 'Continuar estudando', que leva direto ao último curso acessado. Você também pode usar o botão 'Continuar curso' na página Meus Cursos.",
+      "Na página inicial há o atalho 'Continuar estudando', que leva direto ao último curso acessado. Você também pode usar o botão 'Continuar curso' na página Meus cursos.",
   },
   {
     pergunta: "Como o meu progresso é calculado?",

@@ -6,8 +6,8 @@
   const logado = localStorage.getItem("usuarioLogado") === "true";
   const usuario = ls("usuario", null);
   const tipo = usuario && usuario.tipo;
-  const home = (t) => (t === "aluno" ? "aluno-inicio.html" : "dashboard.html");
-  const soProfessor = ["dashboard.html", "meus-cursos.html", "criar-curso.html", "financas.html", "usuarios.html", "relatorios.html", "suporte.html", "configuracoes-niveis.html"];
+  const home = (t) => (t === "aluno" ? "aluno-inicio.html" : "professor-inicio.html");
+  const soProfessor = ["professor-inicio.html", "professor-meus-cursos.html", "criar-curso.html", "financas.html", "usuarios.html", "relatorios.html", "professor-suporte.html", "configuracoes-niveis.html"];
   const soAluno = ["aluno-inicio.html", "aluno-meus-cursos.html", "aluno-suporte.html", "aula.html", "certificados.html"];
   const publicas = ["index.html", "login.html", "validar.html"];
 
@@ -19,36 +19,47 @@
     return void location.replace(home(tipo));
   }
 
-  if (tipo === "professor") {
-    const ul = document.querySelector(".sidebar ul");
-    if (ul && !ul.querySelector('a[href*="dashboard"]')) {
-      const itens = [["dashboard", "house", "Início"], ["meus-cursos", "book", "Meus Cursos"], ["financas", "chart-pie", "Finanças"], ["criar-curso", "plus", "Criar Curso"], ["usuarios", "users", "Usuários"], ["relatorios", "chart-line", "Relatórios"]];
-      ul.innerHTML = itens.map(([p, i, t]) => `<li><a href="./${p}.html"><i class="fa-solid fa-${i}"></i> ${t}</a></li>`).join("");
-    }
-    const h1 = document.querySelector(".topbar h1");
-    if (h1 && /ALUNO/i.test(h1.textContent)) h1.textContent = "PROFESSOR";
-  }
-  if (tipo === "aluno") {
-    document.querySelectorAll('a[href="suporte.html"]').forEach((a) => (a.href = "aluno-suporte.html"));
-  }
+  // Navegação canônica (Guia de Estilo v1.3): mesmos nomes e ícones nos dois perfis.
+  const NAV = {
+    aluno: [
+      ["aluno-inicio.html", "house", "Início"],
+      ["aluno-meus-cursos.html", "book", "Meus cursos"],
+      ["certificados.html", "award", "Certificados"],
+      ["aluno-suporte.html", "circle-question", "Suporte"],
+    ],
+    professor: [
+      ["professor-inicio.html", "house", "Início"],
+      ["professor-meus-cursos.html", "book", "Meus cursos"],
+      ["criar-curso.html", "plus", "Criar curso"],
+      ["usuarios.html", "users", "Usuários"],
+      ["relatorios.html", "chart-line", "Relatórios"],
+      ["financas.html", "chart-pie", "Finanças"],
+      ["configuracoes-niveis.html", "gear", "Configurações"],
+    ],
+  };
+  const ativoComo = { "aula.html": "aluno-meus-cursos.html" };
+  const suporteDe = (t) => (t === "aluno" ? "aluno-suporte.html" : "professor-suporte.html");
 
-  if (tipo === "professor") {
-    const ul2 = document.querySelector(".sidebar ul");
-    if (ul2 && !ul2.querySelector('a[href*="configuracoes-niveis"]'))
-      ul2.insertAdjacentHTML("beforeend", `<li><a href="./configuracoes-niveis.html" ${pagina === "configuracoes-niveis.html" ? 'class="menu-ativo"' : ""}><i class="fa-solid fa-sliders"></i> Níveis</a></li>`);
+  function montarShell() {
+    if (!tipo || !NAV[tipo]) return;
+    const ul = document.querySelector(".sidebar ul");
+    if (ul) {
+      const ativo = ativoComo[pagina] || pagina;
+      ul.innerHTML = NAV[tipo]
+        .map(([p, i, t]) => `<li><a href="./${p}"${p === ativo ? ' class="menu-ativo" aria-current="page"' : ""}><i class="fa-solid fa-${i}"></i> ${t}</a></li>`)
+        .join("");
+    }
+    const logoLink = document.querySelector(".logo-side a");
+    if (logoLink) logoLink.href = "./" + home(tipo);
+    const raiz = document.querySelector(".breadcrumb a:first-child");
+    if (raiz) raiz.href = "./" + home(tipo);
+    const tag = document.querySelector(".perfil-tag");
+    if (tag) tag.textContent = tipo === "aluno" ? "Aluno" : "Professor";
+    document.querySelectorAll(".link-suporte").forEach((a) => (a.href = "./" + suporteDe(tipo)));
   }
+  montarShell();
 
   if (!document.querySelector('link[rel="icon"]')) document.head.insertAdjacentHTML("beforeend", '<link rel="icon" href="./img/favicon.png">');
-  const logoSide = document.querySelector(".logo-side");
-  if (logoSide) {
-    document.head.insertAdjacentHTML("beforeend", `<style>
-      .logo-card{padding:0 4px;margin-bottom:8px;transition:transform .3s}
-      .logo-card:hover{transform:scale(1.04)}
-      .logo-h{height:58px;width:auto;display:block;filter:drop-shadow(0 2px 6px rgba(0,0,0,.25))}
-    </style>`);
-    logoSide.querySelectorAll("h2,p").forEach((e) => (e.style.display = "none"));
-    logoSide.insertAdjacentHTML("afterbegin", '<div class="logo-card"><img class="logo-h" src="./img/logo-claro.png" alt="Habilita Saúde"></div>');
-  }
 
   document.querySelectorAll('a[href$="criar-curso.html"]').forEach((a) =>
     a.addEventListener("click", () => localStorage.removeItem("cursoEditando")));
@@ -69,6 +80,13 @@
   const HS = {
     visivel,
     cursosPublicados: () => ls("cursos", []).filter((c) => c.status === "Publicado"),
+
+    // Conteúdos de um curso: os do professor ou, na falta deles, os de exemplo.
+    conteudosDoCurso(id) {
+      const prof = ls("cursos", []).find((c) => c.id === id);
+      if (prof && (prof.conteudos || []).length) return prof.conteudos;
+      return (window.HS_CONTEUDOS_DEMO || {})[id] || [];
+    },
 
     matricular(cursoId) {
       const cursos = ls("cursos", []);
@@ -126,9 +144,9 @@
         .bv-box{background:#fff;border-radius:22px;max-width:760px;width:100%;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.45);animation:bvP .6s cubic-bezier(.2,1.4,.4,1)}
         .bv-box video{width:100%;display:block;background:#000;aspect-ratio:16/9}
         .bv-rodape{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 22px;flex-wrap:wrap}
-        .bv-rodape h3{margin:0;color:#163b97;font-size:18px}.bv-rodape p{margin:2px 0 0;color:#6b7a99;font-size:13px}
+        .bv-rodape h3{margin:0;color:#0055c3;font-size:18px}.bv-rodape p{margin:2px 0 0;color:#718096;font-size:13px}
         .bv-rodape button{border:0;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:600}
-        #bvPular{background:#eef2fb;color:#163b97;margin-right:8px}#bvComecar{background:#163b97;color:#fff}
+        #bvPular{background:#eef2fb;color:#0055c3;margin-right:8px}#bvComecar{background:#0055c3;color:#fff}
         @keyframes bvF{from{opacity:0}}@keyframes bvP{from{opacity:0;transform:translateY(40px) scale(.9)}}
       </style>
       <div class="bv-box">
@@ -146,7 +164,7 @@
     ov.querySelector("#bvComecar").onclick = fechar;
     v.addEventListener("ended", () => setTimeout(fechar, 600));
   };
-  if (tipo && (pagina === "dashboard.html" || pagina === "aluno-inicio.html")) setTimeout(() => HS.boasVindas(false), 700);
+  if (tipo && (pagina === "professor-inicio.html" || pagina === "aluno-inicio.html")) setTimeout(() => HS.boasVindas(false), 700);
 
   const btnLogout = document.getElementById("btnLogout");
   if (btnLogout) btnLogout.addEventListener("click", () => {

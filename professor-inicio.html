@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Início — Habilita Saúde</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
+  </head>
+
+  <body class="app-shell">
+    <div id="overlay"></div>
+    <div class="container">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div>
+          <div class="logo-side">
+            <a href="./professor-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
+          </div>
+          <nav>
+            <ul>
+            <li>
+              <a href="./professor-inicio.html" class="menu-ativo" aria-current="page">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+            <li>
+              <a href="./professor-meus-cursos.html">
+                <i class="fa-solid fa-book"></i>
+                Meus cursos
+              </a>
+            </li>
+            <li>
+              <a href="./criar-curso.html">
+                <i class="fa-solid fa-plus"></i>
+                Criar curso
+              </a>
+            </li>
+            <li>
+              <a href="./usuarios.html">
+                <i class="fa-solid fa-users"></i>
+                Usuários
+              </a>
+            </li>
+            <li>
+              <a href="./relatorios.html">
+                <i class="fa-solid fa-chart-line"></i>
+                Relatórios
+              </a>
+            </li>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+            <li>
+              <a href="./configuracoes-niveis.html">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+              </a>
+            </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <nav class="breadcrumb" aria-label="Você está em">
+          <span class="atual" aria-current="page">Início</span>
+          </nav>
+
+          <div class="icons">
+            <span class="perfil-tag">Professor</span>
+            <a href="./professor-suporte.html" class="link-suporte" aria-label="Suporte">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <span id="nomeUsuarioTop"></span>
+            </a>
+          </div>
+        </header>
+
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Início</h1>
+            <p>Visão geral de métricas e turmas ativas.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-primary" href="./criar-curso.html"><i class="fa-solid fa-plus"></i> Criar curso</a>
+          </div>
+        </div>
+
+
+        <section id="painelGamificacaoProf"></section>
+
+        <section class="cards">
+          <div class="card">
+            <h3>Meus cursos</h3>
+
+            <div class="search">
+              <input type="text" placeholder="Buscar cursos..." />
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <div id="listaCursosDashboard"></div>
+          </div>
+
+          <div class="card">
+            <h3>Evolução de matrícula</h3>
+            <div class="grafico">
+              <div class="grafico-topo">
+                <button class="btn-ativo">Evolução de matrícula</button>
+
+                <select>
+                  <option>Últimos 6 meses</option>
+                  <option>Últimos 12 meses</option>
+                </select>
+              </div>
+
+              <div class="grafico">
+                <canvas id="graficoVendas"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3>Últimos usuários</h3>
+
+            <div id="listaUsuariosDashboard"></div>
+          </div>
+        </section>
+
+        <section class="bottom-cards">
+          <div class="ranking-card">
+            <h3>Cursos mais vendidos</h3>
+            <table>
+              <tbody id="rankingVendas"></tbody>
+            </table>
+          </div>
+
+          <div class="ranking-card">
+            <h3>Cursos mais bem avaliados</h3>
+
+            <table>
+              <tbody id="rankingAvaliacoes"></tbody>
+            </table>
+          </div>
+        </section>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+    <script src="./js/dashboard.js"></script>
+    <script src="./js/gamificacao-professor.js"></script>
+      </div>
+      </main>
+    </div>
+
+    <script src="./js/animacoes.js"></script>
+  </body>
+</html>

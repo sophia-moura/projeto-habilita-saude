@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Relatórios</title>
+    <title>Relatórios — Habilita Saúde</title>
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -13,107 +13,116 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
   </head>
 
-  <body>
+  <body class="app-shell">
     <div class="container">
-      <aside class="sidebar">
+      <aside class="sidebar" aria-label="Navegação principal">
         <div>
           <div class="logo-side">
-            <h2>HABILITA.SAÚDE</h2>
-            <p>Plataforma De Cursos em Saúde</p>
+            <a href="./professor-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
           </div>
-
-          <ul>
+          <nav>
+            <ul>
             <li>
-              <a href="./dashboard.html">
+              <a href="./professor-inicio.html">
                 <i class="fa-solid fa-house"></i>
                 Início
               </a>
             </li>
-
             <li>
-              <a href="./meus-cursos.html">
+              <a href="./professor-meus-cursos.html">
                 <i class="fa-solid fa-book"></i>
-                Meus Cursos
+                Meus cursos
               </a>
             </li>
-
-            <li>
-              <a href="./financas.html">
-                <i class="fa-solid fa-chart-pie"></i>
-                Finanças
-              </a>
-            </li>
-
             <li>
               <a href="./criar-curso.html">
                 <i class="fa-solid fa-plus"></i>
-                Criar Curso
+                Criar curso
               </a>
             </li>
-
             <li>
               <a href="./usuarios.html">
                 <i class="fa-solid fa-users"></i>
                 Usuários
               </a>
             </li>
-
             <li>
-              <a href="./relatorios.html" class="menu-ativo">
+              <a href="./relatorios.html" class="menu-ativo" aria-current="page">
                 <i class="fa-solid fa-chart-line"></i>
                 Relatórios
               </a>
             </li>
-          </ul>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+            <li>
+              <a href="./configuracoes-niveis.html">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+              </a>
+            </li>
+            </ul>
+          </nav>
         </div>
 
-        <div class="perfil">
-          <div class="foto-wrapper">
-            <a href="./perfil.html">
-              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
-            </a>
-            <span class="online"></span>
-          </div>
-
-          <span id="nomeUsuarioSidebar"></span>
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
         </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
-          <button id="menuMobile" class="menu-mobile">☰</button>
-          <div>
-            <h1>PROFESSOR</h1>
-            <p>
-              Visualize estatísticas, desempenhos e informações relevantes da
-              plataforma
-            </p>
-          </div>
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <nav class="breadcrumb" aria-label="Você está em">
+          <a href="./professor-inicio.html">Início</a>
+          <span class="sep">/</span>
+          <span class="atual" aria-current="page">Relatórios</span>
+          </nav>
 
           <div class="icons">
-            <a href="suporte.html">
+            <span class="perfil-tag">Professor</span>
+            <a href="./professor-suporte.html" class="link-suporte" aria-label="Suporte">
               <i class="fa-regular fa-circle-question"></i>
             </a>
-            <a href="notificacoes.html" class="notification">
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
               <i class="fa-regular fa-bell"></i>
               <span id="badgeNotificacao"></span>
             </a>
-
-            <div class="user-top">
-              <div class="foto-wrapper">
-                <a href="perfil.html">
-                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
-                </a>
-
-                <span class="online"></span>
-              </div>
-
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
               <span id="nomeUsuarioTop"></span>
-            </div>
+            </a>
           </div>
         </header>
+
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Relatórios</h1>
+            <p>Dados analíticos de evasão, notas e receita.</p>
+          </div>
+        </div>
+
 
         <section class="metricas-relatorios">
           <div class="card-relatorio azul">
@@ -161,10 +170,10 @@
           </select>
 
           <select id="filtroCurso">
-            <option value="">Todos os Cursos</option>
+            <option value="">Todos os cursos</option>
           </select>
 
-          <button id="btnRelatorio">Gerar Relatório</button>
+          <button id="btnRelatorio">Gerar relatório</button>
 
           <button id="btnDownload">
             <i class="fa-solid fa-download"></i>
@@ -174,7 +183,7 @@
 
         <section class="dashboard-relatorio">
           <div class="grafico-card">
-            <h2>Desempenho dos Cursos</h2>
+            <h2>Desempenho dos cursos</h2>
 
             <div class="grafico-relatorio">
               <canvas id="graficoCursos"></canvas>
@@ -182,20 +191,20 @@
           </div>
 
           <div class="progresso-card">
-            <h3>PROGRESSO NAS ATIVIDADES</h3>
+            <h3>Progresso nas atividades</h3>
 
             <div class="linha-status">
-              <span>✔ Atividades Corrigidas</span>
+              <span>Atividades corrigidas</span>
               <strong id="statusConcluidas">0</strong>
             </div>
 
             <div class="linha-status">
-              <span>⚠ Atrasadas</span>
+              <span>Atrasadas</span>
               <strong id="statusAtrasadas">0</strong>
             </div>
 
             <div class="linha-status">
-              <span>⏳ Pendentes</span>
+              <span>Pendentes</span>
               <strong id="statusPendentes">0</strong>
             </div>
 
@@ -205,7 +214,7 @@
 
         <section class="ranking-card">
           <div class="ranking-header">
-            <h2>Cursos Mais Acessados</h2>
+            <h2>Cursos mais acessados</h2>
 
             <button id="btnBaixarRanking">
               <i class="fa-solid fa-download"></i>
@@ -220,7 +229,8 @@
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        </main>
+        </div>
+      </main>
     </div>
     <script src="./js/user.js"></script>
     <script src="./js/global.js"></script>

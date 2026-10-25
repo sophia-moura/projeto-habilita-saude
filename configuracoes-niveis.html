@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Níveis de Certificação</title>
+    <title>Configurações — Habilita Saúde</title>
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -13,115 +13,128 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
   </head>
 
-  <body>
+  <body class="app-shell">
     <div class="container">
-      <aside class="sidebar">
+      <aside class="sidebar" aria-label="Navegação principal">
         <div>
           <div class="logo-side">
-            <h2>HABILITA.SAÚDE</h2>
-            <p>Plataforma De Cursos em Saúde</p>
+            <a href="./professor-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
           </div>
-
-          <ul>
+          <nav>
+            <ul>
             <li>
-              <a href="./dashboard.html">
+              <a href="./professor-inicio.html">
                 <i class="fa-solid fa-house"></i>
                 Início
               </a>
             </li>
-
             <li>
-              <a href="./meus-cursos.html">
+              <a href="./professor-meus-cursos.html">
                 <i class="fa-solid fa-book"></i>
-                Meus Cursos
+                Meus cursos
               </a>
             </li>
-
-            <li>
-              <a href="./financas.html">
-                <i class="fa-solid fa-chart-pie"></i>
-                Finanças
-              </a>
-            </li>
-
             <li>
               <a href="./criar-curso.html">
                 <i class="fa-solid fa-plus"></i>
-                Criar Curso
+                Criar curso
               </a>
             </li>
-
             <li>
-              <a href="./usuarios.html" class="menu-ativo">
+              <a href="./usuarios.html">
                 <i class="fa-solid fa-users"></i>
                 Usuários
               </a>
             </li>
-
             <li>
               <a href="./relatorios.html">
                 <i class="fa-solid fa-chart-line"></i>
                 Relatórios
               </a>
             </li>
-          </ul>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+            <li>
+              <a href="./configuracoes-niveis.html" class="menu-ativo" aria-current="page">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+              </a>
+            </li>
+            </ul>
+          </nav>
         </div>
 
-        <div class="perfil">
-          <div class="foto-wrapper">
-            <a href="./perfil.html">
-              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
-            </a>
-
-            <span class="online"></span>
-          </div>
-
-          <span id="nomeUsuarioSidebar"></span>
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
         </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
-          <button id="menuMobile" class="menu-mobile">☰</button>
-          <div>
-            <h1>PROFESSOR</h1>
-            <p>Ajuste preços, cargas horárias, repasses e critérios de cada nível.</p>
-          </div>
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <nav class="breadcrumb" aria-label="Você está em">
+          <a href="./professor-inicio.html">Início</a>
+          <span class="sep">/</span>
+          <span class="atual" aria-current="page">Configurações</span>
+          </nav>
 
           <div class="icons">
-            <a href="suporte.html">
+            <span class="perfil-tag">Professor</span>
+            <a href="./professor-suporte.html" class="link-suporte" aria-label="Suporte">
               <i class="fa-regular fa-circle-question"></i>
             </a>
-            <a href="notificacoes.html" class="notification">
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
               <i class="fa-regular fa-bell"></i>
               <span id="badgeNotificacao"></span>
             </a>
-
-            <div class="user-top">
-              <div class="foto-wrapper">
-                <a href="perfil.html">
-                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
-                </a>
-
-                <span class="online"></span>
-              </div>
-
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
               <span id="nomeUsuarioTop"></span>
-            </div>
+            </a>
           </div>
         </header>
 
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Configurações</h1>
+            <p>Parâmetros dos níveis de certificação e das regras de repasse.</p>
+          </div>
+          <div class="page-actions">
+            <button type="button" id="restaurarNiveis" class="btn btn-secondary">Restaurar padrão do documento</button>
+            <button type="button" id="salvarNiveis" class="btn btn-primary"><i class="fa-solid fa-floppy-disk"></i> Salvar alterações</button>
+          </div>
+        </div>
+
+
         <section class="usuarios-card" style="padding:24px">
           <h2 style="margin-bottom:6px">Parâmetros dos níveis de certificação</h2>
-          <p style="margin-bottom:16px;color:#6b7a99">As alterações valem para novos cadastros de curso, validação de preço e cálculo de repasse.</p>
+          <p style="margin-bottom:16px;color:#718096">As alterações valem para novos cadastros de curso, validação de preço e cálculo de repasse.</p>
           <div id="formNiveis" style="overflow-x:auto"></div>
-          <div style="margin-top:18px;display:flex;gap:10px">
-            <button id="salvarNiveis" class="btn-publicar" style="padding:10px 18px;border:0;border-radius:10px;background:#163b97;color:#fff;cursor:pointer">Salvar alterações</button>
-            <button id="restaurarNiveis" style="padding:10px 18px;border:1px solid #ccd5e8;border-radius:10px;background:#fff;cursor:pointer">Restaurar padrão do documento</button>
-          </div>
+          
         </section>
+      </div>
       </main>
     </div>
     <script src="./js/user.js"></script>

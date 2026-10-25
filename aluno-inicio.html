@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Início - Área do Aluno</title>
+    <title>Início — Habilita Saúde</title>
 
     <link rel="stylesheet" href="./css/aluno.css" />
 
@@ -13,103 +13,101 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
   </head>
 
-  <body>
+  <body class="app-shell">
     <div id="overlay"></div>
 
     <div class="container">
-      <aside class="sidebar">
+      <aside class="sidebar" aria-label="Navegação principal">
         <div>
           <div class="logo-side">
-            <h2>HABILITA.SAÚDE</h2>
-            <p>Área do Aluno</p>
+            <a href="./aluno-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
           </div>
-
-          <ul>
+          <nav>
+            <ul>
             <li>
-              <a href="./aluno-inicio.html" class="menu-ativo">
+              <a href="./aluno-inicio.html" class="menu-ativo" aria-current="page">
                 <i class="fa-solid fa-house"></i>
                 Início
               </a>
             </li>
-
             <li>
               <a href="./aluno-meus-cursos.html">
                 <i class="fa-solid fa-book"></i>
-                Meus Cursos
+                Meus cursos
               </a>
             </li>
-
             <li>
               <a href="./certificados.html">
                 <i class="fa-solid fa-award"></i>
                 Certificados
               </a>
             </li>
-
             <li>
               <a href="./aluno-suporte.html">
-                <i class="fa-regular fa-circle-question"></i>
+                <i class="fa-solid fa-circle-question"></i>
                 Suporte
               </a>
             </li>
-          </ul>
+            </ul>
+          </nav>
         </div>
 
-        <div>
-          <div class="perfil">
-            <div class="foto-wrapper">
-              <img
-                id="fotoUsuarioSidebar"
-                src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
-                alt="Foto do aluno"
-              />
-              <span class="online"></span>
-            </div>
-            <span id="nomeUsuarioSidebar"></span>
-          </div>
-
-          <div class="logout-container">
-            <button id="btnLogout">Sair</button>
-          </div>
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
         </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
-          <button id="menuMobile" class="menu-mobile">☰</button>
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
 
-          <div>
-            <h1 id="saudacaoAluno">Olá!</h1>
-            <p>Continue sua jornada de aprendizado</p>
-          </div>
+          <nav class="breadcrumb" aria-label="Você está em">
+          <span class="atual" aria-current="page">Início</span>
+          </nav>
 
           <div class="icons">
-            <a href="aluno-suporte.html">
+            <span class="perfil-tag">Aluno</span>
+            <a href="./aluno-suporte.html" class="link-suporte" aria-label="Suporte">
               <i class="fa-regular fa-circle-question"></i>
             </a>
-
-            <a href="notificacoes.html" class="notification">
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
               <i class="fa-regular fa-bell"></i>
               <span id="badgeNotificacao"></span>
             </a>
-
-            <a href="perfil.html" style="color: white; text-decoration: none;">
-            <div class="user-top">
-              <div class="foto-wrapper">
-                <img
-                  id="fotoUsuarioTop"
-                  src="https://ui-avatars.com/api/?name=Aluno&background=163b97&color=fff"
-                  alt="Foto do aluno"
-                />
-                <span class="online"></span>
-              </div>
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
               <span id="nomeUsuarioTop"></span>
-            </div>
+            </a>
           </div>
-          </a>
         </header>
+
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1 id="saudacaoAluno">Olá!</h1>
+            <p>Resumo de pendências, prazos e avisos acadêmicos.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-primary" href="./aluno-meus-cursos.html"><i class="fa-solid fa-book"></i> Ver meus cursos</a>
+          </div>
+        </div>
+
 
         <section class="atalho-continuar" id="atalhoContinuar">
           <div class="atalho-info">
@@ -203,10 +201,12 @@
             <div id="listaCertificados" class="certificados-lista"></div>
           </div>
         </section>
+      </div>
       </main>
     </div>
 
     <script src="./js/user.js"></script>
+    <script src="./js/conteudos-demo.js"></script>
     <script src="./js/global.js"></script>
     <script src="./js/gamificacao.js"></script>
     <script src="./js/aluno-dados.js"></script>

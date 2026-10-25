@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-br">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Suporte — Habilita Saúde</title>
+
+    <link rel="stylesheet" href="./css/style.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
+  </head>
+
+  <body class="app-shell">
+    <div class="container">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div>
+          <div class="logo-side">
+            <a href="./professor-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
+          </div>
+          <nav>
+            <ul>
+            <li>
+              <a href="./professor-inicio.html">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+            <li>
+              <a href="./professor-meus-cursos.html">
+                <i class="fa-solid fa-book"></i>
+                Meus cursos
+              </a>
+            </li>
+            <li>
+              <a href="./criar-curso.html">
+                <i class="fa-solid fa-plus"></i>
+                Criar curso
+              </a>
+            </li>
+            <li>
+              <a href="./usuarios.html">
+                <i class="fa-solid fa-users"></i>
+                Usuários
+              </a>
+            </li>
+            <li>
+              <a href="./relatorios.html">
+                <i class="fa-solid fa-chart-line"></i>
+                Relatórios
+              </a>
+            </li>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+            <li>
+              <a href="./configuracoes-niveis.html">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+              </a>
+            </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <nav class="breadcrumb" aria-label="Você está em">
+          <a href="./professor-inicio.html">Início</a>
+          <span class="sep">/</span>
+          <span class="atual" aria-current="page">Suporte</span>
+          </nav>
+
+          <div class="icons">
+            <span class="perfil-tag">Professor</span>
+            <a href="./professor-suporte.html" class="link-suporte" aria-label="Suporte">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <span id="nomeUsuarioTop"></span>
+            </a>
+          </div>
+        </header>
+
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Suporte</h1>
+            <p>Tire dúvidas ou abra um chamado para a equipe.</p>
+          </div>
+          <div class="page-actions">
+            <button type="button" id="btnNovoTicket" class="btn btn-primary"><i class="fa-solid fa-plus"></i> Novo ticket</button>
+          </div>
+        </div>
+
+
+        
+
+        <section class="acoes-suporte">
+          <button>
+            <i class="fa-solid fa-ticket"></i>
+            Meus tickets
+          </button>
+          
+
+          <button>
+            <i class="fa-solid fa-book"></i>
+            FAQ
+          </button>
+
+          <button>
+            <i class="fa-solid fa-phone"></i>
+            Contato
+          </button>
+        </section>
+
+        <select id="filtroStatus">
+          <option value="Todos">Todos</option>
+          <option value="Aberto">Aberto</option>
+          <option value="Andamento">Andamento</option>
+          <option value="Resolvido">Resolvido</option>
+        </select>
+
+        <section class="metricas-suporte">
+          <div class="card-metrica">
+            <i class="fa-solid fa-ticket"></i>
+
+            <div>
+              <h3>Tickets abertos</h3>
+              <strong id="totalAbertos">0</strong>
+            </div>
+          </div>
+
+          <div class="card-metrica">
+            <i class="fa-solid fa-clock"></i>
+
+            <div>
+              <h3>Em andamento</h3>
+              <strong id="totalAndamento">0</strong>
+            </div>
+          </div>
+
+          <div class="card-metrica">
+            <i class="fa-solid fa-circle-check"></i>
+
+            <div>
+              <h3>Resolvidos</h3>
+              <strong id="totalResolvidos">0</strong>
+            </div>
+          </div>
+
+          <div class="card-metrica">
+            <i class="fa-solid fa-comments"></i>
+
+            <div>
+              <h3>Mensagens</h3>
+              <strong id="totalMensagens">0</strong>
+            </div>
+          </div>
+        </section>
+
+        <section id="listaTickets"></section>
+
+        <div id="modalTicket" class="modal">
+          <div class="modal-content">
+            <h2>Novo ticket</h2>
+
+            <input type="text" id="tituloTicket" placeholder="Título" />
+
+            <select id="prioridadeTicket">
+              <option>Baixa</option>
+              <option>Média</option>
+              <option>Alta</option>
+            </select>
+
+            <textarea
+              id="mensagemTicket"
+              rows="6"
+              placeholder="Descreva seu problema"
+            ></textarea>
+
+            <button id="salvarTicket">Abrir chamado</button>
+          </div>
+        </div>
+
+        <div id="modalChat" class="modal">
+          <div class="modal-content">
+            <h2>Ticket</h2>
+
+            <div id="mensagensTicket"></div>
+
+            <div class="enviar-mensagem">
+              <input
+                type="text"
+                id="novaMensagem"
+                placeholder="Digite sua mensagem"
+              />
+
+              <button id="btnEnviarMensagem">Enviar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      </main>
+    </div>
+    <script src="./js/user.js"></script>
+    <script src="./js/suporte.js"></script>
+    <script src="./js/global.js"></script>
+    <script src="./js/animacoes.js"></script>
+  </body>
+</html>

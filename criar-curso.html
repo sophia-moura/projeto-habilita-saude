@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Dashboard</title>
+    <title>Criar curso — Habilita Saúde</title>
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -13,111 +13,126 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
     />
     <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
   </head>
 
-  <body>
+  <body class="app-shell">
     <div class="container">
-      <aside class="sidebar">
+      <aside class="sidebar" aria-label="Navegação principal">
         <div>
           <div class="logo-side">
-            <h2>HABILITA.SAÚDE</h2>
-            <p>Plataforma De Cursos em Saúde</p>
+            <a href="./professor-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
           </div>
-
-          <ul>
+          <nav>
+            <ul>
             <li>
-              <a href="./dashboard.html">
+              <a href="./professor-inicio.html">
                 <i class="fa-solid fa-house"></i>
                 Início
               </a>
             </li>
-
             <li>
-              <a href="./meus-cursos.html">
+              <a href="./professor-meus-cursos.html">
                 <i class="fa-solid fa-book"></i>
-                Meus Cursos
+                Meus cursos
               </a>
             </li>
-
             <li>
-              <a href="./financas.html">
-                <i class="fa-solid fa-chart-pie"></i>
-                Finanças
-              </a>
-            </li>
-
-            <li>
-              <a href="./criar-curso.html" class="menu-ativo">
+              <a href="./criar-curso.html" class="menu-ativo" aria-current="page">
                 <i class="fa-solid fa-plus"></i>
-                Criar Curso
+                Criar curso
               </a>
             </li>
-
             <li>
               <a href="./usuarios.html">
                 <i class="fa-solid fa-users"></i>
                 Usuários
               </a>
             </li>
-
             <li>
               <a href="./relatorios.html">
                 <i class="fa-solid fa-chart-line"></i>
                 Relatórios
               </a>
             </li>
-          </ul>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+            <li>
+              <a href="./configuracoes-niveis.html">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+              </a>
+            </li>
+            </ul>
+          </nav>
         </div>
 
-        <div class="perfil">
-          <div class="foto-wrapper">
-            <a href="./perfil.html">
-              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
-            </a>
-
-            <span class="online"></span>
-          </div>
-
-          <span id="nomeUsuarioSidebar"></span>
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
         </div>
       </aside>
 
       <main class="main">
         <header class="topbar">
-          <button id="menuMobile" class="menu-mobile">☰</button>
-          <div>
-            <h1>PROFESSOR</h1>
-            <p>Cadastre um novo curso na plataforma.</p>
-          </div>
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <nav class="breadcrumb" aria-label="Você está em">
+          <a href="./professor-inicio.html">Início</a>
+          <span class="sep">/</span>
+          <span class="atual" aria-current="page">Criar curso</span>
+          </nav>
 
           <div class="icons">
-            <a href="suporte.html">
+            <span class="perfil-tag">Professor</span>
+            <a href="./professor-suporte.html" class="link-suporte" aria-label="Suporte">
               <i class="fa-regular fa-circle-question"></i>
             </a>
-            <a href="notificacoes.html" class="notification">
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
               <i class="fa-regular fa-bell"></i>
               <span id="badgeNotificacao"></span>
             </a>
-
-            <div class="user-top">
-              <div class="foto-wrapper">
-                <a href="perfil.html">
-                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
-                </a>
-
-                <span class="online"></span>
-              </div>
-
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
               <span id="nomeUsuarioTop"></span>
-            </div>
+            </a>
           </div>
         </header>
+
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Criar curso</h1>
+            <p>Cadastre uma nova capacitação na plataforma.</p>
+          </div>
+          <div class="page-actions">
+            <button type="button" id="btnRascunho" class="btn btn-secondary" form="formCurso"><i class="fa-regular fa-floppy-disk"></i> Salvar rascunho</button>
+            <button type="submit" class="btn btn-primary" form="formCurso"><i class="fa-solid fa-cloud-arrow-up"></i> Publicar curso</button>
+          </div>
+        </div>
+
 
         <form id="formCurso">
           <section class="criar-curso-grid">
             <div class="coluna-esquerda">
               <div class="campo">
-                <label for="nomeCurso">Nome do Curso*</label>
+                <label for="nomeCurso">Nome do curso*</label>
                 <input
                   id="nomeCurso"
                   type="text"
@@ -145,10 +160,10 @@
               </div>
 
               <div class="campo">
-                <label for="areaCurso">Área Temática*</label>
+                <label for="areaCurso">Área temática*</label>
 
                 <select id="areaCurso" required>
-                  <option value="">Selecione a Área</option>
+                  <option value="">Selecione a área</option>
 
                   <option>Enfermagem</option>
                   <option>Nutrição</option>
@@ -159,7 +174,7 @@
               </div>
 
               <div class="campo">
-                <label for="publicoCurso"> Público Alvo* </label>
+                <label for="publicoCurso"> Público-alvo* </label>
 
                 <input
                   id="publicoCurso"
@@ -170,7 +185,7 @@
               </div>
 
               <div class="campo">
-                <label for="cargaHoraria"> Carga Horária* </label>
+                <label for="cargaHoraria"> Carga horária* </label>
 
                 <input
                   type="number"
@@ -193,7 +208,7 @@
               </div>
 
               <div class="campo">
-                <label>Imagem da Capa*</label>
+                <label>Imagem da capa*</label>
 
                 <div class="upload-box" id="uploadBox">
                   <input type="file" id="imagemCurso" accept="image/*" hidden />
@@ -209,7 +224,7 @@
               </div>
 
               <div class="campo">
-                <label for="precoCurso"> Preço do Curso* </label>
+                <label for="precoCurso"> Preço do curso* </label>
 
                 <input type="text" id="precoCurso" placeholder="R$ 0,00" />
               </div>
@@ -251,7 +266,7 @@
           </section>
 
           <div class="conteudos-card">
-            <h2>Conteúdos do Curso</h2>
+            <h2>Conteúdos do curso</h2>
 
             <div class="conteudos-grid">
               <div class="conteudo-item" data-tipo="video">
@@ -294,6 +309,11 @@
                 <span>Materiais</span>
               </div>
 
+              <div class="conteudo-item" data-tipo="texto">
+                <i class="fa-solid fa-file-lines"></i>
+                <span>Lição em texto</span>
+              </div>
+
               <div class="conteudo-item" data-tipo="link">
                 <i class="fa-solid fa-link"></i>
                 <span>Links Externos</span>
@@ -304,24 +324,16 @@
 
           <input type="file" id="arquivoConteudo" hidden />
 
-          <div class="acoes-formulario">
-            <button type="button" id="btnRascunho" class="btn-secundario">
-              <i class="fa-regular fa-floppy-disk"></i>
-              Salvar Rascunho
-            </button>
-
-            <button type="submit" class="btn-publicar">
-              <i class="fa-solid fa-cloud-arrow-up"></i>
-              Publicar Curso
-            </button>
-          </div>
+          
         </form>
+      </div>
       </main>
     </div>
     <script src="./js/user.js"></script>
     <script src="./js/global.js"></script>
     <script src="./js/niveis.js"></script>
     <script src="./js/videos.js"></script>
+    <script src="./js/editor-conteudo.js"></script>
     <script src="./js/criar-curso.js"></script>
 
     <script src="./js/animacoes.js"></script>

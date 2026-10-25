@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Meus cursos — Habilita Saúde</title>
+
+    <link rel="stylesheet" href="./css/meus-cursos.css" />
+
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="./css/animacoes.css" />
+      <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    />
+    <link rel="stylesheet" href="./css/habilita.css" />
+  </head>
+
+  <body class="app-shell">
+    <div id="overlay"></div>
+    <div class="container">
+      <aside class="sidebar" aria-label="Navegação principal">
+        <div>
+          <div class="logo-side">
+            <a href="./professor-inicio.html" aria-label="Habilita Saúde — Início">
+              <img class="logo-h" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+            </a>
+          </div>
+          <nav>
+            <ul>
+            <li>
+              <a href="./professor-inicio.html">
+                <i class="fa-solid fa-house"></i>
+                Início
+              </a>
+            </li>
+            <li>
+              <a href="./professor-meus-cursos.html" class="menu-ativo" aria-current="page">
+                <i class="fa-solid fa-book"></i>
+                Meus cursos
+              </a>
+            </li>
+            <li>
+              <a href="./criar-curso.html">
+                <i class="fa-solid fa-plus"></i>
+                Criar curso
+              </a>
+            </li>
+            <li>
+              <a href="./usuarios.html">
+                <i class="fa-solid fa-users"></i>
+                Usuários
+              </a>
+            </li>
+            <li>
+              <a href="./relatorios.html">
+                <i class="fa-solid fa-chart-line"></i>
+                Relatórios
+              </a>
+            </li>
+            <li>
+              <a href="./financas.html">
+                <i class="fa-solid fa-chart-pie"></i>
+                Finanças
+              </a>
+            </li>
+            <li>
+              <a href="./configuracoes-niveis.html">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+              </a>
+            </li>
+            </ul>
+          </nav>
+        </div>
+
+        <div class="logout-container">
+          <button type="button" id="btnLogout" class="btn-logout">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+            Sair
+          </button>
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <button id="menuMobile" class="menu-mobile" type="button" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+
+          <nav class="breadcrumb" aria-label="Você está em">
+          <a href="./professor-inicio.html">Início</a>
+          <span class="sep">/</span>
+          <span class="atual" aria-current="page">Meus cursos</span>
+          </nav>
+
+          <div class="icons">
+            <span class="perfil-tag">Professor</span>
+            <a href="./professor-suporte.html" class="link-suporte" aria-label="Suporte">
+              <i class="fa-regular fa-circle-question"></i>
+            </a>
+            <a href="./notificacoes.html" class="notification" aria-label="Notificações">
+              <i class="fa-regular fa-bell"></i>
+              <span id="badgeNotificacao"></span>
+            </a>
+            <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
+              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <span id="nomeUsuarioTop"></span>
+            </a>
+          </div>
+        </header>
+
+        <div class="content">
+        <div class="page-header">
+          <div class="page-title">
+            <h1>Meus cursos</h1>
+            <p>Gerencie ementas e videoaulas já cadastradas.</p>
+          </div>
+          <div class="page-actions">
+            <a class="btn btn-primary" href="./criar-curso.html"><i class="fa-solid fa-plus"></i> Criar curso</a>
+          </div>
+        </div>
+
+
+        
+
+        <div class="filtros">
+          <input id="buscaCurso" type="text" placeholder="Buscar curso..." />
+
+          <select id="categoria">
+            <option value="Todas">Todas as categorias</option>
+            <option value="Urgência">Urgência</option>
+            <option value="Enfermagem">Enfermagem</option>
+            <option value="Nutrição">Nutrição</option>
+            <option value="Fisioterapia">Fisioterapia</option>
+            <option value="Saúde Mental">Saúde Mental</option>
+          </select>
+
+          <select id="filtroCarga">
+            <option value="Todas">Todas as cargas horárias</option>
+          </select>
+
+          <select id="filtroPublico">
+            <option value="Todos">Todos os públicos</option>
+          </select>
+        </div>
+
+        <section id="cursosGrid" class="cursos-grid"></section>
+      </div>
+      </main>
+      <div id="modalCurso" class="modal">
+        <div class="modal-content">
+          <button id="fechar">×</button>
+
+          <div id="detalhesCurso"></div>
+        </div>
+      </div>
+    </div>
+    <script src="./js/user.js"></script>
+    <script src="./js/global.js"></script>
+    <script src="./js/niveis.js"></script>
+    <script src="./js/meus-cursos.js"></script>
+    <script src="./js/animacoes.js"></script>
+  </body>
+</html>

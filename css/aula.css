@@ -5,7 +5,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 16px;
-  color: #163b97;
+  color: #0055c3;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -34,10 +34,10 @@
   aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #0b1b45;
-  border-radius: 18px;
+  border-radius: 8px;
   color: #fff;
   text-align: center;
-  box-shadow: 0 12px 30px rgba(22, 59, 151, 0.25);
+  box-shadow: 0 12px 30px rgba(0, 85, 195, 0.25);
 }
 
 .palco video,
@@ -72,15 +72,15 @@
 
 .palco-msg a {
   padding: 12px 20px;
-  border-radius: 12px;
-  background: #22c55e;
+  border-radius: 8px;
+  background: #3e9c2d;
   color: #fff;
   font-weight: 600;
   text-decoration: none;
 }
 
 .palco-msg a:hover {
-  background: #16a34a;
+  background: #3e9c2d;
 }
 
 /* ---------- Título e ações ---------- */
@@ -89,7 +89,7 @@
 }
 
 .aula-info small {
-  color: #6b7280;
+  color: #718096;
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.06em;
@@ -98,7 +98,7 @@
 
 .aula-info h2 {
   margin-top: 2px;
-  color: #163b97;
+  color: #0055c3;
   font-size: 20px;
   line-height: 1.3;
   overflow-wrap: anywhere;
@@ -116,10 +116,10 @@
   justify-content: center;
   gap: 8px;
   padding: 11px 18px;
-  border: 1px solid #d7def0;
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   background: #fff;
-  color: #163b97;
+  color: #0055c3;
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
@@ -137,18 +137,18 @@
 }
 
 .aula-btn-primario {
-  background: #163b97;
-  border-color: #163b97;
+  background: #0055c3;
+  border-color: #0055c3;
   color: #fff;
 }
 
 .aula-btn-primario:hover:not(:disabled) {
-  background: #2249ad;
+  background: #0055c3;
 }
 
 .aula-btn-primario.feita {
-  background: #22c55e;
-  border-color: #22c55e;
+  background: #3e9c2d;
+  border-color: #3e9c2d;
   opacity: 1;
 }
 
@@ -165,21 +165,21 @@
 .aula-barra {
   height: 10px;
   overflow: hidden;
-  background: #e1e8f5;
+  background: #e2e8f0;
   border-radius: 8px;
 }
 
 #barraAula {
   height: 100%;
   width: 0;
-  background: linear-gradient(90deg, #4f7cff, #22c55e);
+  background: linear-gradient(90deg, #0055c3, #3e9c2d);
   transition: width 0.8s;
 }
 
 #textoProgresso {
   display: block;
   margin-top: 6px;
-  color: #6b7280;
+  color: #718096;
   font-size: 12px;
 }
 
@@ -191,7 +191,7 @@
   padding: 16px 18px;
   background: #e8f7ec;
   border: 1px solid #bfe8cc;
-  border-radius: 16px;
+  border-radius: 8px;
   color: #17692b;
 }
 
@@ -222,13 +222,13 @@
 .aula-lista {
   padding: 18px;
   background: #fff;
-  border-radius: 18px;
+  border-radius: 8px;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
 }
 
 .aula-lista h3 {
   margin-bottom: 12px;
-  color: #163b97;
+  color: #0055c3;
   font-size: 16px;
 }
 
@@ -246,9 +246,9 @@
   width: 100%;
   padding: 11px;
   border: none;
-  border-radius: 10px;
+  border-radius: 6px;
   background: transparent;
-  color: #1b2559;
+  color: #1a202c;
   font-size: 13.5px;
   text-align: left;
   cursor: pointer;
@@ -260,7 +260,7 @@
 }
 
 .item-aula.ativa {
-  background: #e8edf7;
+  background: #e2e8f0;
   font-weight: 600;
 }
 
@@ -277,14 +277,14 @@
 }
 
 .item-aula.feita .ck {
-  background: #22c55e;
-  border-color: #22c55e;
+  background: #3e9c2d;
+  border-color: #3e9c2d;
 }
 
 .item-aula .tp {
   flex: none;
   width: 18px;
-  color: #6b7a99;
+  color: #718096;
   text-align: center;
 }
 
@@ -302,9 +302,9 @@
   gap: 8px;
   padding: 60px 20px;
   background: #fff;
-  border-radius: 20px;
+  border-radius: 8px;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
-  color: #6b7280;
+  color: #718096;
   text-align: center;
 }
 
@@ -314,7 +314,7 @@
 }
 
 .aula-vazio strong {
-  color: #1b2559;
+  color: #1a202c;
 }
 
 .aula-vazio p {

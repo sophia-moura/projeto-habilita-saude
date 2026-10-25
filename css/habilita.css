@@ -1,0 +1,1039 @@
+/* ==========================================================================
+   Habilita Saúde — Guia de Estilo v1.3
+   Tokens, shell claro (sidebar + topbar), cabeçalho de página e componentes.
+   Carregue SEMPRE por último nas telas internas (body.app-shell).
+   ========================================================================== */
+
+:root {
+  /* Marca e ação */
+  --hs-azul: #0055c3;
+  --hs-azul-escuro: #002d7d;
+  --hs-verde: #76c338;
+  --hs-verde-escuro: #3e9c2d;
+  --hs-neutro-apoio: #486581;
+
+  /* Fundos e superfícies */
+  --hs-fundo: #f7f9fa;
+  --hs-card: #ffffff;
+  --hs-borda: #e2e8f0;
+
+  /* Texto */
+  --hs-titulo: #1a202c;
+  --hs-corpo: #4a5568;
+  --hs-legenda: #718096;
+
+  /* Semânticas */
+  --hs-sucesso: #3e9c2d;
+  --hs-alerta: #b7791f;
+  --hs-erro: #c53030;
+  --hs-info: #0055c3;
+
+  /* Formas */
+  --hs-raio-card: 8px;
+  --hs-raio-controle: 6px;
+  --hs-sombra: 0 1px 3px rgba(22, 66, 91, 0.08);
+  --hs-foco: 0 0 0 3px rgba(0, 85, 195, 0.15);
+
+  /* Estrutura */
+  --hs-sidebar: 256px;
+  --hs-topbar: 64px;
+  --hs-conteudo: 1200px;
+}
+
+/* ---------- Base ---------- */
+body.app-shell,
+body.app-shell * {
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+body.app-shell i[class*="fa-"] {
+  font-family: "Font Awesome 6 Free", "Font Awesome 6 Brands";
+}
+
+body.app-shell {
+  background: var(--hs-fundo);
+  color: var(--hs-corpo);
+  font-size: 16px;
+  line-height: 1.5;
+  animation: none;
+}
+
+:where(body.app-shell .content) :where(h1, h2, h3, h4) {
+  color: var(--hs-titulo);
+}
+
+body.app-shell h1 { line-height: 1.25; }
+body.app-shell h2,
+body.app-shell h3 { line-height: 1.3; }
+
+body.app-shell :focus-visible {
+  outline: 2px solid var(--hs-azul);
+  outline-offset: 2px;
+}
+
+/* ---------- Estrutura ---------- */
+body.app-shell .container {
+  display: flex;
+  min-height: 100vh;
+  align-items: stretch;
+}
+
+body.app-shell .main {
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  width: auto;
+}
+
+body.app-shell .content {
+  width: 100%;
+  max-width: var(--hs-conteudo);
+  margin: 0 auto;
+  padding: 32px;
+}
+
+/* ---------- Sidebar (shell claro) ---------- */
+body.app-shell .sidebar {
+  width: var(--hs-sidebar);
+  flex: 0 0 var(--hs-sidebar);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  background: var(--hs-card);
+  color: var(--hs-corpo);
+  border-right: 1px solid var(--hs-borda);
+  z-index: 50;
+}
+
+body.app-shell .logo-side {
+  display: flex;
+  align-items: center;
+  height: var(--hs-topbar);
+  padding: 0 24px;
+  border-bottom: 1px solid var(--hs-borda);
+}
+
+body.app-shell .logo-side a {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+body.app-shell .logo-side .logo-h {
+  height: 48px;
+  width: auto;
+  display: block;
+  filter: none;
+}
+
+body.app-shell .logo-side h2,
+body.app-shell .logo-side p {
+  display: none;
+}
+
+body.app-shell .sidebar ul {
+  list-style: none;
+  margin: 0;
+  padding: 16px 12px;
+}
+
+body.app-shell .sidebar li {
+  margin: 0 0 4px;
+  border-radius: var(--hs-raio-controle);
+  animation: none;
+}
+
+body.app-shell .sidebar li a {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: var(--hs-raio-controle);
+  color: var(--hs-corpo);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  text-decoration: none;
+  background: transparent;
+  transform: none;
+  transition: background 0.15s, color 0.15s;
+}
+
+body.app-shell .sidebar li a i {
+  width: 18px;
+  text-align: center;
+  color: var(--hs-neutro-apoio);
+  transform: none;
+  transition: color 0.15s;
+}
+
+body.app-shell .sidebar li a:hover {
+  background: var(--hs-fundo);
+  color: var(--hs-titulo);
+  transform: none;
+}
+
+body.app-shell .sidebar li a:hover i {
+  transform: none;
+}
+
+body.app-shell .sidebar li a.menu-ativo,
+body.app-shell .sidebar li a.menu-ativo:hover {
+  background: rgba(0, 85, 195, 0.08);
+  color: var(--hs-azul) !important;
+  font-weight: 600;
+  box-shadow: inset 3px 0 0 var(--hs-azul);
+}
+
+body.app-shell .sidebar li a.menu-ativo i {
+  color: var(--hs-azul) !important;
+}
+
+body.app-shell .logout-container {
+  margin: 0;
+  padding: 16px 12px;
+  border-top: 1px solid var(--hs-borda);
+}
+
+body.app-shell #btnLogout,
+body.app-shell .btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: var(--hs-raio-controle);
+  background: transparent;
+  color: var(--hs-corpo);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+body.app-shell #btnLogout i,
+body.app-shell .btn-logout i {
+  width: 18px;
+  text-align: center;
+  color: var(--hs-neutro-apoio);
+}
+
+body.app-shell #btnLogout:hover,
+body.app-shell .btn-logout:hover {
+  background: #fdf2f2;
+  color: var(--hs-erro);
+}
+
+body.app-shell #btnLogout:hover i,
+body.app-shell .btn-logout:hover i {
+  color: var(--hs-erro);
+}
+
+/* ---------- Topbar ---------- */
+body.app-shell .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  height: var(--hs-topbar);
+  min-height: var(--hs-topbar);
+  margin: 0;
+  padding: 0 32px;
+  background: var(--hs-card);
+  color: var(--hs-corpo);
+  border-bottom: 1px solid var(--hs-borda);
+}
+
+body.app-shell .menu-mobile {
+  display: none;
+  border: 0;
+  background: transparent;
+  color: var(--hs-corpo);
+  font-size: 18px;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--hs-raio-controle);
+  cursor: pointer;
+}
+
+body.app-shell .menu-mobile:hover {
+  background: var(--hs-fundo);
+}
+
+body.app-shell .breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  color: var(--hs-legenda);
+}
+
+body.app-shell .breadcrumb a {
+  color: var(--hs-legenda);
+  text-decoration: none;
+}
+
+body.app-shell .breadcrumb a:hover {
+  color: var(--hs-azul);
+  text-decoration: underline;
+}
+
+body.app-shell .breadcrumb .sep {
+  color: var(--hs-borda);
+  user-select: none;
+}
+
+body.app-shell .breadcrumb .atual {
+  color: var(--hs-azul);
+  font-weight: 600;
+}
+
+body.app-shell .topbar .icons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+body.app-shell .topbar .icons a {
+  color: var(--hs-neutro-apoio);
+  text-decoration: none;
+}
+
+body.app-shell .topbar .icons a i,
+body.app-shell .icons a i {
+  color: var(--hs-neutro-apoio);
+  font-size: 18px;
+}
+
+body.app-shell .topbar .icons a:hover i {
+  color: var(--hs-azul);
+}
+
+body.app-shell .perfil-tag {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(0, 85, 195, 0.08);
+  border: 1px solid rgba(0, 85, 195, 0.2);
+  color: var(--hs-azul);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.app-shell .notification {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: var(--hs-neutro-apoio);
+}
+
+body.app-shell #badgeNotificacao {
+  position: absolute;
+  top: -8px;
+  right: -10px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--hs-azul);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1;
+  border: 2px solid var(--hs-card);
+  border-radius: 999px;
+}
+
+body.app-shell .user-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--hs-titulo);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+body.app-shell .user-top img {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid var(--hs-borda);
+}
+
+body.app-shell .user-top span {
+  color: var(--hs-titulo);
+}
+
+body.app-shell .online {
+  display: none;
+}
+
+/* ---------- Cabeçalho de página (padrão inegociável) ---------- */
+body.app-shell .page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin: 0 0 24px;
+}
+
+body.app-shell .page-header .page-title {
+  min-width: 0;
+}
+
+body.app-shell .page-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--hs-titulo);
+}
+
+body.app-shell .page-header p {
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--hs-corpo);
+}
+
+body.app-shell .page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+/* ---------- Botões ---------- */
+body.app-shell .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 16px;
+  min-height: 40px;
+  border-radius: var(--hs-raio-controle);
+  border: 1px solid transparent;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+
+body.app-shell .btn-primary {
+  background: var(--hs-azul);
+  border-color: var(--hs-azul);
+  color: #fff;
+}
+
+body.app-shell .btn-primary:hover {
+  background: var(--hs-azul-escuro);
+  border-color: var(--hs-azul-escuro);
+}
+
+body.app-shell .btn-secondary {
+  background: var(--hs-card);
+  border-color: var(--hs-azul);
+  color: var(--hs-azul);
+}
+
+body.app-shell .btn-secondary:hover {
+  background: rgba(0, 85, 195, 0.08);
+}
+
+body.app-shell .btn-tertiary {
+  background: transparent;
+  color: var(--hs-azul);
+}
+
+body.app-shell .btn-tertiary:hover {
+  background: rgba(0, 85, 195, 0.08);
+}
+
+body.app-shell .btn:disabled,
+body.app-shell .btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Botões legados mapeados para a hierarquia do guia */
+body.app-shell .btn-publicar {
+  background: var(--hs-azul);
+  color: #fff;
+  border: 1px solid var(--hs-azul);
+  border-radius: var(--hs-raio-controle);
+}
+
+body.app-shell .btn-publicar:hover {
+  background: var(--hs-azul-escuro);
+}
+
+body.app-shell .btn-secundario {
+  background: var(--hs-card);
+  color: var(--hs-azul);
+  border: 1px solid var(--hs-azul);
+  border-radius: var(--hs-raio-controle);
+}
+
+/* ---------- Formulários ---------- */
+body.app-shell .content input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]),
+body.app-shell .content select,
+body.app-shell .content textarea {
+  border: 1px solid var(--hs-borda);
+  border-radius: var(--hs-raio-controle);
+  color: var(--hs-titulo);
+  background: var(--hs-card);
+  font-size: 14px;
+}
+
+body.app-shell .content input:focus,
+body.app-shell .content select:focus,
+body.app-shell .content textarea:focus {
+  outline: none;
+  border-color: var(--hs-azul);
+  box-shadow: var(--hs-foco);
+}
+
+body.app-shell .content label {
+  color: var(--hs-titulo);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+
+/* Grupos de rádio e checkbox alinhados em linha */
+body.app-shell .radio-group label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+body.app-shell .radio-group input[type="radio"],
+body.app-shell .content input[type="checkbox"],
+body.app-shell .content input[type="radio"] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--hs-azul);
+}
+
+/* ---------- Cards e superfícies ---------- */
+body.app-shell .card,
+body.app-shell .card-metrica,
+body.app-shell .card-relatorio,
+body.app-shell .metrica,
+body.app-shell .ranking-card,
+body.app-shell .usuarios-card,
+body.app-shell .historico-card,
+body.app-shell .grafico-card,
+body.app-shell .status-card,
+body.app-shell .canal-card,
+body.app-shell .perfil-card {
+  border-radius: var(--hs-raio-card);
+  box-shadow: var(--hs-sombra);
+}
+
+body.app-shell .card,
+body.app-shell .ranking-card,
+body.app-shell .usuarios-card,
+body.app-shell .historico-card,
+body.app-shell .grafico-card,
+body.app-shell .status-card,
+body.app-shell .canal-card,
+body.app-shell .perfil-card {
+  background: var(--hs-card);
+  border: 1px solid var(--hs-borda);
+}
+
+/* Rótulos de KPI: 12px / 500 / uppercase */
+body.app-shell .card-metrica span,
+body.app-shell .card-relatorio span,
+body.app-shell .metrica h3 {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hs-legenda);
+}
+
+/* Tabelas */
+:where(body.app-shell .content) :where(table th) {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Barra de progresso concluída em verde Habilita */
+body.app-shell .aula-barra div,
+body.app-shell [class*="progresso"] > div > div,
+body.app-shell .barra div {
+  background: linear-gradient(90deg, var(--hs-verde), var(--hs-verde-escuro));
+}
+
+/* ---------- Responsivo ---------- */
+#overlay {
+  z-index: 40;
+}
+
+@media (max-width: 1024px) {
+  body.app-shell .menu-mobile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  body.app-shell .sidebar {
+    display: flex;
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    height: 100%;
+    z-index: 9999;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease;
+    box-shadow: none;
+  }
+
+  body.app-shell .sidebar.ativa {
+    transform: translateX(0);
+    box-shadow: 0 8px 24px rgba(22, 66, 91, 0.16);
+  }
+
+  body.app-shell .topbar {
+    padding: 0 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  body.app-shell .content {
+    padding: 24px 16px;
+  }
+
+  body.app-shell .page-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  body.app-shell .page-actions {
+    justify-content: flex-start;
+  }
+
+  body.app-shell .topbar .icons {
+    gap: 12px;
+  }
+
+  body.app-shell .user-top span,
+  body.app-shell .perfil-tag {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.app-shell * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+/* ---------- Aula: lição em texto e quiz ---------- */
+body.app-shell .palco.palco--leitura {
+  display: block;
+  aspect-ratio: auto;
+  min-height: 320px;
+  background: var(--hs-card);
+  color: var(--hs-corpo);
+  text-align: left;
+  border: 1px solid var(--hs-borda);
+  box-shadow: var(--hs-sombra);
+  padding: 32px;
+}
+
+body.app-shell .licao {
+  max-width: 720px;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+body.app-shell .licao h3 {
+  margin: 24px 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--hs-titulo);
+}
+
+body.app-shell .licao p {
+  margin: 0 0 16px;
+}
+
+body.app-shell .licao ul {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+
+body.app-shell .licao li {
+  margin-bottom: 8px;
+}
+
+body.app-shell .licao strong {
+  color: var(--hs-titulo);
+}
+
+body.app-shell .quiz {
+  max-width: 720px;
+}
+
+body.app-shell .quiz-resumo {
+  margin: 0 0 24px;
+  font-size: 14px;
+  color: var(--hs-legenda);
+}
+
+body.app-shell .quiz-pergunta {
+  margin: 0 0 24px;
+  padding: 0;
+  border: 0;
+}
+
+body.app-shell .quiz-pergunta legend {
+  margin-bottom: 8px;
+  padding: 0;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--hs-titulo);
+}
+
+body.app-shell .quiz-opcao {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 8px;
+  padding: 12px 16px;
+  border: 1px solid var(--hs-borda);
+  border-radius: var(--hs-raio-controle);
+  background: var(--hs-card);
+  color: var(--hs-corpo);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+body.app-shell .quiz-opcao:hover {
+  background: var(--hs-fundo);
+}
+
+body.app-shell .quiz-opcao:has(input:checked) {
+  border-color: var(--hs-azul);
+  background: rgba(0, 85, 195, 0.08);
+  color: var(--hs-titulo);
+}
+
+body.app-shell .quiz-opcao input {
+  margin-top: 3px;
+  accent-color: var(--hs-azul);
+}
+
+body.app-shell .quiz-erro {
+  margin: 0 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--hs-erro);
+}
+
+body.app-shell .quiz-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+  padding: 16px;
+  border-radius: var(--hs-raio-card);
+  border: 1px solid var(--hs-borda);
+}
+
+body.app-shell .quiz-resultado strong {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+body.app-shell .quiz-resultado.aprovado {
+  background: #f0f9ec;
+  border-color: #c6e4b8;
+}
+
+body.app-shell .quiz-resultado.aprovado strong {
+  color: var(--hs-verde-escuro);
+}
+
+body.app-shell .quiz-resultado.reprovado {
+  background: #fdf2f2;
+  border-color: #f2c7c7;
+}
+
+body.app-shell .quiz-resultado.reprovado strong {
+  color: var(--hs-erro);
+}
+
+body.app-shell .quiz-revisao {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+}
+
+body.app-shell .quiz-revisao li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--hs-borda);
+  font-size: 14px;
+}
+
+body.app-shell .quiz-revisao li small {
+  grid-column: 1 / -1;
+  color: var(--hs-legenda);
+}
+
+body.app-shell .quiz-revisao li.certa b {
+  color: var(--hs-verde-escuro);
+}
+
+body.app-shell .quiz-revisao li.errada b {
+  color: var(--hs-erro);
+}
+
+@media (max-width: 768px) {
+  body.app-shell .palco.palco--leitura {
+    padding: 24px 16px;
+  }
+}
+
+/* ---------- Criar curso: lista de conteúdos e editor de quiz/lição ---------- */
+body.app-shell .acoes-item-conteudo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(26, 32, 44, 0.5);
+}
+
+.editor-modal {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  max-height: 100%;
+  background: var(--hs-card);
+  border-radius: var(--hs-raio-card);
+  box-shadow: 0 8px 24px rgba(22, 66, 91, 0.16);
+  color: var(--hs-corpo);
+}
+
+.editor-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--hs-borda);
+}
+
+.editor-topo h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--hs-titulo);
+}
+
+.editor-fechar {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: var(--hs-raio-controle);
+  background: transparent;
+  color: var(--hs-neutro-apoio);
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.editor-fechar:hover {
+  background: var(--hs-fundo);
+  color: var(--hs-titulo);
+}
+
+.editor-corpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+.editor-campo {
+  display: block;
+  margin-bottom: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--hs-titulo);
+}
+
+.editor-campo input,
+.editor-campo textarea,
+.editor-opcao input[type="text"] {
+  display: block;
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px 12px;
+  border: 1px solid var(--hs-borda);
+  border-radius: var(--hs-raio-controle);
+  background: var(--hs-card);
+  color: var(--hs-titulo);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  box-sizing: border-box;
+}
+
+.editor-campo textarea {
+  resize: vertical;
+}
+
+.editor-campo input:focus,
+.editor-campo textarea:focus,
+.editor-opcao input[type="text"]:focus {
+  outline: none;
+  border-color: var(--hs-azul);
+  box-shadow: var(--hs-foco);
+}
+
+.editor-linha {
+  display: flex;
+  gap: 16px;
+}
+
+.editor-grande {
+  flex: 1;
+}
+
+.editor-pequeno {
+  width: 140px;
+}
+
+.editor-dica {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--hs-legenda);
+}
+
+.editor-dica code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: var(--hs-fundo);
+  color: var(--hs-corpo);
+}
+
+.editor-pergunta {
+  margin: 0 0 24px;
+  padding: 16px;
+  border: 1px solid var(--hs-borda);
+  border-radius: var(--hs-raio-card);
+  background: var(--hs-fundo);
+}
+
+.editor-pergunta-topo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  color: var(--hs-titulo);
+}
+
+.editor-opcao {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.editor-opcao input[type="radio"] {
+  flex: none;
+  accent-color: var(--hs-azul);
+}
+
+.editor-opcao input[type="text"] {
+  margin-top: 0;
+}
+
+.editor-erro {
+  margin: 0;
+  padding: 8px 24px;
+  border-top: 1px solid #f2c7c7;
+  background: #fdf2f2;
+  color: var(--hs-erro);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.editor-rodape {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--hs-borda);
+}
+
+@media (max-width: 768px) {
+  .editor-overlay {
+    padding: 0;
+  }
+
+  .editor-modal {
+    max-width: none;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .editor-linha {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .editor-pequeno {
+    width: 100%;
+  }
+}
+
+body.app-shell .content .quiz-opcao {
+  font-weight: 400;
+  color: var(--hs-corpo);
+}
+
+body.app-shell .content .quiz-opcao:has(input:checked) {
+  color: var(--hs-titulo);
+}

@@ -1,14 +1,14 @@
 :root {
-  --azul: #163b97;
-  --azul-2: #1840a4;
+  --azul: #0055c3;
+  --azul-2: #0055c3;
   --azul-escuro: #0e2a74;
   --azul-claro: #67bdf8;
-  --verde: #00ed86;
+  --verde: #3e9c2d;
   --verde-escuro: #0a9d62;
   --texto: #1b2a4e;
-  --texto-suave: #5d6b8a;
+  --texto-suave: #718096;
   --fundo-claro: #f3f7fd;
-  --borda: #e1e8f5;
+  --borda: #e2e8f0;
   --lado: max(clamp(20px, 5vw, 80px), calc((100% - 1160px) / 2));
 }
 
@@ -97,7 +97,7 @@ a {
   height: 3px;
   width: 0;
   background: var(--verde);
-  border-radius: 30px;
+  border-radius: 999px;
   transition:
     left 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
@@ -134,7 +134,7 @@ a {
   justify-content: center;
   text-decoration: none;
   padding: 13px 24px;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   font-size: 15px;
   white-space: nowrap;
@@ -168,7 +168,7 @@ a {
 }
 
 .btn-verde {
-  background: #00b86b;
+  background: #3e9c2d;
   color: #fff;
 }
 
@@ -183,7 +183,7 @@ a {
   color: #fff;
   background:
     radial-gradient(circle at 85% 20%, rgba(103, 189, 248, 0.22), transparent 45%),
-    linear-gradient(135deg, var(--azul-escuro) 0%, var(--azul) 55%, #1f4fc0 100%);
+    linear-gradient(135deg, var(--azul-escuro) 0%, var(--azul) 55%, #0055c3 100%);
 }
 
 .hero-left {
@@ -244,7 +244,7 @@ a {
 
 .hero-foto {
   position: relative;
-  border-radius: 28px;
+  border-radius: 8px;
   overflow: hidden;
   aspect-ratio: 5 / 4;
   background: var(--azul-2);
@@ -281,7 +281,7 @@ a {
   padding: 10px 16px 10px 10px;
   background: rgba(255, 255, 255, 0.95);
   color: var(--azul);
-  border-radius: 14px;
+  border-radius: 8px;
   font-size: 14px;
   font-weight: 600;
 }
@@ -370,18 +370,18 @@ a {
   flex-direction: column;
   background: #fff;
   border: 1px solid var(--borda);
-  border-radius: 18px;
+  border-radius: 8px;
   overflow: hidden;
   text-decoration: none;
   color: inherit;
-  box-shadow: 0 6px 18px rgba(22, 59, 151, 0.06);
+  box-shadow: 0 6px 18px rgba(0, 85, 195, 0.06);
 }
 
 .curso-img {
   position: relative;
   aspect-ratio: 16 / 10;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--azul) 0%, var(--azul-claro) 100%);
+  background: var(--azul);
 }
 
 .curso-img img {
@@ -514,13 +514,13 @@ a {
   flex-direction: column;
   align-items: flex-start;
   padding: 36px;
-  border-radius: 24px;
+  border-radius: 8px;
   transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .perfil:hover {
   transform: translateY(-4px);
-  box-shadow: 0 18px 36px rgba(22, 59, 151, 0.12);
+  box-shadow: 0 18px 36px rgba(0, 85, 195, 0.12);
 }
 
 .perfil-aluno {
@@ -805,5 +805,120 @@ a {
 
   .rodape-in {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ==========================================================================
+   Guia de Estilo Habilita Saúde v1.3 — shell claro na landing
+   Logotipo sempre colorido, sobre fundo branco ou cinza muito claro.
+   ========================================================================== */
+.navbar {
+  background: #fff;
+  border-bottom: 1px solid var(--borda);
+}
+
+.logo-img {
+  filter: none;
+}
+
+.navbar .logo-img {
+  height: 48px;
+}
+
+#menu > a {
+  color: #4a5568;
+  opacity: 1;
+}
+
+#menu > a:hover,
+#menu > a.ativo {
+  color: #0055c3;
+}
+
+.menu-indicator {
+  background: #0055c3;
+}
+
+.menu-mobile {
+  color: #1a202c;
+}
+
+.btn-primary {
+  background: #0055c3;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #002d7d;
+}
+
+.btn-outline,
+.btn-ghost {
+  background: #fff;
+  color: #0055c3;
+  border: 1px solid #0055c3;
+}
+
+.btn-outline:hover,
+.btn-ghost:hover {
+  background: rgba(0, 85, 195, 0.08);
+  border-color: #0055c3;
+}
+
+.hero {
+  color: #1a202c;
+  background: #f7f9fa;
+}
+
+.tag {
+  color: #3e9c2d;
+}
+
+.hero h1 span {
+  color: #0055c3;
+  font-style: normal;
+}
+
+.hero p {
+  color: #4a5568;
+}
+
+.hero-foto {
+  border: 1px solid var(--borda);
+  box-shadow: 0 1px 3px rgba(22, 66, 91, 0.08);
+}
+
+.rodape {
+  background: #fff;
+  border-top: 1px solid var(--borda);
+  color: #4a5568;
+}
+
+.rodape-nav h4 {
+  color: #1a202c;
+}
+
+.rodape-nav a {
+  color: #4a5568;
+}
+
+.rodape-nav a:hover {
+  color: #0055c3;
+}
+
+.rodape-base {
+  border-top-color: var(--borda);
+  color: #718096;
+}
+
+@media (max-width: 860px) {
+  #menu {
+    background: #fff;
+    border-top: 1px solid var(--borda);
+    box-shadow: 0 8px 24px rgba(22, 66, 91, 0.16);
+  }
+
+  #menu > a {
+    border-bottom-color: var(--borda);
   }
 }

@@ -2,11 +2,11 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Poppins, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
 }
 
 body {
-  background: #eef1f7;
+  background: #f7f9fa;
 }
 
 .container {
@@ -21,7 +21,7 @@ body {
 
 .sidebar {
   width: 300px;
-  background: linear-gradient(to bottom, #163b97, #2249ad);
+  background: linear-gradient(to bottom, #0055c3, #0055c3);
   padding: 30px 20px;
   display: flex;
   flex-direction: column;
@@ -45,7 +45,7 @@ body {
 
 .sidebar li {
   margin-bottom: 15px;
-  border-radius: 10px;
+  border-radius: 6px;
 }
 
 .sidebar li a {
@@ -58,7 +58,7 @@ body {
 }
 
 .topbar {
-  background: #24439d;
+  background: #0055c3;
   color: white;
   margin: -25px -25px 25px -25px;
   padding: 15px 30px;
@@ -99,7 +99,7 @@ body {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: #22c55e;
+  background: #3e9c2d;
   border: 2px solid white;
   position: absolute;
   bottom: 2px;
@@ -107,16 +107,16 @@ body {
 }
 
 .menu-ativo {
-  color: #22c55e !important;
+  color: #3e9c2d !important;
   font-weight: 600;
 }
 
 .menu-ativo i {
-  color: #22c55e !important;
+  color: #3e9c2d !important;
 }
 
 .active-icon {
-  color: #22c55e !important;
+  color: #3e9c2d !important;
 }
 
 @media (max-width: 1000px) {
@@ -247,16 +247,16 @@ body {
 
   padding: 12px;
 
-  border-radius: 10px;
+  border-radius: 6px;
 
-  background: #dc2626;
+  background: #c53030;
   color: white;
 
   font-weight: 600;
 }
 
 .btn-logout:hover {
-  background: #b91c1c;
+  background: #9b2c2c;
 }
 
 .notification {
@@ -284,14 +284,14 @@ body {
   align-items: center;
   justify-content: center;
 
-  background: #22c55e;
+  background: #3e9c2d;
   color: white;
 
   font-size: 11px;
   font-weight: 700;
 
   border-radius: 50%;
-  border: 2px solid #1840a4;
+  border: 2px solid #0055c3;
 
   line-height: 1;
 }

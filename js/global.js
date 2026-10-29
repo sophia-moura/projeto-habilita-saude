@@ -1,6 +1,8 @@
 (function () {
   const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
   const salvar = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+  const esc = (t) =>
+    String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   const pagina = location.pathname.split("/").pop() || "index.html";
   const logado = localStorage.getItem("usuarioLogado") === "true";
@@ -69,43 +71,57 @@
     const naoLidas = ls("notificacoes", []).filter(visivel).filter((n) => !n.lida).length;
     const badge = document.getElementById("badgeNotificacao");
     if (badge) { badge.textContent = naoLidas; badge.style.display = naoLidas > 0 ? "flex" : "none"; }
+    const link = badge && badge.closest("a");
+    if (link) {
+      link.setAttribute(
+        "aria-label",
+        naoLidas > 0 ? `Notificações (${naoLidas} não lidas)` : "Notificações",
+      );
+    }
   }
   function notificar(titulo, descricao, tipoNotif, para) {
     const l = ls("notificacoes", []);
-    l.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), titulo, descricao, tipo: tipoNotif, para, lida: false, data: new Date().toLocaleString("pt-BR") });
-    salvar("notificacoes", l);
+    const lista = Array.isArray(l) ? l : [];
+    lista.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), titulo, descricao, tipo: tipoNotif, para, lida: false, data: new Date().toLocaleString("pt-BR") });
+    salvar("notificacoes", lista);
   }
   atualizarSino();
 
   const HS = {
+    esc,
     visivel,
     cursosPublicados: () => ls("cursos", []).filter((c) => c.status === "Publicado"),
 
     // Conteúdos de um curso: os do professor ou, na falta deles, os de exemplo.
     conteudosDoCurso(id) {
-      const prof = ls("cursos", []).find((c) => c.id === id);
+      const chave = String(id);
+      const prof = ls("cursos", []).find((c) => String(c.id) === chave);
       if (prof && (prof.conteudos || []).length) return prof.conteudos;
-      return (window.HS_CONTEUDOS_DEMO || {})[id] || [];
+      return (window.HS_CONTEUDOS_DEMO || {})[id] || (window.HS_CONTEUDOS_DEMO || {})[chave] || [];
     },
 
     matricular(cursoId) {
       const cursos = ls("cursos", []);
-      const c = cursos.find((x) => x.id === cursoId);
+      const chave = String(cursoId);
+      const c = cursos.find((x) => String(x.id) === chave);
       const u = ls("usuario", null);
-      if (!c || !u) return false;
+      if (!c || !u || !u.email) return false;
+
       const mats = ls("matriculas", []);
-      if (mats.some((m) => m.email === u.email && m.cursoId === c.id)) return false;
+      if (mats.some((m) => m.email === u.email && String(m.cursoId) === chave)) return false;
+
+      const meus = ls("cursosAluno_v2", []);
+      if (meus.some((m) => String(m.id) === chave)) return false;
 
       mats.push({ id: Date.now(), cursoId: c.id, cursoNome: c.nome, nome: u.nome, email: u.email, foto: u.foto || "", data: new Date().toISOString() });
-      c.alunos = (c.alunos || 0) + 1;
-      c.vendas = (c.vendas || 0) + 1;
+      c.alunos = (Number(c.alunos) || 0) + 1;
+      c.vendas = (Number(c.vendas) || 0) + 1;
       salvar("matriculas", mats);
       salvar("cursos", cursos);
 
-      const meus = ls("cursosAluno_v2", []);
       meus.push({
         id: c.id, nome: c.nome, area: c.categoria || "Saúde", categoria: c.nivel || c.categoria || "Curso",
-        imagem: c.imagem, progresso: 0, cargaHoraria: parseInt(c.cargaHoraria) || 0,
+        imagem: c.imagem, progresso: 0, cargaHoraria: parseInt(c.cargaHoraria, 10) || 0,
         professor: c.professor || "Professor(a)", dataMatricula: new Date().toISOString().slice(0, 10),
         ultimoAcesso: null, status: "nao-iniciado", certificado: c.certificado || "",
       });
@@ -119,7 +135,7 @@
     matriculas() {
       const meus = ls("cursosAluno_v2", []);
       return ls("matriculas", []).map((m) => {
-        const a = meus.find((c) => c.id === m.cursoId);
+        const a = meus.find((c) => String(c.id) === String(m.cursoId));
         return { ...m, progresso: a ? a.progresso : 0, status: a ? a.status : "nao-iniciado" };
       });
     },
@@ -152,7 +168,7 @@
       <div class="bv-box">
         <video id="bvVideo" src="./media/boas-vindas.mp4" poster="./media/boas-vindas.jpg" controls playsinline></video>
         <div class="bv-rodape">
-          <div><h3>Bem-vindo(a), ${(usuario.nome || "").split(" ")[0]}!</h3><p>${tipo === "professor" ? "Veja como publicar seus cursos e crescer na plataforma." : "Veja como começar sua jornada de aprendizado."}</p></div>
+          <div><h3>Bem-vindo(a), ${esc((usuario.nome || "").split(" ")[0])}!</h3><p>${tipo === "professor" ? "Veja como publicar seus cursos e crescer na plataforma." : "Veja como começar sua jornada de aprendizado."}</p></div>
           <div><button id="bvPular">Pular</button><button id="bvComecar">Começar</button></div>
         </div>
       </div>`;
@@ -170,14 +186,51 @@
   if (btnLogout) btnLogout.addEventListener("click", () => {
     if (!confirm("Deseja realmente sair da plataforma?")) return;
     localStorage.removeItem("usuarioLogado");
+    localStorage.removeItem("usuario");
     location.href = "index.html";
   });
 
+  // Menu lateral no celular. Algumas páginas antigas não tinham #overlay;
+  // criamos o elemento aqui para o comportamento ser igual em todas.
   const menuMobile = document.getElementById("menuMobile");
   const sidebar = document.querySelector(".sidebar");
-  const overlay = document.getElementById("overlay");
-  if (menuMobile && sidebar && overlay) {
-    menuMobile.addEventListener("click", () => { sidebar.classList.toggle("ativa"); overlay.classList.toggle("ativo"); });
-    overlay.addEventListener("click", () => { sidebar.classList.remove("ativa"); overlay.classList.remove("ativo"); });
+  let overlay = document.getElementById("overlay");
+  if (menuMobile && sidebar) {
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "overlay";
+      document.body.insertBefore(overlay, document.body.firstChild);
+    }
+
+    const menuAberto = () => sidebar.classList.contains("ativa");
+    const definirMenu = (aberto) => {
+      sidebar.classList.toggle("ativa", aberto);
+      overlay.classList.toggle("ativo", aberto);
+      menuMobile.setAttribute("aria-expanded", String(aberto));
+      menuMobile.setAttribute("aria-label", aberto ? "Fechar menu" : "Abrir menu");
+      document.body.classList.toggle("menu-aberto", aberto);
+      if (aberto) {
+        const primeiro = sidebar.querySelector("a, button");
+        if (primeiro) primeiro.focus({ preventScroll: true });
+      }
+    };
+
+    if (!sidebar.id) sidebar.id = "sidebarPrincipal";
+    menuMobile.setAttribute("aria-expanded", "false");
+    menuMobile.setAttribute("aria-controls", sidebar.id);
+    menuMobile.addEventListener("click", () => definirMenu(!menuAberto()));
+    overlay.addEventListener("click", () => definirMenu(false));
+    sidebar.addEventListener("click", (e) => {
+      if (e.target.closest("a")) definirMenu(false);
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && menuAberto()) {
+        definirMenu(false);
+        menuMobile.focus();
+      }
+    });
+    addEventListener("resize", () => {
+      if (innerWidth > 900 && menuAberto()) definirMenu(false);
+    });
   }
 })();

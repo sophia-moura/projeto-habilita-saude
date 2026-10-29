@@ -26,6 +26,79 @@
     },
   ];
 
+  // Sessão ativa: a landing continua pública, mas os atalhos apontam para o
+  // painel correto em vez de obrigar o usuário a passar pelo login novamente.
+  function lerUsuarioLogado() {
+    try {
+      if (localStorage.getItem("usuarioLogado") !== "true") return null;
+      const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+      return usuario && ["aluno", "professor"].includes(usuario.tipo) ? usuario : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  const usuarioLogado = lerUsuarioLogado();
+  const professorLogado = usuarioLogado && usuarioLogado.tipo === "professor";
+  const homeLogado = professorLogado ? "professor-inicio.html" : "aluno-inicio.html";
+  const cursosLogado = professorLogado ? "professor-meus-cursos.html" : "aluno-meus-cursos.html";
+
+  function configurarAtalhos() {
+    if (!usuarioLogado) return;
+
+    document.querySelectorAll(".acoes, .menu-acoes").forEach((grupo) => {
+      grupo.innerHTML =
+        `<a href="./${homeLogado}" class="btn-primary">Meu painel</a>` +
+        `<a href="./index.html" class="btn-outline" data-logout>Sair</a>`;
+    });
+
+    const botoesHero = document.querySelector(".hero-buttons");
+    if (botoesHero) {
+      const principal = botoesHero.querySelector("a");
+      const secundario = botoesHero.querySelectorAll("a")[1];
+      if (principal) {
+        principal.href = "./" + cursosLogado;
+        principal.textContent = "Meus cursos →";
+      }
+      if (secundario) {
+        secundario.href = professorLogado ? "./criar-curso.html" : "./certificados.html";
+        secundario.textContent = professorLogado ? "Criar curso" : "Meus certificados";
+      }
+    }
+
+    document.querySelectorAll('a[href="login.html?perfil=aluno"]').forEach((a) => {
+      a.href = "./" + cursosLogado;
+    });
+
+    if (professorLogado) {
+      document.querySelectorAll('a[href="login.html?perfil=professor"]').forEach((a) => {
+        a.href = "./criar-curso.html";
+        if (/ensinar/i.test(a.textContent)) a.textContent = "Criar curso";
+      });
+    }
+
+    const navPlataforma = document.querySelector('.rodape-nav[aria-label="Plataforma"]');
+    if (navPlataforma) {
+      navPlataforma.innerHTML =
+        `<h4>Plataforma</h4>` +
+        `<a href="./${homeLogado}">Meu painel</a>` +
+        `<a href="./index.html" data-logout>Sair</a>` +
+        `<a href="validar.html">Validar certificado</a>`;
+    }
+
+    document.addEventListener("click", (e) => {
+      const sair = e.target.closest("[data-logout]");
+      if (!sair) return;
+      e.preventDefault();
+      if (!confirm("Deseja realmente sair da plataforma?")) return;
+      localStorage.removeItem("usuarioLogado");
+      localStorage.removeItem("usuario");
+      location.reload();
+    });
+  }
+
+  configurarAtalhos();
+
   function cursosPublicados() {
     try {
       const lista = JSON.parse(localStorage.getItem("cursos")) || [];
@@ -44,7 +117,7 @@
 
   function criarCard(curso) {
     const card = el("a", "curso-card");
-    card.href = "login.html?perfil=aluno";
+    card.href = usuarioLogado ? "./" + cursosLogado : "login.html?perfil=aluno";
 
     const imgBox = el("div", "curso-img");
     if (curso.imagem) {

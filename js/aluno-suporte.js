@@ -1,4 +1,7 @@
 const CHAVE_CHAMADOS = "chamadosAluno";
+const esc =
+  (window.HS && HS.esc) ||
+  ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
 const perguntasFaq = [
   {
@@ -63,21 +66,22 @@ function renderizarFaq(termo = "") {
   filtradas.forEach((item, indice) => {
     listaFaq.innerHTML += `
       <div class="faq-item" data-indice="${indice}">
-        <button class="faq-pergunta">
-          <span>${item.pergunta}</span>
+        <button class="faq-pergunta" type="button" aria-expanded="false">
+          <span>${esc(item.pergunta)}</span>
           <i class="fa-solid fa-chevron-down"></i>
         </button>
 
         <div class="faq-resposta">
-          <p>${item.resposta}</p>
+          <p>${esc(item.resposta)}</p>
         </div>
       </div>
     `;
   });
 
   document.querySelectorAll(".faq-item").forEach((item) => {
-    item.querySelector(".faq-pergunta").addEventListener("click", () => {
-      item.classList.toggle("aberto");
+    item.querySelector(".faq-pergunta").addEventListener("click", (e) => {
+      const aberto = item.classList.toggle("aberto");
+      e.currentTarget.setAttribute("aria-expanded", String(aberto));
     });
   });
 }
@@ -92,7 +96,8 @@ function preencherCursos() {
   const cursos = obterCursosAluno();
 
   cursos.forEach((curso) => {
-    cursoChamado.innerHTML += `<option value="${curso.nome}">${curso.nome}</option>`;
+    if (!curso || !curso.nome) return;
+    cursoChamado.innerHTML += `<option value="${esc(curso.nome)}">${esc(curso.nome)}</option>`;
   });
 }
 
@@ -184,18 +189,18 @@ function renderizarChamados() {
       <div class="chamado-item">
         <div class="chamado-topo">
           <div>
-            <strong>${chamado.assunto}</strong>
-            <span class="protocolo">${chamado.protocolo}</span>
+            <strong>${esc(chamado.assunto || "Chamado")}</strong>
+            <span class="protocolo">${esc(chamado.protocolo || "")}</span>
           </div>
 
           <span class="status-chamado ${status.classe}">${status.texto}</span>
         </div>
 
-        <p class="chamado-mensagem">${chamado.mensagem}</p>
+        <p class="chamado-mensagem">${esc(chamado.mensagem || "")}</p>
 
         <div class="chamado-rodape">
-          <span><i class="fa-solid fa-book"></i> ${chamado.curso}</span>
-          <span><i class="fa-regular fa-clock"></i> ${chamado.data}</span>
+          <span><i class="fa-solid fa-book"></i> ${esc(chamado.curso || "—")}</span>
+          <span><i class="fa-regular fa-clock"></i> ${esc(chamado.data || "—")}</span>
         </div>
       </div>
     `;

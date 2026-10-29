@@ -178,8 +178,12 @@ function renderizarCursos() {
 
 abas.forEach((aba) => {
   aba.addEventListener("click", () => {
-    abas.forEach((a) => a.classList.remove("ativa"));
+    abas.forEach((a) => {
+      a.classList.remove("ativa");
+      a.setAttribute("aria-selected", "false");
+    });
     aba.classList.add("ativa");
+    aba.setAttribute("aria-selected", "true");
 
     filtros.status = aba.dataset.status;
 

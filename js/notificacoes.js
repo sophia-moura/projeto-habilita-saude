@@ -1,172 +1,156 @@
-const visivel = HS.visivel;
+(function () {
+  const esc =
+    HS.esc ||
+    ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
+  const ehVisivel = HS.visivel;
 
-let notificacoes = (JSON.parse(localStorage.getItem("notificacoes")) || []).filter(visivel);
+  const lerTodas = () => {
+    try {
+      const lista = JSON.parse(localStorage.getItem("notificacoes"));
+      return Array.isArray(lista) ? lista : [];
+    } catch (e) {
+      return [];
+    }
+  };
 
-function criarNotificacao(titulo, descricao, tipo) {
-  const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
-
-  notificacoes.unshift({
-    id: Date.now(),
-    titulo,
-    descricao,
-    tipo,
-    lida: false,
-    data: new Date().toLocaleString("pt-BR"),
-  });
-
-  localStorage.setItem("notificacoes", JSON.stringify(notificacoes));
-}
-
-function renderizarNotificacoes(lista) {
+  let notificacoes = lerTodas().filter(ehVisivel);
   const container = document.getElementById("listaNotificacoes");
+  if (!container) return;
 
-  container.innerHTML = "";
+  const ICONES = {
+    curso: "fa-book",
+    ticket: "fa-ticket",
+    relatorio: "fa-trophy",
+    alerta: "fa-circle-exclamation",
+    avaliacao: "fa-clipboard-check",
+    certificado: "fa-award",
+    sistema: "fa-gear",
+  };
 
-  lista.forEach((n) => {
-    let icone = "fa-bell";
-
-    if (n.tipo === "curso") {
-      icone = "fa-book";
-    }
-
-    if (n.tipo === "ticket") {
-      icone = "fa-ticket";
-    }
-
-    if (n.tipo === "relatorio") {
-      icone = "fa-trophy";
-    }
-
-    if (n.tipo === "alerta") {
-      icone = "fa-circle-exclamation";
-    }
-
-    container.innerHTML += `
-      <div class="notificacao-card">
-
-        <div class="icone ${n.tipo}">
-          <i class="fa-solid ${icone}"></i>
-        </div>
-
-        <div class="conteudo">
-
-          <h3>${n.titulo}</h3>
-
-          <p>${n.descricao}</p>
-
-          <small>${n.data}</small>
-
-          ${
-            !n.lida
-              ? `
-    <span
-      class="marcar-lida"
-      onclick="marcarComoLida(${n.id})"
-    >
-      <i class="fa-solid fa-check"></i>
-      Marcar como lida
-    </span>
-  `
-              : ""
-          }
-
-        </div>
-
-      </div>
-    `;
-  });
-}
-
-function ativarFiltro(id) {
-  document
-    .querySelectorAll(".metricas-notificacao .card-metrica")
-    .forEach((card) => card.classList.remove("ativo"));
-
-  document.getElementById(id).classList.add("ativo");
-}
-
-document.getElementById("filtroTotal").addEventListener("click", () => {
-  ativarFiltro("filtroTotal");
-
-  renderizarNotificacoes(notificacoes);
-});
-
-document.getElementById("filtroNaoLidas").addEventListener("click", () => {
-  ativarFiltro("filtroNaoLidas");
-
-  renderizarNotificacoes(notificacoes.filter((n) => !n.lida));
-});
-
-document.getElementById("filtroLidas").addEventListener("click", () => {
-  ativarFiltro("filtroLidas");
-
-  renderizarNotificacoes(notificacoes.filter((n) => n.lida));
-});
-
-document.getElementById("filtroHoje").addEventListener("click", () => {
-  ativarFiltro("filtroHoje");
-
-  renderizarNotificacoes(
-    notificacoes.filter((n) =>
-      n.data.includes(new Date().toLocaleDateString("pt-BR")),
-    ),
-  );
-});
-
-function atualizarMetricas() {
-  const notificacoes = (JSON.parse(localStorage.getItem("notificacoes")) || []).filter(visivel);
-
-  document.getElementById("totalNotificacoes").textContent =
-    notificacoes.length;
-
-  document.getElementById("naoLidas").textContent = notificacoes.filter(
-    (n) => !n.lida,
-  ).length;
-
-  document.getElementById("lidas").textContent = notificacoes.filter(
-    (n) => n.lida,
-  ).length;
-
-  document.getElementById("hoje").textContent = notificacoes.filter((n) =>
-    n.data.includes(new Date().toLocaleDateString("pt-BR")),
-  ).length;
-}
-
-function marcarComoLida(id) {
-  const lista = JSON.parse(localStorage.getItem("notificacoes")) || [];
-
-  const notificacao = lista.find((n) => n.id === id);
-
-  if (notificacao) {
-    notificacao.lida = true;
+  function vazio(texto) {
+    container.innerHTML = `<p class="vazio">${esc(texto)}</p>`;
   }
 
-  localStorage.setItem("notificacoes", JSON.stringify(lista));
+  function renderizarNotificacoes(lista) {
+    if (!lista.length) {
+      vazio("Nenhuma notificação encontrada.");
+      return;
+    }
 
-  notificacoes = lista.filter(visivel);
+    container.innerHTML = lista
+      .map((n) => {
+        const icone = ICONES[n.tipo] || "fa-bell";
+        const tipo = esc(n.tipo || "sistema");
+        return `
+      <div class="notificacao-card">
+        <div class="icone ${tipo}">
+          <i class="fa-solid ${icone}"></i>
+        </div>
+        <div class="conteudo">
+          <h3>${esc(n.titulo || "Notificação")}</h3>
+          <p>${esc(n.descricao || "")}</p>
+          <small>${esc(n.data || "")}</small>
+          ${
+            !n.lida
+              ? `<button type="button" class="marcar-lida" data-lida="${esc(n.id)}">
+                   <i class="fa-solid fa-check"></i> Marcar como lida
+                 </button>`
+              : ""
+          }
+        </div>
+      </div>`;
+      })
+      .join("");
+  }
+
+  function ativarFiltro(id) {
+    document.querySelectorAll(".metricas-notificacao .card-metrica").forEach((card) => {
+      card.classList.remove("ativo");
+      card.setAttribute("aria-pressed", "false");
+    });
+    const el = document.getElementById(id);
+    if (el) {
+      el.classList.add("ativo");
+      el.setAttribute("aria-pressed", "true");
+    }
+  }
+
+  const filtros = {
+    filtroTotal: () => notificacoes,
+    filtroNaoLidas: () => notificacoes.filter((n) => !n.lida),
+    filtroLidas: () => notificacoes.filter((n) => n.lida),
+    filtroHoje: () => {
+      const hoje = new Date().toLocaleDateString("pt-BR");
+      return notificacoes.filter((n) => String(n.data || "").includes(hoje));
+    },
+  };
+
+  Object.keys(filtros).forEach((id) => {
+    const botao = document.getElementById(id);
+    if (!botao) return;
+    botao.setAttribute("role", "button");
+    botao.setAttribute("tabindex", "0");
+    const acao = () => {
+      ativarFiltro(id);
+      renderizarNotificacoes(filtros[id]());
+    };
+    botao.addEventListener("click", acao);
+    botao.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        acao();
+      }
+    });
+  });
+
+  function atualizarMetricas() {
+    const todas = lerTodas().filter(ehVisivel);
+    const hoje = new Date().toLocaleDateString("pt-BR");
+    const set = (id, valor) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = valor;
+    };
+    set("totalNotificacoes", todas.length);
+    set("naoLidas", todas.filter((n) => !n.lida).length);
+    set("lidas", todas.filter((n) => n.lida).length);
+    set("hoje", todas.filter((n) => String(n.data || "").includes(hoje)).length);
+  }
+
+  function marcarComoLida(id) {
+    const lista = lerTodas();
+    const notificacao = lista.find((n) => String(n.id) === String(id));
+    if (!notificacao) return;
+    notificacao.lida = true;
+    try {
+      localStorage.setItem("notificacoes", JSON.stringify(lista));
+    } catch (e) {
+      alert("Não foi possível atualizar a notificação.");
+      return;
+    }
+    notificacoes = lista.filter(ehVisivel);
+    atualizarMetricas();
+    renderizarNotificacoes(notificacoes);
+  }
+
+  container.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-lida]");
+    if (btn) marcarComoLida(btn.dataset.lida);
+  });
 
   atualizarMetricas();
   renderizarNotificacoes(notificacoes);
-}
 
-atualizarMetricas();
-
-renderizarNotificacoes(notificacoes);
-
-function excluirTodasNotificacoes() {
-  const confirmar = confirm("Deseja realmente excluir todas as notificações?");
-
-  if (!confirmar) return;
-
-  const todas = JSON.parse(localStorage.getItem("notificacoes")) || [];
-  localStorage.setItem("notificacoes", JSON.stringify(todas.filter((n) => !visivel(n))));
-
-  notificacoes = [];
-
-  atualizarMetricas();
-  renderizarNotificacoes([]);
-}
-
-document
-  .getElementById("btnExcluirTodas")
-  .addEventListener("click", excluirTodasNotificacoes);
+  document.getElementById("btnExcluirTodas")?.addEventListener("click", () => {
+    if (!confirm("Deseja realmente excluir todas as notificações?")) return;
+    const restantes = lerTodas().filter((n) => !ehVisivel(n));
+    try {
+      localStorage.setItem("notificacoes", JSON.stringify(restantes));
+    } catch (e) {
+      alert("Não foi possível excluir as notificações.");
+      return;
+    }
+    notificacoes = [];
+    atualizarMetricas();
+    renderizarNotificacoes([]);
+  });
+})();

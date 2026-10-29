@@ -1,296 +1,238 @@
-const cursos = JSON.parse(localStorage.getItem("cursos")) || [];
+(function () {
+  const esc =
+    (window.HS && HS.esc) ||
+    ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
-console.log("Cursos carregados:", cursos);
+  const ler = (chave, padrao) => {
+    try {
+      const valor = JSON.parse(localStorage.getItem(chave));
+      return valor ?? padrao;
+    } catch (e) {
+      return padrao;
+    }
+  };
 
-console.log(
-  "Elemento Dashboard:",
-  document.getElementById("listaCursosDashboard"),
-);
+  let cursos = ler("cursos", []);
+  if (!Array.isArray(cursos)) cursos = [];
 
-console.log(cursos);
+  const numero = (v) => {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const imagem = (src) => esc(src || "./img/perfil.svg");
 
-function atualizarMetricas() {
-  const totalCursos = cursos.length;
+  function atualizarMetricas() {
+    const totalCursos = cursos.length;
+    const totalAlunos = cursos.reduce((total, curso) => total + numero(curso.alunos), 0);
+    const receitaTotal = cursos.reduce((total, curso) => total + numero(curso.preco) * numero(curso.vendas), 0);
+    const publicados = cursos.filter((curso) => curso.status === "Publicado").length;
 
-  const totalAlunos = cursos.reduce(
-    (total, curso) => total + (curso.alunos || 0),
-    0,
-  );
-
-  const receitaTotal = cursos.reduce(
-    (total, curso) => total + curso.preco * (curso.vendas || 0),
-    0,
-  );
-
-  const publicados = cursos.filter(
-    (curso) => curso.status === "Publicado",
-  ).length;
-
-  const totalCursosEl = document.getElementById("totalCursos");
-  const totalAlunosEl = document.getElementById("totalAlunos");
-  const receitaTotalEl = document.getElementById("receitaTotal");
-  const cursosPublicadosEl = document.getElementById("cursosPublicados");
-
-  if (totalCursosEl) {
-    totalCursosEl.textContent = totalCursos;
+    const set = (id, valor) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = valor;
+    };
+    set("totalCursos", totalCursos);
+    set("totalAlunos", totalAlunos);
+    set("receitaTotal", "R$ " + receitaTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
+    set("cursosPublicados", publicados);
   }
 
-  if (totalAlunosEl) {
-    totalAlunosEl.textContent = totalAlunos;
-  }
+  function renderizarCursosDashboard() {
+    const lista = document.getElementById("listaCursosDashboard");
+    if (!lista) return;
+    const busca = document.querySelector(".cards .search input");
+    const termo = (busca?.value || "").trim().toLowerCase();
+    const filtrados = termo
+      ? cursos.filter((curso) => String(curso.nome || "").toLowerCase().includes(termo))
+      : cursos;
 
-  if (receitaTotalEl) {
-    receitaTotalEl.textContent = "R$ " + receitaTotal.toLocaleString("pt-BR");
-  }
+    if (!filtrados.length) {
+      lista.innerHTML = `<p class="vazio">${termo ? "Nenhum curso encontrado para a busca." : "Nenhum curso criado ainda."}</p>`;
+      return;
+    }
 
-  if (cursosPublicadosEl) {
-    cursosPublicadosEl.textContent = publicados;
-  }
-}
-
-function renderizarCursosDashboard() {
-  const lista = document.getElementById("listaCursosDashboard");
-
-  lista.innerHTML = "";
-
-  if (cursos.length === 0) {
-    lista.innerHTML = `
-      <p>
-        Nenhum curso criado.
-      </p>
-    `;
-
-    return;
-  }
-
-  cursos.forEach((curso) => {
-    lista.innerHTML += `
-        <div class="curso">
-
-          <img
-            src="${curso.imagem}"
-            alt="${curso.nome}"
-          >
-
-          <div>
-            <h4>${curso.nome}</h4>
-
-            <p>
-              ${curso.status}
-            </p>
-          </div>
-
-          <strong>
-            ${curso.alunos || 0}
-          </strong>
-
+    lista.innerHTML = filtrados
+      .map(
+        (curso) => `
+      <div class="curso">
+        <img src="${imagem(curso.imagem)}" alt="${esc(curso.nome || "Curso")}" />
+        <div>
+          <h4>${esc(curso.nome || "Curso sem nome")}</h4>
+          <p>${esc(curso.status || "—")}</p>
         </div>
-      `;
-  });
-}
-
-function renderizarMaisVendidos() {
-  const tabela = document.getElementById("rankingVendas");
-
-  tabela.innerHTML = "";
-
-  if (cursos.length === 0) {
-    tabela.innerHTML = `
-      <tr>
-        <td colspan="3">
-          Nenhum curso encontrado
-        </td>
-      </tr>
-    `;
-
-    return;
+        <strong>${numero(curso.alunos)}</strong>
+      </div>`,
+      )
+      .join("");
   }
 
-  const ranking = [...cursos]
-    .sort((a, b) => (b.vendas || 0) - (a.vendas || 0))
-    .slice(0, 3);
+  function renderizarMaisVendidos() {
+    const tabela = document.getElementById("rankingVendas");
+    if (!tabela) return;
 
-  ranking.forEach((curso, index) => {
-    tabela.innerHTML += `
-        <tr>
-          <td>${index + 1}</td>
-          <td>${curso.nome}</td>
-          <td>${curso.vendas || 0}</td>
-        </tr>
-      `;
-  });
-}
+    if (!cursos.length) {
+      tabela.innerHTML = `<tr><td colspan="3">Nenhum curso encontrado</td></tr>`;
+      return;
+    }
 
-function renderizarAvaliacoes() {
-  const tabela = document.getElementById("rankingAvaliacoes");
+    const ranking = cursos
+      .slice()
+      .sort((a, b) => numero(b.vendas) - numero(a.vendas))
+      .slice(0, 3);
 
-  tabela.innerHTML = "";
-
-  const cursosComAvaliacao = cursos.filter(
-    (curso) => (curso.vendas || 0) > 0 && (curso.avaliacao || 0) > 0,
-  );
-
-  if (cursosComAvaliacao.length === 0) {
-    tabela.innerHTML = `
-      <tr>
-        <td colspan="3">
-          Nenhum curso avaliado ainda
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
-
-  const ranking = cursosComAvaliacao
-    .sort((a, b) => (b.avaliacao || 0) - (a.avaliacao || 0))
-    .slice(0, 3);
-
-  ranking.forEach((curso, index) => {
-    tabela.innerHTML += `
+    tabela.innerHTML = ranking
+      .map(
+        (curso, index) => `
       <tr>
         <td>${index + 1}</td>
-        <td>${curso.nome}</td>
-        <td>⭐ ${curso.avaliacao || 0}</td>
-      </tr>
-    `;
-  });
-}
-
-function renderizarUsuariosDashboard() {
-  const lista = document.getElementById("listaUsuariosDashboard");
-
-  if (!lista) return;
-
-  lista.innerHTML = "";
-
-  const usuarios = HS.alunos();
-
-  if (usuarios.length === 0) {
-    lista.innerHTML = `
-      <p>Nenhum usuário encontrado.</p>
-    `;
-    return;
+        <td>${esc(curso.nome || "Curso")}</td>
+        <td>${numero(curso.vendas)}</td>
+      </tr>`,
+      )
+      .join("");
   }
 
-  usuarios.slice(0, 5).forEach((usuario) => {
-    lista.innerHTML += `
+  function renderizarAvaliacoes() {
+    const tabela = document.getElementById("rankingAvaliacoes");
+    if (!tabela) return;
+
+    const cursosComAvaliacao = cursos.filter(
+      (curso) => numero(curso.vendas) > 0 && numero(curso.avaliacao) > 0,
+    );
+
+    if (!cursosComAvaliacao.length) {
+      tabela.innerHTML = `<tr><td colspan="3">Nenhum curso avaliado ainda</td></tr>`;
+      return;
+    }
+
+    const ranking = cursosComAvaliacao
+      .slice()
+      .sort((a, b) => numero(b.avaliacao) - numero(a.avaliacao))
+      .slice(0, 3);
+
+    tabela.innerHTML = ranking
+      .map(
+        (curso, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${esc(curso.nome || "Curso")}</td>
+        <td>⭐ ${numero(curso.avaliacao).toFixed(1)}</td>
+      </tr>`,
+      )
+      .join("");
+  }
+
+  function renderizarUsuariosDashboard() {
+    const lista = document.getElementById("listaUsuariosDashboard");
+    if (!lista) return;
+
+    const usuarios = HS.alunos();
+    if (!usuarios.length) {
+      lista.innerHTML = `<p>Nenhum usuário encontrado.</p>`;
+      return;
+    }
+
+    lista.innerHTML = usuarios
+      .slice(0, 5)
+      .map((usuario) => {
+        const nome = usuario.nome || "Aluno";
+        const avatar =
+          usuario.foto ||
+          (typeof window.HSAvatar === "function" ? window.HSAvatar(nome) : "./img/perfil.svg");
+        return `
       <div class="usuario-dashboard">
-        <img
-          src="${usuario.foto || "https://ui-avatars.com/api/?background=0055c3&color=fff&name=" + encodeURIComponent(usuario.nome)}"
-          alt="${usuario.nome}"
-        >
-
+        <img src="${esc(avatar)}" alt="${esc(nome)}" />
         <div class="usuario-info">
-          <strong>${usuario.nome}</strong>
-          <small>${usuario.cursoNome}</small>
+          <strong>${esc(nome)}</strong>
+          <small>${esc(usuario.cursoNome || "—")}</small>
         </div>
-      </div>
-    `;
+      </div>`;
+      })
+      .join("");
+  }
+
+  /* ---------- Gráfico ---------- */
+  function meses(qtd) {
+    const nomes = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+    const hoje = new Date();
+    const labels = [];
+    for (let i = qtd - 1; i >= 0; i--) {
+      const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+      labels.push(nomes[d.getMonth()]);
+    }
+    return labels;
+  }
+
+  function dadosGrafico(qtd) {
+    const total = cursos.reduce((t, c) => t + numero(c.alunos), 0);
+    return Array.from({ length: qtd }, (_, i) => Math.round((total * (i + 1)) / qtd));
+  }
+
+  let grafico = null;
+
+  function criarGrafico() {
+    const canvas = document.getElementById("graficoVendas");
+    if (!canvas) return;
+    if (!window.Chart) {
+      canvas.style.display = "none";
+      const aviso = document.createElement("p");
+      aviso.className = "vazio";
+      aviso.textContent = "Não foi possível carregar o gráfico. Verifique sua conexão.";
+      canvas.insertAdjacentElement("afterend", aviso);
+      return;
+    }
+    if (grafico) {
+      grafico.destroy();
+      grafico = null;
+    }
+    grafico = new Chart(canvas, {
+      type: "line",
+      data: {
+        labels: meses(6),
+        datasets: [
+          {
+            label: "Matrículas",
+            data: dadosGrafico(6),
+            borderColor: "#4f7cff",
+            backgroundColor: "rgba(79,124,255,0.15)",
+            fill: true,
+            tension: 0.4,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: "#4f7cff",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            grid: { color: "#f7f9fa" },
+            border: { display: false },
+          },
+          x: { grid: { display: false }, border: { display: false } },
+        },
+      },
+    });
+  }
+
+  atualizarMetricas();
+  renderizarCursosDashboard();
+  renderizarMaisVendidos();
+  renderizarAvaliacoes();
+  renderizarUsuariosDashboard();
+  criarGrafico();
+
+  document.querySelector(".cards .search input")?.addEventListener("input", renderizarCursosDashboard);
+
+  document.querySelector(".grafico-topo select")?.addEventListener("change", (e) => {
+    const qtd = String(e.target.value).includes("12") ? 12 : 6;
+    if (!grafico) return;
+    grafico.data.labels = meses(qtd);
+    grafico.data.datasets[0].data = dadosGrafico(qtd);
+    grafico.update();
   });
-}
-
-renderizarUsuariosDashboard();
-
-function criarNotificacao(titulo, descricao, tipo) {
-  const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
-
-  notificacoes.unshift({
-    id: Date.now(),
-    titulo,
-    descricao,
-    tipo,
-    lida: false,
-    data: new Date().toLocaleString("pt-BR"),
-  });
-
-  localStorage.setItem("notificacoes", JSON.stringify(notificacoes));
-}
-
-const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
-
-const naoLidas = notificacoes.filter((n) => !n.lida).length;
-
-atualizarMetricas();
-
-renderizarCursosDashboard();
-
-renderizarMaisVendidos();
-
-renderizarAvaliacoes();
-
-const totalAlunos = cursos.reduce(
-  (total, curso) => total + (curso.alunos || 0),
-  0,
-);
-
-const dadosGrafico = [
-  0,
-  totalAlunos * 0.2,
-  totalAlunos * 0.4,
-  totalAlunos * 0.6,
-  totalAlunos * 0.8,
-  totalAlunos,
-];
-
-const ctx = document.getElementById("graficoVendas");
-
-new Chart(ctx, {
-  type: "line",
-  data: {
-    labels: ["Dez", "Jan", "Fev", "Mar", "Abr", "Mai"],
-    datasets: [
-      {
-        label: "Matrículas",
-        data: dadosGrafico,
-
-        borderColor: "#4f7cff",
-        backgroundColor: "rgba(79,124,255,0.15)",
-
-        fill: true,
-
-        tension: 0.4,
-
-        pointRadius: 4,
-        pointHoverRadius: 6,
-
-        pointBackgroundColor: "#4f7cff",
-      },
-    ],
-  },
-
-  options: {
-    responsive: true,
-    maintainAspectRatio: false,
-
-    plugins: {
-      legend: {
-        display: false,
-      },
-    },
-
-    scales: {
-      y: {
-        beginAtZero: true,
-
-        grid: {
-          color: "#f7f9fa",
-        },
-
-        border: {
-          display: false,
-        },
-      },
-
-      x: {
-        grid: {
-          display: false,
-        },
-
-        border: {
-          display: false,
-        },
-      },
-    },
-  },
-});
+})();

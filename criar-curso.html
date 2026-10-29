@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Criar curso — Habilita Saúde</title>
+    <meta name="description" content="Crie e publique cursos na Habilita Saúde com conteúdos, carga horária e certificação." />
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -20,9 +21,13 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
 
   <body class="app-shell">
+    
+    <div id="overlay"></div>
     <div class="container">
       <aside class="sidebar" aria-label="Navegação principal">
         <div>
@@ -109,7 +114,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -191,6 +196,7 @@
                   type="number"
                   id="cargaHoraria"
                   min="1"
+                  required
                   placeholder="Ex: 30"
                 />
               </div>
@@ -210,8 +216,8 @@
               <div class="campo">
                 <label>Imagem da capa*</label>
 
-                <div class="upload-box" id="uploadBox">
-                  <input type="file" id="imagemCurso" accept="image/*" hidden />
+                <div class="upload-box" id="uploadBox" role="button" tabindex="0" aria-label="Enviar imagem de capa do curso">
+                  <input type="file" id="imagemCurso" accept="image/png,image/jpeg,image/webp" hidden />
 
                   <img id="previewImagem" class="preview-imagem" />
 

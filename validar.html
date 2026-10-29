@@ -4,6 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Validar Certificado — Habilita Saúde</title>
+  <meta
+    name="description"
+    content="Valide a autenticidade dos certificados emitidos pela Habilita Saúde usando o código de validação."
+  />
   <link rel="icon" href="./img/favicon.png" />
   <style>
     *{box-sizing:border-box;font-family:Inter,Arial,sans-serif}
@@ -18,26 +22,36 @@
     .res{margin-top:20px;padding:18px;border-radius:14px;font-size:14px;line-height:1.7;animation:e .5s}
     .ok{background:#e8f7ec;color:#17692b}.no{background:#fdecec;color:#a12626}
   </style>
-</head>
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
+  </head>
 <body>
-  <div class="caixa">
+  <main class="caixa">
     <img src="./img/logo.png" alt="Habilita Saúde" />
     <h1>Validação de certificado</h1>
     <p class="s">Informe o código de 32 caracteres presente no certificado.</p>
-    <input id="codigo" maxlength="32" placeholder="Código do certificado" />
-    <button id="btn">Validar</button>
-    <div id="res"></div>
-  </div>
+    <input id="codigo" maxlength="32" placeholder="Código do certificado" autocomplete="off" aria-label="Código do certificado" />
+    <button id="btn" type="button">Validar</button>
+    <div id="res" role="status" aria-live="polite"></div>
+  </main>
   <script>
     const campo = document.getElementById("codigo"), res = document.getElementById("res");
+    const esc = (t) =>
+      String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
     function validar() {
       const id = campo.value.trim().toUpperCase();
-      const r = JSON.parse(localStorage.getItem("certificados") || "[]").find((c) => c.uuid === id);
+      let registros = [];
+      try {
+        registros = JSON.parse(localStorage.getItem("certificados") || "[]");
+      } catch (e) {
+        registros = [];
+      }
+      const r = Array.isArray(registros) ? registros.find((c) => String(c.uuid || "").toUpperCase() === id) : null;
       res.innerHTML = r
-        ? `<div class="res ok"><b>✔ Certificado autêntico</b><br>Aluno: ${r.aluno}<br>Curso: ${r.curso}<br>${r.rotulo}<br>Carga horária: ${r.cargaHoraria}h<br>Emitido em: ${r.data}</div>`
+        ? `<div class="res ok"><b>✔ Certificado autêntico</b><br>Aluno: ${esc(r.aluno)}<br>Curso: ${esc(r.curso)}<br>${esc(r.rotulo)}<br>Carga horária: ${esc(r.cargaHoraria)}h<br>Emitido em: ${esc(r.data)}</div>`
         : `<div class="res no"><b>✖ Certificado não encontrado</b><br>Confira o código e tente novamente.</div>`;
     }
-    document.getElementById("btn").onclick = validar;
+    document.getElementById("btn").addEventListener("click", validar);
     campo.addEventListener("keydown", (e) => e.key === "Enter" && validar());
     const q = new URLSearchParams(location.search).get("id") || location.pathname.split("/validar/")[1];
     if (q) { campo.value = q; validar(); }

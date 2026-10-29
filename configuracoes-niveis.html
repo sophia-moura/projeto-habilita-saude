@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Configurações — Habilita Saúde</title>
+    <meta name="description" content="Configure níveis, trilhas e regras de gamificação da plataforma Habilita Saúde." />
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -20,9 +21,13 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
 
   <body class="app-shell">
+    
+    <div id="overlay"></div>
     <div class="container">
       <aside class="sidebar" aria-label="Navegação principal">
         <div>
@@ -109,7 +114,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -128,11 +133,11 @@
         </div>
 
 
-        <section class="usuarios-card" style="padding:24px">
-          <h2 style="margin-bottom:6px">Parâmetros dos níveis de certificação</h2>
-          <p style="margin-bottom:16px;color:#718096">As alterações valem para novos cadastros de curso, validação de preço e cálculo de repasse.</p>
-          <div id="formNiveis" style="overflow-x:auto"></div>
-          
+        <section class="usuarios-card config-niveis" aria-labelledby="tituloNiveis">
+          <h2 id="tituloNiveis">Parâmetros dos níveis de certificação</h2>
+          <p class="config-desc">As alterações valem para novos cadastros de curso, validação de preço e cálculo de repasse. Revise as faixas antes de salvar.</p>
+          <div id="formNiveis" class="tabela-niveis-wrap"></div>
+          <p id="statusNiveis" class="config-status" role="status" aria-live="polite"></p>
         </section>
       </div>
       </main>

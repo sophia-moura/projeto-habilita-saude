@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Meus cursos — Habilita Saúde</title>
+    <meta name="description" content="Acesse seus cursos na Habilita Saúde, continue as aulas e acompanhe seu progresso." />
 
     <link rel="stylesheet" href="./css/aluno.css" />
 
@@ -20,6 +21,8 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
 
   <body class="app-shell">
@@ -93,7 +96,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -108,20 +111,20 @@
         </div>
 
 
-        <section class="abas-cursos">
-          <button class="aba ativa" data-status="todos">
+        <section class="abas-cursos" role="tablist" aria-label="Filtrar cursos por status">
+          <button type="button" class="aba ativa" role="tab" aria-selected="true" data-status="todos">
             Todos <span class="contador" id="contTodos">0</span>
           </button>
 
-          <button class="aba" data-status="andamento">
+          <button type="button" class="aba" role="tab" aria-selected="false" data-status="andamento">
             Em andamento <span class="contador" id="contAndamento">0</span>
           </button>
 
-          <button class="aba" data-status="concluido">
+          <button type="button" class="aba" role="tab" aria-selected="false" data-status="concluido">
             Concluídos <span class="contador" id="contConcluido">0</span>
           </button>
 
-          <button class="aba" data-status="nao-iniciado">
+          <button type="button" class="aba" role="tab" aria-selected="false" data-status="nao-iniciado">
             Não iniciados <span class="contador" id="contNaoIniciado">0</span>
           </button>
         </section>
@@ -133,18 +136,19 @@
               type="text"
               id="campoBusca"
               placeholder="Buscar em meus cursos..."
+              aria-label="Buscar em meus cursos"
             />
           </div>
 
-          <select id="filtroArea">
+          <select id="filtroArea" aria-label="Filtrar por área">
             <option value="">Todas as áreas</option>
           </select>
 
-          <select id="filtroCategoria">
+          <select id="filtroCategoria" aria-label="Filtrar por categoria">
             <option value="">Todas as categorias</option>
           </select>
 
-          <select id="filtroOrdenacao">
+          <select id="filtroOrdenacao" aria-label="Ordenar cursos">
             <option value="recentes">Acessados recentemente</option>
             <option value="progresso">Maior progresso</option>
             <option value="matricula">Matrícula mais recente</option>
@@ -152,6 +156,7 @@
           </select>
         </section>
 
+        <h2 class="sr-only">Lista de cursos</h2>
         <section id="listaCursos" class="lista-cursos"></section>
       </div>
       </main>

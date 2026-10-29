@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Meus cursos — Habilita Saúde</title>
+    <meta name="description" content="Gerencie seus cursos publicados e rascunhos na Habilita Saúde." />
 
     <link rel="stylesheet" href="./css/meus-cursos.css" />
 
@@ -19,6 +20,8 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
 
   <body class="app-shell">
@@ -109,7 +112,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -130,9 +133,9 @@
         
 
         <div class="filtros">
-          <input id="buscaCurso" type="text" placeholder="Buscar curso..." />
+          <input id="buscaCurso" type="text" placeholder="Buscar curso..." aria-label="Buscar curso" />
 
-          <select id="categoria">
+          <select id="categoria" aria-label="Filtrar por categoria">
             <option value="Todas">Todas as categorias</option>
             <option value="Urgência">Urgência</option>
             <option value="Enfermagem">Enfermagem</option>
@@ -141,15 +144,16 @@
             <option value="Saúde Mental">Saúde Mental</option>
           </select>
 
-          <select id="filtroCarga">
+          <select id="filtroCarga" aria-label="Filtrar por carga horária">
             <option value="Todas">Todas as cargas horárias</option>
           </select>
 
-          <select id="filtroPublico">
+          <select id="filtroPublico" aria-label="Filtrar por público-alvo">
             <option value="Todos">Todos os públicos</option>
           </select>
         </div>
 
+        <h2 class="sr-only">Lista de cursos</h2>
         <section id="cursosGrid" class="cursos-grid"></section>
       </div>
       </main>

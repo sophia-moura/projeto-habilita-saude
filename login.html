@@ -4,7 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Login</title>
+    <title>Entrar — Habilita Saúde</title>
+    <meta
+      name="description"
+      content="Entre ou crie sua conta na Habilita Saúde para acessar cursos, certificados e sua área de aprendizagem."
+    />
 
     <link rel="stylesheet" href="./css/login.css" />
 
@@ -28,9 +32,11 @@
       @media (prefers-reduced-motion:reduce){*{animation:none!important}}
     </style>
     <link rel="stylesheet" href="./css/animacoes.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
   <body>
-    <div class="login-container">
+    <main class="login-container">
       <div class="login-box">
         <div class="logo">
           <img class="logo-img" src="./img/logo-habilita.png" alt="Habilita Saúde" style="height:90px;margin:0 auto 6px" />
@@ -110,7 +116,7 @@
         </div>
 
       </div>
-    </div>
+    </main>
 
     <!-- ===== MODAL DE CADASTRO ===== -->
     <div class="modal-cadastro" id="modalCadastro" role="dialog" aria-modal="true">
@@ -398,11 +404,22 @@
       })();
 
       function gerarFoto(nome) {
-        return (
-          "https://ui-avatars.com/api/?name=" +
-          encodeURIComponent(nome || "U") +
-          "&background=0055c3&color=fff"
-        );
+        if (typeof window.HSAvatar === "function") return window.HSAvatar(nome);
+        const iniciais = String(nome || "U")
+          .trim()
+          .split(/\s+/)
+          .slice(0, 2)
+          .map((parte) => (parte.match(/[\p{L}\p{N}]/u) || ["U"])[0])
+          .join("")
+          .toUpperCase();
+        const svg =
+          '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">' +
+          '<rect width="128" height="128" rx="64" fill="#0055c3"/>' +
+          '<text x="50%" y="50%" dy=".35em" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" ' +
+          'font-size="52" font-weight="700" fill="#ffffff">' +
+          (iniciais || "U") +
+          "</text></svg>";
+        return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
       }
 
       function abrirCadastro(tipo) {

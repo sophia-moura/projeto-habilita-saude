@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Suporte — Habilita Saúde</title>
+    <meta name="description" content="Central de suporte do professor da Habilita Saúde: tire dúvidas e acompanhe chamados." />
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -20,9 +21,13 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
 
   <body class="app-shell">
+    
+    <div id="overlay"></div>
     <div class="container">
       <aside class="sidebar" aria-label="Navegação principal">
         <div>
@@ -109,7 +114,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -147,7 +152,7 @@
           </button>
         </section>
 
-        <select id="filtroStatus">
+        <select id="filtroStatus" aria-label="Filtrar tickets por status">
           <option value="Todos">Todos</option>
           <option value="Aberto">Aberto</option>
           <option value="Andamento">Andamento</option>
@@ -155,6 +160,7 @@
         </select>
 
         <section class="metricas-suporte">
+          <h2 class="sr-only">Resumo do suporte</h2>
           <div class="card-metrica">
             <i class="fa-solid fa-ticket"></i>
 
@@ -194,18 +200,24 @@
 
         <section id="listaTickets"></section>
 
-        <div id="modalTicket" class="modal">
+        <div id="modalTicket" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalTicket">
           <div class="modal-content">
-            <h2>Novo ticket</h2>
+            <button type="button" class="modal-fechar" data-fechar-modal aria-label="Fechar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 id="tituloModalTicket">Novo ticket</h2>
 
+            <label for="tituloTicket" class="sr-only">Título do ticket</label>
             <input type="text" id="tituloTicket" placeholder="Título" />
 
+            <label for="prioridadeTicket" class="sr-only">Prioridade</label>
             <select id="prioridadeTicket">
               <option>Baixa</option>
               <option>Média</option>
               <option>Alta</option>
             </select>
 
+            <label for="mensagemTicket" class="sr-only">Descrição do problema</label>
             <textarea
               id="mensagemTicket"
               rows="6"
@@ -216,13 +228,17 @@
           </div>
         </div>
 
-        <div id="modalChat" class="modal">
+        <div id="modalChat" class="modal" role="dialog" aria-modal="true" aria-labelledby="tituloModalChat">
           <div class="modal-content">
-            <h2>Ticket</h2>
+            <button type="button" class="modal-fechar" data-fechar-modal aria-label="Fechar">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+            <h2 id="tituloModalChat">Ticket</h2>
 
             <div id="mensagensTicket"></div>
 
             <div class="enviar-mensagem">
+              <label for="novaMensagem" class="sr-only">Mensagem</label>
               <input
                 type="text"
                 id="novaMensagem"

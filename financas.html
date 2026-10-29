@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Finanças — Habilita Saúde</title>
+    <meta name="description" content="Acompanhe faturamento, repasses e dados bancários no painel financeiro da Habilita Saúde." />
 
     <link rel="stylesheet" href="./css/style.css" />
     <link
@@ -18,8 +19,12 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
   <body class="app-shell">
+    
+    <div id="overlay"></div>
     <div class="container">
       <aside class="sidebar" aria-label="Navegação principal">
         <div>
@@ -106,7 +111,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -127,10 +132,11 @@
         
 
         <div class="acoes-topo">
-          <input type="month" id="filtroMes" />
+          <input type="month" id="filtroMes" aria-label="Filtrar por mês" />
           
         </div>
         <section class="metricas-financeiras">
+          <h2 class="sr-only">Indicadores financeiros</h2>
           <div class="card-metrica azul-claro">
             <h3>Faturamento bruto</h3>
             <strong id="faturamentoBruto">R$ 0,00</strong>
@@ -219,17 +225,17 @@
 
             <div class="pagamento-info">
               <span>Banco</span>
-              <strong id="bancoUsuario">Banco do Brasil</strong>
+              <strong id="bancoUsuario">—</strong>
             </div>
 
             <div class="pagamento-info">
               <span>Agência</span>
-              <strong id="agenciaUsuario">1234-5</strong>
+              <strong id="agenciaUsuario">—</strong>
             </div>
 
             <div class="pagamento-info">
               <span>Conta</span>
-              <strong id="contaUsuario">12345-6</strong>
+              <strong id="contaUsuario">—</strong>
             </div>
 
             <button class="btn-editar-banco">
@@ -246,11 +252,11 @@
       <div class="modal-content">
         <h2>Editar dados bancários</h2>
 
-        <input type="text" id="inputBanco" placeholder="Banco" />
+        <input type="text" id="inputBanco" placeholder="Banco" aria-label="Banco" />
 
-        <input type="text" id="inputAgencia" placeholder="Agência" />
+        <input type="text" id="inputAgencia" placeholder="Agência" aria-label="Agência" />
 
-        <input type="text" id="inputConta" placeholder="Conta" />
+        <input type="text" id="inputConta" placeholder="Conta" aria-label="Conta" />
 
         <button id="salvarBanco">Salvar</button>
       </div>

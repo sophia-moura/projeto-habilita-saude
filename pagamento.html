@@ -1,211 +1,442 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Habilita.Saúde — Finalizar compra</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="pagamento.css">
-</head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Finalize a compra do seu curso na Habilita Saúde." />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Finalizar compra — Habilita Saúde</title>
 
-<div class="topbar">
-  <div class="brand">
-    <div class="mark">H</div>
-    <div class="name">HABILITA<span>.SAÚDE</span></div>
-  </div>
-  <div class="secure-note">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z"/></svg>
-    Ambiente seguro
-  </div>
-</div>
+    <link rel="icon" href="./img/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./css/pagamento.css" />
+    <script src="./js/tema.js"></script>
+  </head>
 
-<div class="wrap">
-  <a class="back">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 5l-7 7 7 7"/></svg>
-    Voltar ao curso
-  </a>
+  <body>
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
 
-  <div class="steps">
-    <div class="step done"><div class="n">✓</div>Seus dados</div>
-    <div class="step-sep"></div>
-    <div class="step active"><div class="n">2</div>Pagamento</div>
-    <div class="step-sep"></div>
-    <div class="step"><div class="n">3</div>Confirmação</div>
-  </div>
+    <header class="topbar">
+      <a class="brand" href="./index.html" aria-label="Habilita Saúde — página inicial">
+        <img class="brand-logo" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+      </a>
 
-  <h1 class="page-title">Finalizar compra</h1>
+      <div class="topbar-actions">
+        <span class="secure-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+            <path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z" />
+          </svg>
+          <span>Ambiente seguro</span>
+        </span>
+        <div class="icons"></div>
+      </div>
+    </header>
 
-  <div class="grid">
-    <div class="main-col">
+    <main class="wrap" id="conteudo">
+      <a class="back" id="backLink" href="./aluno-meus-cursos.html">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M14 5l-7 7 7 7" />
+        </svg>
+        <span id="backLinkText">Voltar ao curso</span>
+      </a>
 
-      <div class="card">
-        <h2><span class="num">1</span>Forma de pagamento</h2>
-        <div class="paytabs">
-          <div class="paytab active" onclick="selectPay('card')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5.5" width="19" height="13" rx="2.2"/><path d="M2.5 9.5h19"/></svg>
-            Cartão
-          </div>
-          <div class="paytab" onclick="selectPay('pix')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8.5 4.5l4 4 4-4M8.5 19.5l4-4 4 4M4.5 8.5l4 4-4 4M19.5 8.5l-4 4 4 4"/></svg>
-            Pix
-          </div>
-          <div class="paytab" onclick="selectPay('boleto')">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4.5v15M8 4.5v15M11 4.5v15M15 4.5v15M18 4.5v15M20.5 4.5v15"/></svg>
-            Boleto
-          </div>
+      <div class="steps" aria-label="Etapas da compra">
+        <div class="step done">
+          <span class="n" aria-hidden="true">✓</span>
+          <span>Seus dados</span>
+        </div>
+        <span class="step-sep" aria-hidden="true"></span>
+        <div class="step active" aria-current="step">
+          <span class="n" aria-hidden="true">2</span>
+          <span>Pagamento</span>
+        </div>
+        <span class="step-sep" aria-hidden="true"></span>
+        <div class="step">
+          <span class="n" aria-hidden="true">3</span>
+          <span>Confirmação</span>
+        </div>
+      </div>
+
+      <div class="page-heading">
+        <h1>Finalizar compra</h1>
+        <p>Escolha a forma de pagamento e confira os dados antes de continuar.</p>
+      </div>
+
+      <p class="demo-note" role="note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 10v6M12 7h.01" stroke-linecap="round" />
+        </svg>
+        Checkout de demonstração: nenhum valor real será cobrado.
+      </p>
+
+      <form id="checkoutForm" class="grid" novalidate>
+        <div class="main-col">
+          <section class="card" aria-labelledby="tituloPagamento">
+            <h2 id="tituloPagamento"><span class="num" aria-hidden="true">1</span>Forma de pagamento</h2>
+
+            <div class="paytabs" role="tablist" aria-label="Forma de pagamento">
+              <button
+                class="paytab active"
+                type="button"
+                role="tab"
+                id="tab-card"
+                aria-selected="true"
+                aria-controls="card-pane"
+                data-pay="card"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <rect x="2.5" y="5.5" width="19" height="13" rx="2.2" />
+                  <path d="M2.5 9.5h19" />
+                </svg>
+                Cartão
+              </button>
+              <button
+                class="paytab"
+                type="button"
+                role="tab"
+                id="tab-pix"
+                aria-selected="false"
+                aria-controls="pix-pane"
+                tabindex="-1"
+                data-pay="pix"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M8.5 4.5l4 4 4-4M8.5 19.5l4-4 4 4M4.5 8.5l4 4-4 4M19.5 8.5l-4 4 4 4" />
+                </svg>
+                Pix
+              </button>
+              <button
+                class="paytab"
+                type="button"
+                role="tab"
+                id="tab-boleto"
+                aria-selected="false"
+                aria-controls="boleto-pane"
+                tabindex="-1"
+                data-pay="boleto"
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M4 4.5v15M8 4.5v15M11 4.5v15M15 4.5v15M18 4.5v15M20.5 4.5v15" />
+                </svg>
+                Boleto
+              </button>
+            </div>
+
+            <div id="card-pane" role="tabpanel" aria-labelledby="tab-card">
+              <div class="card-preview" aria-hidden="true">
+                <div class="top-row">
+                  <div class="chip"></div>
+                  <div class="brandmark" id="cardBrandPreview">VISA</div>
+                </div>
+                <div class="num" id="prevNum">•••• •••• •••• ••••</div>
+                <div class="bot">
+                  <span>Titular<br /><b id="prevName">NOME NO CARTÃO</b></span>
+                  <span>Val.<br /><b id="prevExp">••/••</b></span>
+                </div>
+              </div>
+
+              <div class="field card-num-field">
+                <div class="label-row">
+                  <label for="cardNumber">Número do cartão</label>
+                  <span class="card-brand" id="cardBrand">Cartão</span>
+                </div>
+                <input
+                  id="cardNumber"
+                  name="cardNumber"
+                  placeholder="0000 0000 0000 0000"
+                  maxlength="19"
+                  inputmode="numeric"
+                  autocomplete="cc-number"
+                  aria-describedby="erro-cardNumber"
+                  required
+                />
+                <small class="field-error" id="erro-cardNumber" aria-live="polite"></small>
+              </div>
+
+              <div class="field">
+                <label for="cardName">Nome impresso no cartão</label>
+                <input
+                  id="cardName"
+                  name="cardName"
+                  placeholder="Como está no cartão"
+                  maxlength="60"
+                  autocomplete="cc-name"
+                  aria-describedby="erro-cardName"
+                  required
+                />
+                <small class="field-error" id="erro-cardName" aria-live="polite"></small>
+              </div>
+
+              <div class="row3">
+                <div class="field">
+                  <label for="cardExp">Validade</label>
+                  <input
+                    id="cardExp"
+                    name="cardExp"
+                    placeholder="MM/AA"
+                    maxlength="5"
+                    inputmode="numeric"
+                    autocomplete="cc-exp"
+                    aria-describedby="erro-cardExp"
+                    required
+                  />
+                  <small class="field-error" id="erro-cardExp" aria-live="polite"></small>
+                </div>
+                <div class="field">
+                  <label for="cardCvv">CVV</label>
+                  <input
+                    id="cardCvv"
+                    name="cardCvv"
+                    placeholder="000"
+                    maxlength="4"
+                    inputmode="numeric"
+                    autocomplete="cc-csc"
+                    aria-describedby="erro-cardCvv"
+                    required
+                  />
+                  <small class="field-error" id="erro-cardCvv" aria-live="polite"></small>
+                </div>
+                <div class="field">
+                  <label for="cardCpf">CPF do titular</label>
+                  <input
+                    id="cardCpf"
+                    name="cardCpf"
+                    placeholder="000.000.000-00"
+                    maxlength="14"
+                    inputmode="numeric"
+                    autocomplete="off"
+                    aria-describedby="erro-cardCpf"
+                    required
+                  />
+                  <small class="field-error" id="erro-cardCpf" aria-live="polite"></small>
+                </div>
+              </div>
+
+              <div class="installments">
+                <label for="installSelect">Parcelamento</label>
+                <select id="installSelect" name="installments"></select>
+              </div>
+            </div>
+
+            <div id="pix-pane" class="pix-box" role="tabpanel" aria-labelledby="tab-pix" hidden>
+              <div id="qrCode" class="qr" role="img" aria-label="QR Code Pix ilustrativo"></div>
+              <div class="pix-copy">
+                <h3>Pague com Pix</h3>
+                <p>Escaneie o QR Code com o app do seu banco. A confirmação é automática e o acesso ao curso é liberado na hora.</p>
+                <div class="code-row">
+                  <code id="pixCode">00020126580014BR.GOV.BCB.PIX0136habilita-saude-demo5204000053039865802BR</code>
+                  <button type="button" class="copy-btn" data-copy-target="pixCode">Copiar código</button>
+                </div>
+                <small>O código acima é ilustrativo e não gera cobrança.</small>
+              </div>
+            </div>
+
+            <div id="boleto-pane" class="boleto-box" role="tabpanel" aria-labelledby="tab-boleto" hidden>
+              <h3>Boleto bancário</h3>
+              <p>O boleto vence em 3 dias úteis. Após o pagamento, a compensação pode levar até 2 dias úteis para liberar o acesso.</p>
+              <div id="barcode" class="barcode" aria-hidden="true"></div>
+              <div class="code-row">
+                <code id="boletoCode">34191.79001 01043.510047 91020.150008 5 91230000031760</code>
+                <button type="button" class="copy-btn" data-copy-target="boletoCode">Copiar código</button>
+              </div>
+              <small>O boleto acima é ilustrativo e não gera cobrança.</small>
+            </div>
+          </section>
+
+          <section class="card" aria-labelledby="tituloCobranca">
+            <h2 id="tituloCobranca"><span class="num" aria-hidden="true">2</span>Dados de cobrança</h2>
+            <p class="card-desc">Usamos estes dados apenas para emitir o comprovante da compra.</p>
+
+            <div class="row2">
+              <div class="field">
+                <label for="billingName">Nome completo</label>
+                <input
+                  id="billingName"
+                  name="billingName"
+                  placeholder="Seu nome"
+                  maxlength="80"
+                  autocomplete="name"
+                  aria-describedby="erro-billingName"
+                  required
+                />
+                <small class="field-error" id="erro-billingName" aria-live="polite"></small>
+              </div>
+              <div class="field">
+                <label for="billingEmail">E-mail</label>
+                <input
+                  id="billingEmail"
+                  name="billingEmail"
+                  type="email"
+                  placeholder="voce@email.com"
+                  maxlength="120"
+                  autocomplete="email"
+                  aria-describedby="erro-billingEmail"
+                  required
+                />
+                <small class="field-error" id="erro-billingEmail" aria-live="polite"></small>
+              </div>
+            </div>
+
+            <div class="row2">
+              <div class="field">
+                <label for="billingCpf">CPF</label>
+                <input
+                  id="billingCpf"
+                  name="billingCpf"
+                  placeholder="000.000.000-00"
+                  maxlength="14"
+                  inputmode="numeric"
+                  autocomplete="off"
+                  aria-describedby="erro-billingCpf"
+                  required
+                />
+                <small class="field-error" id="erro-billingCpf" aria-live="polite"></small>
+              </div>
+              <div class="field">
+                <label for="billingCep">CEP</label>
+                <input
+                  id="billingCep"
+                  name="billingCep"
+                  placeholder="00000-000"
+                  maxlength="9"
+                  inputmode="numeric"
+                  autocomplete="postal-code"
+                  aria-describedby="erro-billingCep"
+                  required
+                />
+                <small class="field-error" id="erro-billingCep" aria-live="polite"></small>
+              </div>
+            </div>
+          </section>
         </div>
 
-        <div id="card-pane">
-          <div class="card-preview">
-            <div class="top-row"><div class="chip"></div><div class="brandmark">VISA</div></div>
-            <div class="num" id="prevNum">•••• •••• •••• ••••</div>
-            <div class="bot"><span>Titular<br><b id="prevName">NOME NO CARTÃO</b></span><span>Val.<br><b id="prevExp">••/••</b></span></div>
-          </div>
+        <aside class="summary" aria-labelledby="tituloResumo">
+          <div class="card">
+            <h2 class="summary-title" id="tituloResumo">Resumo do pedido</h2>
 
-          <div class="field card-num-field">
-            <label>Número do cartão</label>
-            <input id="cardNumber" placeholder="0000 0000 0000 0000" maxlength="19" inputmode="numeric">
-            <div class="card-brands">
-              <svg viewBox="0 0 38 24"><rect width="38" height="24" rx="4" fill="#f7f9fa"/><text x="19" y="15" font-size="8" text-anchor="middle" fill="#718096" font-family="Inter">VISA</text></svg>
-              <svg viewBox="0 0 38 24"><rect width="38" height="24" rx="4" fill="#f7f9fa"/><circle cx="15" cy="12" r="6" fill="#EB8B2E" opacity=".8"/><circle cx="23" cy="12" r="6" fill="#c53030" opacity=".8"/></svg>
+            <div class="course-row">
+              <div class="course-thumb" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                  <path d="M4 5.5h16v13H4z" />
+                  <path d="M10 9.5l5 2.5-5 2.5z" />
+                </svg>
+              </div>
+              <div>
+                <div class="t">Nutrição Clínica Aplicada</div>
+                <div class="s">Dra. Carla Souza · 18h de conteúdo</div>
+              </div>
+            </div>
+
+            <div class="line-item"><span>Valor do curso</span><span id="subtotalVal">R$ 397,00</span></div>
+            <div class="line-item discount" id="couponLine">
+              <span id="couponLabel">Cupom BEMVINDO20 (20%)</span>
+              <span id="discountVal">− R$ 79,40</span>
+            </div>
+
+            <div class="coupon-applied" id="couponApplied">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 12.5l5 5L20 6.5" />
+              </svg>
+              <span id="couponAppliedText">BEMVINDO20 aplicado</span>
+              <button type="button" class="remove" id="removerCupom">remover</button>
+            </div>
+
+            <div class="coupon-form" id="couponForm" hidden>
+              <label class="sr-only" for="couponInput">Cupom de desconto</label>
+              <input id="couponInput" name="coupon" placeholder="Código do cupom" autocomplete="off" maxlength="30" />
+              <button type="button" class="coupon-btn" id="aplicarCupom">Aplicar</button>
+            </div>
+            <p class="coupon-msg" id="couponMsg" role="status" aria-live="polite"></p>
+
+            <div class="total-row">
+              <span class="lbl">Total</span>
+              <span class="val" id="totalVal">R$ 317,60</span>
+            </div>
+            <div class="installment-badge" id="installmentBadge">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <rect x="2.5" y="5.5" width="19" height="13" rx="2.2" />
+                <path d="M2.5 9.5h19" />
+              </svg>
+              <span id="installmentText">Parcela em até <b id="totalInstall">3x de R$ 105,87</b> sem juros</span>
+            </div>
+
+            <button class="pay-btn" id="payBtn" type="submit">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z" />
+              </svg>
+              <span id="payBtnText">Confirmar pagamento</span>
+            </button>
+            <p class="pay-error" id="payError" role="alert" aria-live="assertive"></p>
+
+            <div class="guarantee">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M4 12.5l5 5L20 6.5" />
+              </svg>
+              Garantia de 7 dias ou seu dinheiro de volta
+            </div>
+
+            <div class="trust-row">
+              <div class="item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <rect x="4" y="10" width="16" height="10" rx="2" />
+                  <path d="M8 10V7a4 4 0 0 1 8 0v3" />
+                </svg>
+                Dados criptografados
+              </div>
+              <div class="item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M4 6h16M4 12h16M4 18h10" />
+                </svg>
+                Compra parcelada
+              </div>
+              <div class="item">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <circle cx="12" cy="12" r="9" />
+                  <path d="M9 12.5l2 2 4-4.5" />
+                </svg>
+                Acesso imediato
+              </div>
             </div>
           </div>
-          <div class="field"><label>Nome impresso no cartão</label><input id="cardName" placeholder="Como está no cartão"></div>
-          <div class="row3">
-            <div class="field"><label>Validade</label><input id="cardExp" placeholder="MM/AA" maxlength="5"></div>
-            <div class="field"><label>CVV</label><input placeholder="000" maxlength="4" inputmode="numeric"></div>
-            <div class="field"><label>CPF do titular</label><input placeholder="000.000.000-00"></div>
+        </aside>
+      </form>
+
+      <section id="confirmacao" class="confirmacao" aria-live="polite" hidden>
+        <div class="confirm-card">
+          <div class="confirm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 12.5l5 5L20 6.5" />
+            </svg>
           </div>
-          <div class="installments">
-            Parcelamento
-            <select id="installSelect">
-              <option data-badge="12x de R$ 24,92">12x de R$ 24,92 sem juros</option>
-              <option data-badge="10x de R$ 29,90">10x de R$ 29,90 sem juros</option>
-              <option data-badge="6x de R$ 49,83">6x de R$ 49,83 sem juros</option>
-              <option data-badge="3x de R$ 99,67" selected>3x de R$ 99,67 sem juros</option>
-              <option data-badge="2x de R$ 149,50">2x de R$ 149,50</option>
-              <option data-badge="1x de R$ 299,00">1x de R$ 299,00</option>
-            </select>
-          </div>
-        </div>
+          <p class="confirm-eyebrow">Pedido <span id="confirmProtocolo">—</span></p>
+          <h2 id="confirmTitulo" tabindex="-1">Pagamento confirmado!</h2>
+          <p id="confirmTexto">Seu acesso ao curso já está liberado. Você também pode começar pelos seus cursos.</p>
 
-        <div id="pix-pane" class="pix-box">
-          <div class="qr"></div>
-          <p>Escaneie o QR Code com o app do seu banco. A confirmação é automática e o acesso ao curso é liberado na hora.</p>
-        </div>
+          <dl class="confirm-resumo">
+            <div><dt>Curso</dt><dd>Nutrição Clínica Aplicada</dd></div>
+            <div><dt>Forma de pagamento</dt><dd id="confirmMetodo">Cartão de crédito</dd></div>
+            <div><dt>Total</dt><dd id="confirmTotal">R$ 317,60</dd></div>
+            <div><dt>E-mail</dt><dd id="confirmEmail">—</dd></div>
+          </dl>
 
-        <div id="boleto-pane" class="boleto-box">
-          <p>O boleto vence em 3 dias úteis. Após o pagamento, a compensação pode levar até 2 dias úteis para liberar o acesso.</p>
-        </div>
-      </div>
-
-      <div class="card">
-        <h2><span class="num">2</span>Dados de cobrança</h2>
-        <div class="row2">
-          <div class="field"><label>Nome completo</label><input placeholder="Seu nome"></div>
-          <div class="field"><label>E-mail</label><input placeholder="voce@email.com"></div>
-        </div>
-        <div class="row2">
-          <div class="field"><label>CPF</label><input placeholder="000.000.000-00"></div>
-          <div class="field"><label>CEP</label><input placeholder="00000-000"></div>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="summary">
-      <div class="card">
-        <div class="course-row">
-          <div class="course-thumb"></div>
-          <div>
-            <div class="t">Nutrição Clínica Aplicada</div>
-            <div class="s">Dra. Carla Souza · 18h de conteúdo</div>
+          <div class="confirm-actions">
+            <a class="btn-primary" id="confirmCoursesLink" href="./aluno-meus-cursos.html">Ir para meus cursos</a>
+            <a class="btn-ghost" href="./index.html">Voltar ao início</a>
           </div>
         </div>
+      </section>
 
-        <div class="line-item"><span>Valor do curso</span><span>R$ 397,00</span></div>
-        <div class="line-item discount" id="couponLine"><span>Cupom BEMVINDO20 aplicado</span><span>− R$ 98,00</span></div>
-        <div class="coupon-applied">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
-          BEMVINDO20 aplicado <span class="remove">remover</span>
-        </div>
+      <footer class="pagamento-footer">
+        <p>Precisa de ajuda? <a id="supportLink" href="./aluno-suporte.html">Fale com o suporte</a>.</p>
+      </footer>
+    </main>
 
-        <div class="total-row">
-          <span class="lbl">Total</span>
-          <span class="val" id="totalVal">R$ 299,00</span>
-        </div>
-        <div class="installment-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="5.5" width="19" height="13" rx="2.2"/><path d="M2.5 9.5h19"/></svg>
-          Parcela em até <b id="totalInstall">3x de R$ 99,67</b> sem juros
-        </div>
-
-        <button class="pay-btn">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l7 3v6c0 4.8-3 8-7 9-4-1-7-4.2-7-9V6l7-3Z"/></svg>
-          Confirmar pagamento
-        </button>
-
-        <div class="guarantee">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5l5 5L20 6.5"/></svg>
-          Garantia de 7 dias ou seu dinheiro de volta
-        </div>
-
-        <div class="trust-row">
-          <div class="item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
-            Dados criptografados
-          </div>
-          <div class="item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
-            Compra parcelada
-          </div>
-          <div class="item">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12.5l2 2 4-4.5"/></svg>
-            Acesso imediato
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-function selectPay(which){
-  document.querySelectorAll('.paytab').forEach(el=>el.classList.remove('active'));
-  event.currentTarget.classList.add('active');
-  document.getElementById('card-pane').style.display = which==='card' ? 'block' : 'none';
-  document.getElementById('pix-pane').classList.toggle('show', which==='pix');
-  document.getElementById('boleto-pane').classList.toggle('show', which==='boleto');
-}
-
-const numInput = document.getElementById('cardNumber');
-const nameInput = document.getElementById('cardName');
-const expInput = document.getElementById('cardExp');
-const prevNum = document.getElementById('prevNum');
-const prevName = document.getElementById('prevName');
-const prevExp = document.getElementById('prevExp');
-
-numInput.addEventListener('input', e=>{
-  let v = e.target.value.replace(/\D/g,'').slice(0,16);
-  v = v.replace(/(.{4})/g,'$1 ').trim();
-  e.target.value = v;
-  prevNum.textContent = v.padEnd(19,'•').replace(/(.{4})(?=.)/g,'$1 ').slice(0,19) || '•••• •••• •••• ••••';
-});
-nameInput.addEventListener('input', e=>{
-  prevName.textContent = e.target.value.toUpperCase() || 'NOME NO CARTÃO';
-});
-expInput.addEventListener('input', e=>{
-  let v = e.target.value.replace(/\D/g,'').slice(0,4);
-  if(v.length>2) v = v.slice(0,2)+'/'+v.slice(2);
-  e.target.value = v;
-  prevExp.textContent = v || '••/••';
-});
-
-document.getElementById('installSelect').addEventListener('change', e=>{
-  document.getElementById('totalInstall').textContent = e.target.selectedOptions[0].dataset.badge;
-});
-</script>
-</body>
+    <script src="./js/pagamento.js"></script>
+  </body>
 </html>

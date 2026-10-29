@@ -3,174 +3,39 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <title>Dashboard</title>
-
-    <link rel="stylesheet" href="./css/style.css" />
-
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"
-    />
-    <link rel="stylesheet" href="./css/animacoes.css" />
+    <meta name="robots" content="noindex" />
+    <title>Redirecionando — Habilita Saúde</title>
+    <meta name="description" content="Acesse o painel da Habilita Saúde." />
+    <script>
+      (function () {
+        var destino = "professor-inicio.html";
+        try {
+          var logado = localStorage.getItem("usuarioLogado") === "true";
+          var usuario = JSON.parse(localStorage.getItem("usuario") || "null");
+          if (logado && usuario && usuario.tipo === "aluno") destino = "aluno-inicio.html";
+        } catch (e) {}
+        window.location.replace(destino);
+      })();
+    </script>
+    <noscript><meta http-equiv="refresh" content="0; url=professor-inicio.html" /></noscript>
+    <style>
+      body {
+        display: grid;
+        min-height: 100vh;
+        margin: 0;
+        place-items: center;
+        background: #f7f9fa;
+        color: #1a202c;
+        font-family: Inter, system-ui, sans-serif;
+        text-align: center;
+      }
+      a { color: #0055c3; }
+    </style>
   </head>
-
   <body>
-    <div id="overlay"></div>
-    <div class="container">
-      <aside class="sidebar">
-        <div>
-          <div class="logo-side">
-            <h2>HABILITA.SAÚDE</h2>
-            <p>Plataforma De Cursos em Saúde</p>
-          </div>
-
-          <ul>
-            <li>
-              <a href="./dashboard.html" class="menu-ativo">
-                <i class="fa-solid fa-house"></i>
-                Início
-              </a>
-            </li>
-
-            <li>
-              <a href="./meus-cursos.html">
-                <i class="fa-solid fa-book"></i>
-                Meus Cursos
-              </a>
-            </li>
-
-            <li>
-              <a href="./financas.html">
-                <i class="fa-solid fa-chart-pie"></i>
-                Finanças
-              </a>
-            </li>
-
-            <li>
-              <a href="./criar-curso.html">
-                <i class="fa-solid fa-plus"></i>
-                Criar Curso
-              </a>
-            </li>
-
-            <li>
-              <a href="./usuarios.html">
-                <i class="fa-solid fa-users"></i>
-                Usuários
-              </a>
-            </li>
-
-            <li>
-              <a href="./relatorios.html">
-                <i class="fa-solid fa-chart-line"></i>
-                Relatórios
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div class="perfil">
-          <div class="foto-wrapper">
-            <a href="./perfil.html">
-              <img id="fotoUsuarioSidebar" src="./img/perfil.jpg" />
-            </a>
-            <span class="online"></span>
-          </div>
-          <span id="nomeUsuarioSidebar"></span>
-        </div>
-      </aside>
-
-      <main class="main">
-        <header class="topbar">
-          <button id="menuMobile" class="menu-mobile">☰</button>
-          <div>
-            <h1>PROFESSOR</h1>
-            <p>Bem-vindo(a) ao seu painel</p>
-          </div>
-
-          <div class="icons">
-            <a href="suporte.html">
-              <i class="fa-regular fa-circle-question"></i>
-            </a>
-            <a href="notificacoes.html" class="notification">
-              <i class="fa-regular fa-bell"></i>
-              <span id="badgeNotificacao"></span>
-            </a>
-
-            <div class="user-top">
-              <div class="foto-wrapper">
-                <a href="perfil.html">
-                  <img id="fotoUsuarioTop" src="./img/perfil.jpg" />
-                </a>
-                <span class="online"></span>
-              </div>
-              <span id="nomeUsuarioTop"></span>
-            </div>
-          </div>
-        </header>
-
-        <section id="painelGamificacaoProf"></section>
-
-        <section class="cards">
-          <div class="card">
-            <h3>Meus Cursos</h3>
-
-            <div class="search">
-              <input type="text" placeholder="Buscar cursos..." />
-              <i class="fa-solid fa-magnifying-glass"></i>
-            </div>
-            <div id="listaCursosDashboard"></div>
-          </div>
-
-          <div class="card">
-            <h3>Evolução De Matrícula</h3>
-            <div class="grafico">
-              <div class="grafico-topo">
-                <button class="btn-ativo">Evolução de Matrícula</button>
-
-                <select>
-                  <option>Últimos 6 Meses</option>
-                  <option>Últimos 12 Meses</option>
-                </select>
-              </div>
-
-              <div class="grafico">
-                <canvas id="graficoVendas"></canvas>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
-            <h3>Últimos Usuários</h3>
-
-            <div id="listaUsuariosDashboard"></div>
-          </div>
-        </section>
-
-        <section class="bottom-cards">
-          <div class="ranking-card">
-            <h3>CURSOS MAIS VENDIDOS</h3>
-            <table>
-              <tbody id="rankingVendas"></tbody>
-            </table>
-          </div>
-
-          <div class="ranking-card">
-            <h3>CURSOS MAIS BEM AVALIADOS</h3>
-
-            <table>
-              <tbody id="rankingAvaliacoes"></tbody>
-            </table>
-          </div>
-        </section>
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-        <script src="./js/user.js"></script>
-    <script src="./js/global.js"></script>
-    <script src="./js/dashboard.js"></script>
-    <script src="./js/gamificacao-professor.js"></script>
-      </main>
-    </div>
-
-    <script src="./js/animacoes.js"></script>
+    <main>
+      <h1>Redirecionando…</h1>
+      <p>Se nada acontecer, <a href="./professor-inicio.html">continue para o painel</a>.</p>
+    </main>
   </body>
 </html>

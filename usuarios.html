@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
     <title>Usuários — Habilita Saúde</title>
+    <meta name="description" content="Consulte e gerencie os alunos matriculados nos seus cursos na Habilita Saúde." />
 
     <link rel="stylesheet" href="./css/style.css" />
 
@@ -20,9 +21,13 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
     />
     <link rel="stylesheet" href="./css/habilita.css" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
   </head>
 
   <body class="app-shell">
+    
+    <div id="overlay"></div>
     <div class="container">
       <aside class="sidebar" aria-label="Navegação principal">
         <div>
@@ -109,7 +114,7 @@
               <span id="badgeNotificacao"></span>
             </a>
             <a href="./perfil.html" class="user-top" aria-label="Meu perfil">
-              <img id="fotoUsuarioTop" src="https://ui-avatars.com/api/?name=U&background=0055c3&color=fff" alt="" />
+              <img id="fotoUsuarioTop" src="./img/perfil.svg" alt="" />
               <span id="nomeUsuarioTop"></span>
             </a>
           </div>
@@ -168,14 +173,14 @@
           </div>
 
           <div class="filtros-direita">
-            <select id="filtroCurso">
-              <option>Todos os cursos</option>
+            <select id="filtroCurso" aria-label="Filtrar por curso">
+              <option value="">Todos os cursos</option>
             </select>
 
-            <select id="filtroStatus">
-              <option>Todos os status</option>
-              <option>Ativo</option>
-              <option>Concluído</option>
+            <select id="filtroStatus" aria-label="Filtrar por status">
+              <option value="">Todos os status</option>
+              <option value="ativo">Ativo</option>
+              <option value="concluido">Concluído</option>
             </select>
           </div>
         </section>

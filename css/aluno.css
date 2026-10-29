@@ -321,7 +321,7 @@ body {
 
 .card-metrica span {
   font-size: 13px;
-  color: #718096;
+  color: var(--hs-legenda, #5b6b80);
   font-weight: 600;
 }
 
@@ -353,6 +353,11 @@ body {
   grid-template-columns: 1.4fr 1fr;
   gap: 20px;
   margin-bottom: 20px;
+}
+
+/* Impede que conteúdo com largura mínima (textos/flex) estoure a coluna no mobile. */
+.grid-inicio > * {
+  min-width: 0;
 }
 
 .card {

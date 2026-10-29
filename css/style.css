@@ -1882,7 +1882,7 @@ body {
 }
 
 .usuario-info small {
-  color: #718096;
+  color: var(--hs-legenda, #5b6b80);
 }
 
 #listaCursosDashboard::-webkit-scrollbar {
@@ -2143,6 +2143,28 @@ body {
   .cards{
     display:grid;
     grid-template-columns:1fr;
+  }
+
+  .bottom-cards{
+    grid-template-columns:1fr;
+  }
+
+  .ranking-card{
+    min-width:0;
+  }
+
+  .ranking-card table{
+    table-layout:fixed;
+  }
+
+  .ranking-card td{
+    overflow-wrap:anywhere;
+  }
+
+  .ranking-card td:first-child,
+  .ranking-card td:last-child{
+    width:48px;
+    white-space:nowrap;
   }
 
   .card{

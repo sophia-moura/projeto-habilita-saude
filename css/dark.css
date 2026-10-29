@@ -1,0 +1,1407 @@
+/* ==========================================================================
+   Habilita Saúde — Modo escuro
+
+   Ativado por  <html data-theme="dark">  (veja js/tema.js).
+   Carregue por ÚLTIMO, depois de todos os outros CSS da página.
+
+   Organização
+   1. Botão de alternar tema (vale para claro e escuro)
+   2. Tokens escuros (substituem os --hs-* do habilita.css e os do index.css)
+   3. Ajustes por componente, onde o CSS original usa cor fixa
+   ========================================================================== */
+
+
+/* ==========================================================================
+   1. Botão de alternar tema
+   ========================================================================== */
+.tema-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--hs-borda, #e2e8f0);
+  border-radius: 50%;
+  background: var(--hs-card, #ffffff);
+  color: var(--hs-neutro-apoio, #486581);
+  line-height: 0;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+}
+
+.tema-toggle:hover {
+  color: var(--hs-azul, #0055c3);
+  border-color: currentColor;
+}
+
+.tema-toggle:active {
+  transform: scale(0.92);
+}
+
+.tema-toggle:focus-visible {
+  outline: 2px solid var(--hs-azul, #0055c3);
+  outline-offset: 2px;
+}
+
+/* Lua no tema claro, sol no tema escuro */
+.tema-toggle .tema-icone-sol { display: none; }
+html[data-theme="dark"] .tema-toggle .tema-icone-lua { display: none; }
+html[data-theme="dark"] .tema-toggle .tema-icone-sol { display: block; }
+
+/* Landing no celular: botão ao lado do ☰ (o bloco .acoes some nessa largura) */
+.tema-toggle--mobile {
+  display: none;
+  margin-left: auto;
+  margin-right: 12px;
+}
+
+@media (max-width: 860px) {
+  .tema-toggle--mobile {
+    display: inline-flex;
+  }
+}
+
+/* Páginas sem barra superior (login, validação…) */
+.tema-toggle--flutuante {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 10000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+
+/* Na barra superior das telas internas, o botão é só um ícone, como os vizinhos */
+body.app-shell .topbar .icons .tema-toggle {
+  width: 36px;
+  height: 36px;
+  border-color: transparent;
+  background: transparent;
+}
+
+body.app-shell .topbar .icons .tema-toggle:hover {
+  background: rgba(0, 85, 195, 0.08);
+  border-color: transparent;
+}
+
+/* Transição suave só no instante do clique (a classe é posta pelo tema.js) */
+html.tema-transicao,
+html.tema-transicao *,
+html.tema-transicao *::before,
+html.tema-transicao *::after {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease,
+    box-shadow 0.3s ease,
+    fill 0.3s ease,
+    stroke 0.3s ease !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.tema-transicao,
+  html.tema-transicao *,
+  html.tema-transicao *::before,
+  html.tema-transicao *::after {
+    transition: none !important;
+  }
+}
+
+
+/* ==========================================================================
+   2. Tokens escuros
+   ========================================================================== */
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* ---- Guia de estilo (habilita.css) ---- */
+  --hs-azul: #6ea8ff;            /* texto, links, ícones e bordas de destaque */
+  --hs-azul-escuro: #1d4ed8;     /* hover de botões */
+  --hs-verde: #4ade80;
+  --hs-verde-escuro: #4ade80;
+  --hs-neutro-apoio: #9fb0c8;
+
+  --hs-fundo: #0b1220;
+  --hs-card: #131c2e;
+  --hs-borda: #243049;
+
+  --hs-titulo: #f1f5f9;
+  --hs-corpo: #cbd5e1;
+  --hs-legenda: #94a3b8;
+
+  --hs-sucesso: #4ade80;
+  --hs-alerta: #fbbf24;
+  --hs-erro: #f87171;
+  --hs-info: #6ea8ff;
+
+  --hs-sombra: 0 1px 3px rgba(0, 0, 0, 0.5);
+  --hs-foco: 0 0 0 3px rgba(110, 168, 255, 0.3);
+
+  /* ---- Tokens novos, só do modo escuro ---- */
+  --hs-superficie-2: #1a2540;                 /* campos, hover, áreas rebaixadas */
+  --hs-azul-solido: #2563eb;                  /* fundo de botão primário (texto branco) */
+  --hs-azul-fundo: rgba(110, 168, 255, 0.12); /* destaque azul suave */
+  --hs-erro-fundo: rgba(248, 113, 113, 0.12);
+  --hs-erro-borda: rgba(248, 113, 113, 0.35);
+  --hs-sucesso-fundo: rgba(74, 222, 128, 0.12);
+  --hs-sucesso-borda: rgba(74, 222, 128, 0.35);
+  --hs-alerta-fundo: rgba(251, 191, 36, 0.12);
+
+  /* ---- Landing (index.css) ---- */
+  --azul: #2563eb;   /* aqui é usado como FUNDO (texto branco); textos azuis são tratados na seção 4 */
+  --azul-2: #2563eb;
+  --texto: #f1f5f9;
+  --texto-suave: #94a3b8;
+  --fundo-claro: #0f1829;
+  --borda: #243049;
+}
+
+/* ==========================================================================
+   3. Espelho dos CSS legados
+   Gerado a partir de cada regra de css/*.css que usa cor fixa (branco, cinzas
+   claros, azul da marca como texto…). Usa :where() para manter a MESMA
+   especificidade da regra original; a ordem das regras também é a original.
+   Quando alguém trocar uma cor em style.css/aluno.css/etc., o espelho
+   correspondente está na seção com o mesmo nome de arquivo.
+   Obs.: o certificado (.papel*) fica de fora de propósito: é "papel", sempre claro.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Espelho de css/global.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) body {
+  background: var(--hs-fundo);
+}
+:where(html[data-theme="dark"]) .online {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .menu-ativo {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .menu-ativo i {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .active-icon {
+  color: var(--hs-verde-escuro) !important;
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/style.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) body {
+  background: var(--hs-fundo);
+}
+:where(html[data-theme="dark"]) .sidebar li:hover,
+:where(html[data-theme="dark"]) .active {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .grafico {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .search input {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .ranking-card tr {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .metrica {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .metrica h3 {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .metrica strong {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .grafico-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .finance-header h1 {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .finance-header p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .acoes-topo input {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .grafico-financeiro {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .resumo-financeiro {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .linha {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .historico-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .historico-card th,
+:where(html[data-theme="dark"]) .historico-card td {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .pagamento-card,
+:where(html[data-theme="dark"]) .historico-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .pagamento-card h2,
+:where(html[data-theme="dark"]) .historico-card h2 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .pagamento-info {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .pagamento-info span {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .pagamento-info strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .campo input,
+:where(html[data-theme="dark"]) .campo select,
+:where(html[data-theme="dark"]) .campo textarea {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .upload-box {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .upload-box.dragging {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .conteudo-item {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .conteudo-item:hover {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .conteudo-item i {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .conteudos-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .conteudos-card h2 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .metrica {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .metrica h3 {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .metrica strong {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .filtros input,
+:where(html[data-theme="dark"]) .filtros select {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .usuarios-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .usuarios-card tr {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .vazio {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .filtros-relatorio select {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .grafico-card,
+:where(html[data-theme="dark"]) .status-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .barra {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .btn-secundario {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .item-conteudo {
+  background: var(--hs-superficie-2);
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .info-conteudo i {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .info-conteudo small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .item-conteudo button {
+  background: var(--hs-borda);
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .ticket-info {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aberto {
+  background: var(--hs-azul-fundo);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .andamento {
+  background: var(--hs-alerta-fundo);
+  color: var(--hs-alerta);
+}
+:where(html[data-theme="dark"]) .resolvido {
+  background: var(--hs-sucesso-fundo);
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .ticket-info {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aberto {
+  background: var(--hs-azul-fundo);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .andamento {
+  background: var(--hs-alerta-fundo);
+  color: var(--hs-alerta);
+}
+:where(html[data-theme="dark"]) .resolvido {
+  background: var(--hs-sucesso-fundo);
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .metricas-suporte strong {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .modal-content {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .modal-content input,
+:where(html[data-theme="dark"]) .modal-content select,
+:where(html[data-theme="dark"]) .modal-content textarea {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) #mensagensTicket {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .usuario {
+  background: var(--hs-azul-fundo);
+}
+:where(html[data-theme="dark"]) .suporte {
+  background: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .ticket-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .ticket-esquerda {
+  background: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .ticket-icon {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .btn-excluir {
+  background: var(--hs-borda);
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .card-metrica {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .card-metrica strong {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .filtros-notificacao button {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .notificacao-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .notificacao-conteudo p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .marcar-lida {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .menu-ativo {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .menu-ativo i {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .active-icon {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .online {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .metricas-dashboard .card-metrica {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .metricas-dashboard span {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .metricas-dashboard strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .busca input {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .filtros-direita select {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .usuarios-card tbody tr:hover {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .suporte-header h2 {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .suporte-header p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .metricas-notificacao .card-metrica {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .metricas-notificacao h3 {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .metricas-notificacao strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .filtros-notificacao button {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .notificacao-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .notificacao-card h3 {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .notificacao-card p {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .notificacao-card small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .notificacao-card button {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .marcar-lida {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .marcar-lida:hover {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .btn-excluir-todas {
+  background: var(--hs-borda);
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .btn-excluir-todas:hover {
+  background: var(--hs-erro-fundo);
+}
+:where(html[data-theme="dark"]) .barra-ranking {
+  background: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .card-relatorio {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .card-relatorio span {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .card-relatorio strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .filtros-relatorio select {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .grafico-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .progresso-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .linha-status {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .linha-status strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .ranking-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) #listaCursosDashboard .curso {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) #ultimosUsuarios .usuario {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .grafico-topo button {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .grafico-topo select {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .usuario-dashboard {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .usuario-info small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) #listaCursosDashboard::-webkit-scrollbar-track {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .perfil-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .perfil-card input {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .label-foto {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .texto-foto {
+  color: var(--hs-legenda);
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/aluno.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) body {
+  background: var(--hs-fundo);
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .menu-ativo {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .menu-ativo i {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .online {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .btn-continuar {
+  background: var(--hs-card);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .card-metrica {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .card-metrica span {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .card-metrica strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .card-topo a {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .curso-mini {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .curso-mini-info small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .barra-progresso {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .curso-mini .btn-continuar-mini {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .curso-mini .btn-continuar-mini:hover {
+  background: var(--hs-azul-fundo);
+}
+:where(html[data-theme="dark"]) .curso-recomendado {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .curso-recomendado-info small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .tag-area {
+  color: var(--hs-azul);
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .aviso-item {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .aviso-conteudo p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aviso-conteudo small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .certificado-item {
+  background: var(--hs-superficie-2);
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .certificado-item i {
+  color: #c4b5fd;
+}
+:where(html[data-theme="dark"]) .certificado-item small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .vazio {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aba {
+  background: var(--hs-card);
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aba:hover {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .aba .contador {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .filtros-cursos .busca i {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .filtros-cursos .busca input {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .filtros-cursos select {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .curso-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .status-andamento {
+  background: var(--hs-azul-fundo);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .status-concluido {
+  background: var(--hs-sucesso-fundo);
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .status-nao-iniciado {
+  background: var(--hs-superficie-2);
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .curso-professor {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .curso-detalhes {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .curso-detalhes i {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .curso-progresso-texto {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .curso-progresso-texto strong {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .btn-certificado {
+  background: var(--hs-borda);
+  color: #c4b5fd;
+}
+:where(html[data-theme="dark"]) .btn-certificado:hover {
+  background: rgba(168, 85, 247, 0.16);
+}
+:where(html[data-theme="dark"]) .lista-vazia {
+  background: var(--hs-card);
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .canal-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .canal-card small {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .canal-prazo {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .busca-faq i {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .busca-faq input {
+  border-color: var(--hs-borda);
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .busca-faq input:focus {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .faq-item {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .faq-pergunta {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .faq-pergunta:hover {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .faq-pergunta i {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .faq-item.aberto .faq-pergunta i {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .faq-resposta p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .input-box-suporte label {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .input-box-suporte select,
+:where(html[data-theme="dark"]) .input-box-suporte textarea {
+  border-color: var(--hs-borda);
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .input-box-suporte select:focus,
+:where(html[data-theme="dark"]) .input-box-suporte textarea:focus {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .mensagem-retorno.erro {
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .mensagem-retorno.sucesso {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .chamado-item {
+  border-color: var(--hs-borda);
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .protocolo {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .chamado-aberto {
+  background: var(--hs-azul-fundo);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .chamado-respondido {
+  background: var(--hs-sucesso-fundo);
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .chamado-encerrado {
+  background: var(--hs-superficie-2);
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .chamado-mensagem {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .chamado-rodape {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .chamado-rodape i {
+  color: var(--hs-azul);
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/aula.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) .aula-voltar {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .aula-info small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aula-info h2 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .aula-btn {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .aula-btn:hover:not(:disabled) {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .aula-barra {
+  background: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) #textoProgresso {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aula-fim {
+  background: var(--hs-superficie-2);
+  border-color: var(--hs-borda);
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .aula-lista {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .aula-lista h3 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .item-aula {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .item-aula:hover {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .item-aula.ativa {
+  background: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .item-aula .ck {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .item-aula .tp {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aula-vazio {
+  background: var(--hs-card);
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .aula-vazio strong {
+  color: var(--hs-titulo);
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/certificados.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) .cert-nota {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .cert-card {
+  background: var(--hs-superficie-2);
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .cert-info h4 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .cert-meta {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .cert-meta i {
+  color: #c4b5fd;
+}
+:where(html[data-theme="dark"]) .cert-codigo {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .cert-codigo i {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .cert-codigo a {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .cert-btn {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .cert-btn:hover {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .prox-item {
+  border-bottom-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .prox-info small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .prox-pct {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .prox-item:hover strong {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .validar-texto {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .validar-form input {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .cert-vazio {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .cert-vazio strong {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .cert-modal-box {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .cert-modal-fechar {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/meus-cursos.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) body {
+  background: var(--hs-fundo);
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .sidebar li:hover,
+:where(html[data-theme="dark"]) .active {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .filtros input,
+:where(html[data-theme="dark"]) .filtros select {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .curso-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .platinum {
+  background: var(--hs-azul-fundo);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .silver {
+  background: var(--hs-borda);
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .gold {
+  background: var(--hs-alerta-fundo);
+  color: var(--hs-alerta);
+}
+:where(html[data-theme="dark"]) .curso-content p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .acoes button:nth-child(2) {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .feedback-btn {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .modal-content {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .status.publicado {
+  background: var(--hs-sucesso-fundo);
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .status.privado {
+  background: var(--hs-borda);
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .menu-ativo {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .menu-ativo i {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .active-icon {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .online {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .suporte-header h2 {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .suporte-header p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .filtros input,
+:where(html[data-theme="dark"]) .filtros select {
+  border-color: var(--hs-borda);
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .btn-editar {
+  background: var(--hs-superficie-2);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .btn-excluir {
+  background: var(--hs-borda);
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .tag.nivel-operacional {
+  background: var(--hs-borda);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .tag.nivel-estrategico {
+  background: var(--hs-alerta-fundo);
+  color: var(--hs-alerta);
+}
+:where(html[data-theme="dark"]) .tag.nivel-expert {
+  background: var(--hs-borda);
+  color: #c4b5fd;
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/perfil.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) .online {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .menu-ativo {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .menu-ativo i {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .active-icon {
+  color: var(--hs-verde-escuro) !important;
+}
+:where(html[data-theme="dark"]) .perfil-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .perfil-card input {
+  border-color: var(--hs-borda);
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/login.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) .login-box {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .logo h1 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .logo p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .input {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .criar-conta {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .pergunta-perfil {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .opcao-perfil {
+  background: var(--hs-superficie-2);
+  color: var(--hs-titulo);
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .opcao-perfil:hover {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .opcao-perfil i {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .opcao-perfil small {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .btn-voltar {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .perfil-selecionado {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .perfil-selecionado i {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .perfil-selecionado span {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .erro-login {
+  color: var(--hs-erro);
+}
+:where(html[data-theme="dark"]) .cadastro-box {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .criar-conta {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .criar-conta a {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .fechar-modal {
+  background: var(--hs-superficie-2);
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .fechar-modal:hover {
+  background: var(--hs-borda);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .cabecalho-cadastro h2 {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .cabecalho-cadastro p {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .opcao-perfil.selecionada {
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .toggle-senha {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .toggle-senha:hover {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .link-entrar {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .link-entrar a {
+  color: var(--hs-azul);
+}
+
+/* --------------------------------------------------------------------------
+   Espelho de css/index.css
+   -------------------------------------------------------------------------- */
+:where(html[data-theme="dark"]) body {
+  background: var(--hs-fundo);
+}
+:where(html[data-theme="dark"]) .btn-primary {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .btn-outline {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .btn-ghost {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .btn-ghost:hover {
+  border-color: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .hero-chip {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .bloco {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .curso-card {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .curso-area {
+  background: var(--hs-borda);
+}
+:where(html[data-theme="dark"]) .passo-icone {
+  background: var(--hs-azul-fundo);
+}
+:where(html[data-theme="dark"]) .perfil-icone {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) .perfil-professor .perfil-icone {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .perfil-tag {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .perfil-professor li::before {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .rodape-base {
+  color: var(--hs-legenda);
+}
+:where(html[data-theme="dark"]) .navbar {
+  background: var(--hs-card);
+}
+:where(html[data-theme="dark"]) #menu > a {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) #menu > a:hover,
+:where(html[data-theme="dark"]) #menu > a.ativo {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .menu-mobile {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .btn-outline,
+:where(html[data-theme="dark"]) .btn-ghost {
+  background: var(--hs-card);
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .hero {
+  color: var(--hs-titulo);
+  background: var(--hs-superficie-2);
+}
+:where(html[data-theme="dark"]) .tag {
+  color: var(--hs-verde-escuro);
+}
+:where(html[data-theme="dark"]) .hero h1 span {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .hero p {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .rodape {
+  background: var(--hs-card);
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .rodape-nav h4 {
+  color: var(--hs-titulo);
+}
+:where(html[data-theme="dark"]) .rodape-nav a {
+  color: var(--hs-corpo);
+}
+:where(html[data-theme="dark"]) .rodape-nav a:hover {
+  color: var(--hs-azul);
+}
+:where(html[data-theme="dark"]) .rodape-base {
+  color: var(--hs-legenda);
+}
+@media (max-width: 860px) {
+  :where(html[data-theme="dark"]) #menu {
+    background: var(--hs-card);
+  }
+}
+
+
+/* ==========================================================================
+   4. Ajustes manuais (especificidade maior que o espelho acima)
+   ========================================================================== */
+
+/* ---- 4.1 habilita.css: onde o azul é FUNDO (texto branco por cima) ---- */
+html[data-theme="dark"] body.app-shell .btn-primary,
+html[data-theme="dark"] body.app-shell .btn-publicar,
+html[data-theme="dark"] body.app-shell #badgeNotificacao {
+  background: var(--hs-azul-solido);
+  border-color: var(--hs-azul-solido);
+  color: #fff;
+}
+
+html[data-theme="dark"] body.app-shell .btn-primary:hover,
+html[data-theme="dark"] body.app-shell .btn-publicar:hover {
+  background: var(--hs-azul-escuro);
+  border-color: var(--hs-azul-escuro);
+}
+
+html[data-theme="dark"] body.app-shell #badgeNotificacao {
+  border-color: var(--hs-card);
+}
+
+/* ---- 4.2 habilita.css: tons suaves que eram rgba(azul da marca) ---- */
+html[data-theme="dark"] body.app-shell .sidebar li a.menu-ativo,
+html[data-theme="dark"] body.app-shell .sidebar li a.menu-ativo:hover,
+html[data-theme="dark"] body.app-shell .btn-secondary:hover,
+html[data-theme="dark"] body.app-shell .btn-tertiary:hover,
+html[data-theme="dark"] body.app-shell .quiz-opcao:has(input:checked),
+html[data-theme="dark"] body.app-shell .topbar .icons .tema-toggle:hover {
+  background: var(--hs-azul-fundo);
+}
+
+html[data-theme="dark"] body.app-shell .perfil-tag {
+  background: var(--hs-azul-fundo);
+  border-color: rgba(110, 168, 255, 0.3);
+}
+
+/* ---- 4.3 habilita.css: estados de erro / sucesso ---- */
+html[data-theme="dark"] body.app-shell #btnLogout:hover,
+html[data-theme="dark"] body.app-shell .btn-logout:hover,
+html[data-theme="dark"] body.app-shell .quiz-resultado.reprovado,
+html[data-theme="dark"] .editor-erro {
+  background: var(--hs-erro-fundo);
+}
+
+html[data-theme="dark"] body.app-shell .quiz-resultado.reprovado,
+html[data-theme="dark"] .editor-erro {
+  border-color: var(--hs-erro-borda);
+}
+
+html[data-theme="dark"] body.app-shell .quiz-resultado.aprovado {
+  background: var(--hs-sucesso-fundo);
+  border-color: var(--hs-sucesso-borda);
+}
+
+html[data-theme="dark"] .editor-overlay {
+  background: rgba(0, 0, 0, 0.65);
+}
+
+html[data-theme="dark"] .editor-modal {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  border: 1px solid var(--hs-borda);
+}
+
+/* ---- 4.4 Gamificação (CSS injetado por js/gamificacao*.js) ---- */
+html[data-theme="dark"] .gam-card {
+  background: var(--hs-card);
+  border: 1px solid var(--hs-borda);
+  box-shadow: none;
+}
+html[data-theme="dark"] .gam-card h2,
+html[data-theme="dark"] .gam-card h3 { color: var(--hs-azul); }
+html[data-theme="dark"] .gam-card small { color: var(--hs-legenda) !important; }
+html[data-theme="dark"] .gam-nivel b { background: var(--hs-azul-solido); color: #fff; }
+html[data-theme="dark"] .gam-barra { background: var(--hs-borda); }
+html[data-theme="dark"] .gam-badge { background: var(--hs-superficie-2); color: var(--hs-corpo); }
+html[data-theme="dark"] .gam-badge.off { opacity: 1; color: var(--hs-legenda); }
+html[data-theme="dark"] .gam-rank .eu { background: var(--hs-borda); color: var(--hs-titulo); }
+
+/* ---- 4.5 Modal de boas-vindas (CSS injetado por js/global.js) ---- */
+html[data-theme="dark"] .bv-box {
+  background: var(--hs-card);
+  border: 1px solid var(--hs-borda);
+}
+html[data-theme="dark"] .bv-rodape h3 { color: var(--hs-azul); }
+html[data-theme="dark"] .bv-rodape p { color: var(--hs-legenda); }
+html[data-theme="dark"] #bvPular { background: var(--hs-superficie-2); color: var(--hs-azul); }
+html[data-theme="dark"] #bvComecar { background: var(--hs-azul-solido); color: #fff; }
+
+/* ---- 4.6 Landing (index.css): usos de --azul como TEXTO ---- */
+html[data-theme="dark"] .hero-chip,
+html[data-theme="dark"] .secao h2,
+html[data-theme="dark"] .link-seta,
+html[data-theme="dark"] .curso-area,
+html[data-theme="dark"] .curso-corpo h3,
+html[data-theme="dark"] .curso-rodape,
+html[data-theme="dark"] .passo-icone,
+html[data-theme="dark"] .passo h3,
+html[data-theme="dark"] .perfil-icone,
+html[data-theme="dark"] .perfil h3,
+html[data-theme="dark"] .perfil li::before {
+  color: var(--hs-azul);
+}
+
+html[data-theme="dark"] .hero-chip {
+  background: rgba(19, 28, 46, 0.92);
+  border: 1px solid var(--hs-borda);
+}
+
+html[data-theme="dark"] .btn-outline,
+html[data-theme="dark"] .btn-ghost {
+  border-color: var(--hs-azul);
+  color: var(--hs-azul);
+}
+
+html[data-theme="dark"] .btn-outline:hover,
+html[data-theme="dark"] .btn-ghost:hover {
+  background: var(--hs-azul-fundo);
+}
+
+html[data-theme="dark"] .btn-primary:not(body.app-shell .btn-primary) {
+  background: var(--hs-azul-solido);
+  color: #fff;
+}
+
+html[data-theme="dark"] .hero h1 { color: var(--hs-titulo); }
+html[data-theme="dark"] .hero h1 span { color: var(--hs-azul); }
+
+html[data-theme="dark"] .menu-indicator { background: var(--hs-azul); }
+
+html[data-theme="dark"] .perfil-aluno {
+  background: linear-gradient(135deg, rgba(110, 168, 255, 0.14) 0%, rgba(110, 168, 255, 0.04) 100%);
+}
+
+html[data-theme="dark"] .perfil-professor {
+  background: linear-gradient(135deg, rgba(74, 222, 128, 0.14) 0%, rgba(74, 222, 128, 0.04) 100%);
+}
+
+/* ---- 4.7 Validação de certificado (CSS inline em validar.html) ---- */
+html[data-theme="dark"] .caixa { background: var(--hs-card); border: 1px solid var(--hs-borda); }
+html[data-theme="dark"] .caixa input { background: var(--hs-superficie-2); border-color: var(--hs-borda); color: var(--hs-titulo); }
+html[data-theme="dark"] .caixa h1 { color: var(--hs-azul); }
+html[data-theme="dark"] .caixa p.s { color: var(--hs-legenda); }
+html[data-theme="dark"] .caixa button { background: var(--hs-azul-solido); }
+html[data-theme="dark"] .res.ok { background: var(--hs-sucesso-fundo); color: var(--hs-sucesso); }
+html[data-theme="dark"] .res.no { background: var(--hs-erro-fundo); color: var(--hs-erro); }
+
+/* ---- 4.8 Campos de formulário em geral (texto e placeholder legíveis) ---- */
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea {
+  color: var(--hs-titulo);
+}
+
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder {
+  color: var(--hs-legenda);
+  opacity: 1;
+}
+
+html[data-theme="dark"] select option {
+  background: var(--hs-card);
+  color: var(--hs-titulo);
+}
+
+
+/* ---- 4.9 Pequenos acertos de legibilidade ---- */
+html[data-theme="dark"] body.app-shell .breadcrumb .sep {
+  color: var(--hs-legenda);
+}
+
+/* Textos com cor fixa escrita direto no HTML/JS (style="color:#718096") */
+html[data-theme="dark"] [style*="color:#718096"],
+html[data-theme="dark"] [style*="color: #718096"] {
+  color: var(--hs-legenda) !important;
+}

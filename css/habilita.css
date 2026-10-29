@@ -20,7 +20,7 @@
   /* Texto */
   --hs-titulo: #1a202c;
   --hs-corpo: #4a5568;
-  --hs-legenda: #718096;
+  --hs-legenda: #5b6b80;
 
   /* Semânticas */
   --hs-sucesso: #3e9c2d;
@@ -581,6 +581,188 @@ body.app-shell .metrica h3 {
   font-size: 14px;
 }
 
+/* ---------- Configurações dos níveis ---------- */
+body.app-shell .config-niveis {
+  padding: 24px;
+}
+
+body.app-shell .config-niveis h2 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  color: var(--hs-titulo);
+}
+
+body.app-shell .config-desc {
+  margin: 0 0 18px;
+  color: var(--hs-legenda);
+  font-size: 14px;
+}
+
+body.app-shell .config-status {
+  margin: 16px 0 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+body.app-shell .config-status:empty {
+  display: none;
+}
+
+body.app-shell .config-status.sucesso {
+  color: var(--hs-sucesso);
+}
+
+body.app-shell .config-status.erro {
+  color: var(--hs-erro);
+}
+
+body.app-shell .config-vazio {
+  margin: 0;
+  padding: 24px;
+  color: var(--hs-legenda);
+  text-align: center;
+}
+
+body.app-shell .tabela-niveis-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--hs-borda);
+  border-radius: var(--hs-raio-card);
+  -webkit-overflow-scrolling: touch;
+}
+
+body.app-shell .tabela-niveis {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+body.app-shell .tabela-niveis th,
+body.app-shell .tabela-niveis td {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--hs-borda);
+  vertical-align: middle;
+}
+
+body.app-shell .tabela-niveis tbody tr:last-child th,
+body.app-shell .tabela-niveis tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+body.app-shell .tabela-niveis thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--hs-fundo);
+  color: var(--hs-corpo);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  white-space: nowrap;
+}
+
+body.app-shell .tabela-niveis thead th:first-child,
+body.app-shell .tabela-niveis tbody th {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--hs-card);
+  text-align: left;
+}
+
+body.app-shell .tabela-niveis thead th:first-child {
+  z-index: 3;
+  background: var(--hs-fundo);
+}
+
+body.app-shell .tabela-niveis tbody th {
+  min-width: 210px;
+}
+
+body.app-shell .rotulo-campo {
+  display: block;
+  color: var(--hs-titulo);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+body.app-shell .dica-campo {
+  display: block;
+  margin-top: 2px;
+  color: var(--hs-legenda);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+body.app-shell .campo-nivel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+body.app-shell .tabela-niveis input[type="number"] {
+  width: 100%;
+  max-width: 110px;
+  min-height: 38px;
+  padding: 7px 9px;
+  border: 1px solid var(--hs-borda);
+  border-radius: var(--hs-raio-controle);
+  background: var(--hs-card);
+  color: var(--hs-titulo);
+  font-size: 14px;
+  text-align: right;
+}
+
+body.app-shell .tabela-niveis input[type="number"]:focus {
+  outline: none;
+  border-color: var(--hs-azul);
+  box-shadow: var(--hs-foco);
+}
+
+body.app-shell .tabela-niveis input[aria-invalid="true"] {
+  border-color: var(--hs-erro);
+  box-shadow: 0 0 0 3px rgba(197, 48, 48, 0.12);
+}
+
+body.app-shell .unidade {
+  min-width: 20px;
+  color: var(--hs-legenda);
+  font-size: 12px;
+  text-align: left;
+}
+
+body.app-shell .erro-campo {
+  display: block;
+  max-width: 160px;
+  margin: 4px auto 0;
+  color: var(--hs-erro);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-align: center;
+}
+
+body.app-shell .erro-campo:empty {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  body.app-shell .config-niveis {
+    padding: 18px;
+  }
+
+  body.app-shell .tabela-niveis {
+    min-width: 640px;
+  }
+
+  body.app-shell .tabela-niveis tbody th {
+    min-width: 180px;
+  }
+}
+
 /* Barra de progresso concluída em verde Habilita */
 body.app-shell .aula-barra div,
 body.app-shell [class*="progresso"] > div > div,
@@ -1036,4 +1218,16 @@ body.app-shell .content .quiz-opcao {
 
 body.app-shell .content .quiz-opcao:has(input:checked) {
   color: var(--hs-titulo);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }

@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const cors = require("cors");
 const express = require("express");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
@@ -9,6 +10,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+app.use(cors({
+    origin: "http://127.0.0.1:5500",
+    credentials: true
+}));
 
 app.use(session({
     secret: process.env.SESSION_SECRET,

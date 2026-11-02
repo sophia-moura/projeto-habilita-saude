@@ -250,115 +250,67 @@
         etapaSelecao.style.display = "block";
         tipoSelecionado = null;
       });
-
-      /* ---------- Senhas: PBKDF2 (SHA-256) com sal individual ---------- */
-      const PBKDF2_ITER = 100000;
-      const bytesParaHex = (b) =>
-        [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, "0")).join("");
-      const hexParaBytes = (h) =>
-        Uint8Array.from(h.match(/../g) || [], (x) => parseInt(x, 16));
-      const hashDisponivel = () => !!(window.crypto && window.crypto.subtle);
-
-      async function derivarSenha(senha, saltHex, iter) {
-        const chave = await crypto.subtle.importKey(
-          "raw",
-          new TextEncoder().encode(senha),
-          "PBKDF2",
-          false,
-          ["deriveBits"],
-        );
-        const bits = await crypto.subtle.deriveBits(
-          { name: "PBKDF2", hash: "SHA-256", salt: hexParaBytes(saltHex), iterations: iter || PBKDF2_ITER },
-          chave,
-          256,
-        );
-        return bytesParaHex(bits);
-      }
-
-      async function criarCredencial(senha) {
-        const salt = bytesParaHex(crypto.getRandomValues(new Uint8Array(16)));
-        return { salt, iter: PBKDF2_ITER, senhaHash: await derivarSenha(senha, salt, PBKDF2_ITER) };
-      }
-
-      // Comparação em tempo constante
-      function iguais(a, b) {
-        if (a.length !== b.length) return false;
-        let r = 0;
-        for (let i = 0; i < a.length; i++) r |= a.charCodeAt(i) ^ b.charCodeAt(i);
-        return r === 0;
-      }
-
-      const MSG_SEM_CRIPTO =
-        "Este navegador bloqueou a proteção de senhas. Acesse o site por HTTPS ou localhost.";
-
+      
       async function entrar() {
-        if (!tipoSelecionado) return;
+          if (!tipoSelecionado) return;
 
-        const email = emailLogin.value.trim().toLowerCase();
-        const senha = senhaLogin.value;
+          const email = emailLogin.value.trim().toLowerCase();
+          const senha = senhaLogin.value;
 
-        if (!email || !senha) {
-          erroLogin.textContent = "Preencha e-mail e senha para continuar.";
-          return;
-        }
-
-        erroLogin.textContent = "";
-
-        const lista = usuariosRegistrados();
-        const encontrado = lista.find(
-          (u) => u.email === email && u.tipo === tipoSelecionado,
-        );
-
-        if (!encontrado) {
-          erroLogin.textContent =
-            "E-mail não encontrado para este perfil. Crie sua conta abaixo.";
-          return;
-        }
-
-        if (!hashDisponivel()) {
-          erroLogin.textContent = MSG_SEM_CRIPTO;
-          return;
-        }
-
-        let senhaOk = false;
-        if (encontrado.senhaHash) {
-          const calculado = await derivarSenha(senha, encontrado.salt, encontrado.iter);
-          senhaOk = iguais(calculado, encontrado.senhaHash);
-        } else if (typeof encontrado.senha === "string" && encontrado.senha !== "") {
-          // Conta antiga com senha em texto puro: confere e converte para hash agora.
-          senhaOk = encontrado.senha === senha;
-          if (senhaOk) {
-            Object.assign(encontrado, await criarCredencial(senha));
-            delete encontrado.senha;
-            localStorage.setItem("usuarios", JSON.stringify(lista));
+          if (!email || !senha) {
+              erroLogin.textContent = "Preencha e-mail e senha para continuar.";
+              return;
           }
-        }
 
-        if (!senhaOk) {
-          erroLogin.textContent = "Senha incorreta. Tente novamente.";
-          return;
-        }
+          erroLogin.textContent = "";
+          btnEntrar.disabled = true;
 
-        const usuario = {
-          nome: encontrado.nome,
-          email: encontrado.email,
-          foto:
-            encontrado.foto ||
-            (encontrado.tipo === "professor"
-              ? "./img/professor.png"
-              : gerarFoto(encontrado.nome)),
-          tipo: encontrado.tipo,
-          online: true,
-        };
+          try {
+              const resposta = await fetch("http://localhost:3000/api/login", {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json"
+                  },
+                  credentials: "include",
+                  body: JSON.stringify({
+                      email,
+                      senha,
+                      tipo: tipoSelecionado
+                  })
+              });
 
-        localStorage.setItem("usuario", JSON.stringify(usuario));
-        localStorage.setItem("usuarioLogado", "true");
+              const dados = await resposta.json();
 
-        window.location.href =
-          tipoSelecionado === "professor"
-            ? "professor-inicio.html"
-            : "aluno-inicio.html";
+              if (!resposta.ok) {
+                  erroLogin.textContent = dados.erro || "Erro ao entrar.";
+                  return;
+              }
+
+              const usuario = {
+                  nome: dados.usuario.nome,
+                  email: dados.usuario.email,
+                  tipo: dados.usuario.tipo,
+                  online: true,
+                  foto: dados.usuario.tipo === "professor"
+                      ? "./img/professor.png"
+                      : gerarFoto(dados.usuario.nome)
+              };
+
+              localStorage.setItem("usuario", JSON.stringify(usuario));
+              localStorage.setItem("usuarioLogado", "true");
+
+              window.location.href = tipoSelecionado === "professor"
+                  ? "professor-inicio.html"
+                  : "aluno-inicio.html";
+
+          } catch (erro) {
+              console.error(erro);
+              erroLogin.textContent = "Não foi possível conectar ao servidor.";
+          } finally {
+              btnEntrar.disabled = false;
+          }
       }
+
 
       emailLogin.addEventListener("keydown", (e) => {
         if (e.key === "Enter") entrar();
@@ -377,31 +329,6 @@
       const confirmarCadastro = document.getElementById("confirmarCadastro");
       const erroCadastro = document.getElementById("erroCadastro");
       let tipoCadastro = null;
-
-      function usuariosRegistrados() {
-        return JSON.parse(localStorage.getItem("usuarios") || "[]");
-      }
-
-      // Compatibilidade: migra o usuário salvo isoladamente para a lista
-      (function migrarUsuarioAntigo() {
-        const antigo = JSON.parse(localStorage.getItem("usuario") || "null");
-        if (!antigo || !antigo.email) return;
-        const lista = usuariosRegistrados();
-        if (!lista.some((u) => u.email === antigo.email && u.tipo === antigo.tipo)) {
-          lista.push({
-            nome: antigo.nome,
-            email: antigo.email,
-            senha: antigo.senha || "",
-            tipo: antigo.tipo,
-            foto: antigo.foto || "",
-          });
-          localStorage.setItem("usuarios", JSON.stringify(lista));
-        }
-        if ("senha" in antigo) {
-          delete antigo.senha;
-          localStorage.setItem("usuario", JSON.stringify(antigo));
-        }
-      })();
 
       function gerarFoto(nome) {
         if (typeof window.HSAvatar === "function") return window.HSAvatar(nome);
@@ -447,67 +374,118 @@
       });
 
       async function cadastrar() {
-        const nome = nomeCadastro.value.trim();
-        const email = emailCadastro.value.trim().toLowerCase();
-        const senha = senhaCadastro.value;
-        const confirmar = confirmarCadastro.value;
+          const nome = nomeCadastro.value.trim();
+          const email = emailCadastro.value.trim().toLowerCase();
+          const senha = senhaCadastro.value;
+          const confirmar = confirmarCadastro.value;
 
-        erroCadastro.textContent = "";
+          erroCadastro.textContent = "";
 
-        if (!tipoCadastro) {
-          erroCadastro.textContent = "Escolha seu perfil: Professor ou Aluno.";
-          return;
-        }
-        if (!nome) {
-          erroCadastro.textContent = "Informe seu nome completo.";
-          return;
-        }
-        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-          erroCadastro.textContent = "Informe um e-mail válido.";
-          return;
-        }
-        if (senha.length < 6) {
-          erroCadastro.textContent = "A senha deve ter no mínimo 6 caracteres.";
-          return;
-        }
-        if (senha !== confirmar) {
-          erroCadastro.textContent = "As senhas não coincidem.";
-          return;
-        }
+          if (!tipoCadastro) {
+              erroCadastro.textContent = "Escolha seu perfil: Professor ou Aluno.";
+              return;
+          }
 
-        const lista = usuariosRegistrados();
-        if (lista.some((u) => u.email === email)) {
-          erroCadastro.textContent =
-            "Este e-mail já está cadastrado. Faça login.";
-          return;
-        }
+          if (!nome) {
+              erroCadastro.textContent = "Informe seu nome completo.";
+              return;
+          }
 
-        if (!hashDisponivel()) {
-          erroCadastro.textContent = MSG_SEM_CRIPTO;
-          return;
-        }
+          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+              erroCadastro.textContent = "Informe um e-mail válido.";
+              return;
+          }
 
-        lista.push({ nome, email, tipo: tipoCadastro, ...(await criarCredencial(senha)) });
-        localStorage.setItem("usuarios", JSON.stringify(lista));
+          if (senha.length < 6) {
+              erroCadastro.textContent = "A senha deve ter no mínimo 6 caracteres.";
+              return;
+          }
 
-        const usuario = {
-          nome,
-          email,
-          foto:
-            tipoCadastro === "professor"
-              ? "./img/professor.png"
-              : gerarFoto(nome),
-          tipo: tipoCadastro,
-          online: true,
-        };
+          if (senha !== confirmar) {
+              erroCadastro.textContent = "As senhas não coincidem.";
+              return;
+          }
 
-        localStorage.setItem("usuario", JSON.stringify(usuario));
-        localStorage.setItem("usuarioLogado", "true");
+          const btnCriarConta = document.getElementById("btnCriarConta");
+          btnCriarConta.disabled = true;
 
-        window.location.href =
-          tipoCadastro === "professor"
-            ? "professor-inicio.html"
-            : "aluno-inicio.html";
+          const rotaCadastro = tipoCadastro === "aluno"
+            ? "http://localhost:3000/api/alunos"
+            : "http://localhost:3000/api/professores";
+
+          try {
+              // 1. Cadastrar no banco
+              const respostaCadastro = await fetch(rotaCadastro, {
+                  method: "POST",
+                  headers: {
+                      "Content-Type": "application/json"
+                  },
+                  credentials: "include",
+                  body: JSON.stringify({ nome, email, senha })
+              });
+
+              const dadosCadastro = await respostaCadastro.json();
+
+              if (!respostaCadastro.ok) {
+                  erroCadastro.textContent =
+                      dadosCadastro.erro || "Não foi possível criar a conta.";
+                  return;
+              }
+
+              // 2. Fazer login automaticamente
+              const respostaLogin = await fetch(
+                  rotaCadastro,
+                  {
+                      method: "POST",
+                      headers: {
+                          "Content-Type": "application/json"
+                      },
+                      credentials: "include",
+                      body: JSON.stringify({
+                          email,
+                          senha,
+                          tipo: tipoCadastro
+                      })
+                  }
+              );
+
+              const dadosLogin = await respostaLogin.json();
+
+              if (!respostaLogin.ok) {
+                  erroCadastro.textContent =
+                      "Conta criada! Faça login para continuar.";
+                  fecharCadastro();
+                  abrirEtapaLogin(tipoCadastro);
+                  emailLogin.value = email;
+                  return;
+              }
+
+              // 3. Atualizar dados locais usados pelo frontend
+              const usuario = {
+                  nome: dadosLogin.usuario.nome,
+                  email: dadosLogin.usuario.email,
+                  tipo: dadosLogin.usuario.tipo,
+                  online: true,
+                  foto: tipoCadastro === "professor"
+                      ? "./img/professor.png"
+                      : gerarFoto(nome)
+              };
+
+              localStorage.setItem("usuario", JSON.stringify(usuario));
+              localStorage.setItem("usuarioLogado", "true");
+
+              // 4. Redirecionar
+              window.location.href = tipoCadastro === "professor"
+                  ? "professor-inicio.html"
+                  : "aluno-inicio.html";
+
+          } catch (erro) {
+              console.error(erro);
+              erroCadastro.textContent =
+                  "Não foi possível conectar ao servidor.";
+          } finally {
+              btnCriarConta.disabled = false;
+          }
       }
 
       confirmarCadastro.addEventListener("keydown", (e) => {

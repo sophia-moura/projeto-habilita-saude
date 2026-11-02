@@ -3,11 +3,24 @@ require("dotenv").config();
 const express = require("express");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
+const session = require("express-session");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
+
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: false,
+        sameSite: "lax",
+        maxAge: 1000 * 60 * 60 * 2
+    }
+}));
 
 const banco = mysql.createPool({
     host: process.env.DB_HOST,
@@ -123,6 +136,104 @@ app.post("/api/alunos", (req, res) => {
 // Cadastro de professor
 app.post("/api/professores", (req, res) => {
     return cadastrarUsuario(req, res, "professor");
+});
+
+app.post("/api/login", async (req, res) => {
+    try {
+        const { email, senha, tipo } = req.body;
+
+        if (!email || !senha || !tipo) {
+            return res.status(400).json({
+                erro: "Informe email, senha e tipo de usuário."
+            });
+        }
+
+        if (!["aluno", "professor"].includes(tipo)) {
+            return res.status(400).json({
+                erro: "Tipo de usuário inválido."
+            });
+        }
+
+        const tabela = tipo === "aluno" ? "aluno" : "professor";
+        const colunaId = tipo === "aluno" ? "id_aluno" : "id_professor";
+
+        const [usuarios] = await banco.execute(
+            `SELECT ${colunaId} AS id, nome, email, senha_hash
+             FROM ${tabela}
+             WHERE email = ?
+             LIMIT 1`,
+            [email.toLowerCase()]
+        );
+
+        if (usuarios.length === 0) {
+            return res.status(401).json({
+                erro: "Email ou senha incorretos."
+            });
+        }
+
+        const usuario = usuarios[0];
+
+        const senhaValida = await bcrypt.compare(
+            senha,
+            usuario.senha_hash
+        );
+
+        if (!senhaValida) {
+            return res.status(401).json({
+                erro: "Email ou senha incorretos."
+            });
+        }
+
+        req.session.usuario = {
+            id: usuario.id,
+            nome: usuario.nome,
+            email: usuario.email,
+            tipo: tipo
+        };
+
+        res.json({
+            sucesso: true,
+            mensagem: "Login realizado!",
+            usuario: req.session.usuario
+        });
+
+    } catch (erro) {
+        console.error(erro);
+
+        res.status(500).json({
+            erro: "Erro ao realizar login."
+        });
+    }
+});
+
+app.get("/api/usuario-logado", (req, res) => {
+    if (!req.session.usuario) {
+        return res.status(401).json({
+            autenticado: false
+        });
+    }
+
+    res.json({
+        autenticado: true,
+        usuario: req.session.usuario
+    });
+});
+
+app.post("/api/logout", (req, res) => {
+    req.session.destroy((erro) => {
+        if (erro) {
+            return res.status(500).json({
+                erro: "Erro ao encerrar sessão."
+            });
+        }
+
+        res.clearCookie("connect.sid");
+
+        res.json({
+            sucesso: true,
+            mensagem: "Logout realizado."
+        });
+    });
 });
 
 app.listen(PORT, () => {

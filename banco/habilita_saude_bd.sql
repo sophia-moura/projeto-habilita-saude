@@ -28,9 +28,20 @@ CREATE TABLE curso (
     id_curso      INT UNSIGNED NOT NULL AUTO_INCREMENT,
     id_professor  INT UNSIGNED NOT NULL,
     nome_curso    VARCHAR(150) NOT NULL,
+    subtitulo     VARCHAR(200) NULL,
     descricao     TEXT NULL,
+    area_tematica VARCHAR(80) NULL,
+    publico_alvo  VARCHAR(200) NULL,
+    carga_horaria SMALLINT UNSIGNED NULL,
+    nivel         VARCHAR(50) NULL,
+    certificado   VARCHAR(50) NULL,
+    checklist     JSON NULL,
+    imagem_url    VARCHAR(500) NULL,
+    curso_demo    BOOLEAN NOT NULL DEFAULT FALSE,
     preco         DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-    status        ENUM('rascunho','publicado') NOT NULL DEFAULT 'rascunho',
+    status        ENUM('rascunho','publicado')
+                  NOT NULL DEFAULT 'rascunho',
+    data_criacao  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT pk_curso PRIMARY KEY (id_curso),
     CONSTRAINT fk_curso_professor FOREIGN KEY (id_professor)
         REFERENCES professor (id_professor),
@@ -50,12 +61,33 @@ CREATE TABLE modulo (
 CREATE TABLE aula (
     id_aula    INT UNSIGNED NOT NULL AUTO_INCREMENT,
     id_modulo  INT UNSIGNED NOT NULL,
+
     titulo     VARCHAR(150) NOT NULL,
     conteudo   TEXT NULL,
+
+    tipo ENUM(
+        'video',
+        'pdf',
+        'ebook',
+        'slide',
+        'mapa',
+        'quiz',
+        'caso',
+        'material',
+        'link',
+        'texto'
+    ) NOT NULL DEFAULT 'texto',
+
+    arquivo_url VARCHAR(500) NULL,
+    metadados   JSON NULL,
+
     ordem      INT UNSIGNED NOT NULL,
+
     CONSTRAINT pk_aula PRIMARY KEY (id_aula),
+
     CONSTRAINT fk_aula_modulo FOREIGN KEY (id_modulo)
         REFERENCES modulo (id_modulo) ON DELETE CASCADE
+
 ) ENGINE=InnoDB;
 
 -- vendas e aprendizagem

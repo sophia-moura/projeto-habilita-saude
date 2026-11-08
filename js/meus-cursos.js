@@ -3,14 +3,7 @@
     (window.HS && HS.esc) ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
-  let cursos = (() => {
-    try {
-      const lista = JSON.parse(localStorage.getItem("cursos"));
-      return Array.isArray(lista) ? lista : [];
-    } catch (e) {
-      return [];
-    }
-  })();
+  let cursos = [];
 
   const grid = document.getElementById("cursosGrid");
   const modalCurso = document.getElementById("modalCurso");
@@ -137,7 +130,7 @@
     modalCurso.setAttribute("aria-hidden", "true");
   }
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
     const ganhos = e.target.closest("[data-financas]");
     if (ganhos) {
       e.stopPropagation();
@@ -147,35 +140,60 @@
 
     const editar = e.target.closest(".btn-editar");
     if (editar) {
-      e.stopPropagation();
-      const curso = cursos.find((c) => String(c.id) === String(editar.dataset.id));
-      if (!curso) return;
-      try {
-        localStorage.setItem("cursoEditando", JSON.stringify(curso));
-      } catch (err) {
-        alert("Não foi possível abrir o curso para edição.");
+        e.stopPropagation();
+
+        const id = editar.dataset.id;
+
+        if (!id) {
+            alert("Não foi possível identificar o curso.");
+            return;
+        }
+
+        window.location.href = `criar-curso.html?editar=${encodeURIComponent(id)}`;
+
         return;
-      }
-      window.location.href = "criar-curso.html";
-      return;
     }
 
     const excluir = e.target.closest(".btn-excluir");
-    if (excluir) {
-      e.stopPropagation();
-      const id = excluir.dataset.id;
-      if (!confirm("Deseja realmente excluir este curso?")) return;
-      cursos = cursos.filter((curso) => String(curso.id) !== String(id));
-      try {
-        localStorage.setItem("cursos", JSON.stringify(cursos));
-      } catch (err) {
-        alert("Não foi possível excluir o curso.");
+
+      if (excluir) {
+        e.stopPropagation();
+
+        const id = excluir.dataset.id;
+
+        if (!confirm("Deseja realmente excluir este curso?")) return;
+
+        try {
+          const resposta = await fetch(
+            `http://localhost:3000/api/cursos/${id}`,
+            {
+              method: "DELETE",
+              credentials: "include"
+            }
+          );
+
+          const dados = await resposta.json();
+
+          if (!resposta.ok) {
+            throw new Error(dados.erro || "Não foi possível excluir o curso.");
+          }
+
+          cursos = cursos.filter(
+            (curso) => String(curso.id) !== String(id)
+          );
+
+          carregarFiltros();
+          aplicarFiltros();
+
+          alert("Curso excluído com sucesso!");
+
+        } catch (erro) {
+          console.error("Erro ao excluir curso:", erro);
+          alert(erro.message || "Erro ao excluir curso.");
+        }
+
         return;
       }
-      carregarFiltros();
-      aplicarFiltros();
-      return;
-    }
 
     if (e.target.closest(".acoes")) return;
     const card = e.target.closest(".curso-card");
@@ -197,6 +215,59 @@
   filtroCarga?.addEventListener("change", aplicarFiltros);
   filtroPublico?.addEventListener("change", aplicarFiltros);
 
-  carregarFiltros();
-  renderCursos(cursos);
+  async function carregarCursos() {
+    try {
+      grid.innerHTML = "<p>Carregando seus cursos...</p>";
+
+      const resposta = await fetch(
+        "http://localhost:3000/api/professor/cursos",
+        {
+          method: "GET",
+          credentials: "include"
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.erro || "Não foi possível carregar seus cursos."
+        );
+      }
+
+      cursos = dados.map((curso) => ({
+        id: curso.id_curso,
+        nome: curso.nome_curso,
+        subtitulo: curso.subtitulo || "",
+        descricao: curso.descricao || "",
+        categoria: curso.area_tematica || "",
+        publico: curso.publico_alvo || "",
+        cargaHoraria: curso.carga_horaria
+            ? `${curso.carga_horaria} horas`
+            : "",
+        nivel: curso.nivel || "",
+        certificado: curso.certificado || "",
+        checklist: curso.checklist || [],
+        imagem: curso.imagem_url || "./img/perfil.svg",
+        preco: Number(curso.preco) || 0,
+        status: curso.status === "publicado"
+            ? "Publicado"
+            : "Privado"
+      }));
+
+      carregarFiltros();
+      renderCursos(cursos);
+
+    } catch (erro) {
+      console.error("Erro ao carregar cursos:", erro);
+
+      grid.innerHTML = `
+        <p class="estado-vazio">
+          ${esc(erro.message || "Erro ao carregar os cursos.")}
+        </p>
+      `;
+    }
+  }
+
+  carregarCursos();
 })();

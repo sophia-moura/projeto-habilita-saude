@@ -6,156 +6,40 @@
 
   const pagina = location.pathname.split("/").pop() || "index.html";
 
-  const home = (t) =>
-      t === "aluno" ? "aluno-inicio.html" : "professor-inicio.html";
-
-  const soProfessor = [
-      "professor-inicio.html",
-      "professor-meus-cursos.html",
-      "criar-curso.html",
-      "financas.html",
-      "usuarios.html",
-      "relatorios.html",
-      "professor-suporte.html",
-      "configuracoes-niveis.html"
-  ];
-
-  const soAluno = [
-      "aluno-inicio.html",
-      "aluno-meus-cursos.html",
-      "aluno-suporte.html",
-      "aula.html",
-      "certificados.html"
-  ];
-
-  const publicas = ["index.html", "login.html", "validar.html"];
-
   let usuario = null;
   let tipo = null;
 
-  if (!publicas.includes(pagina)) {
-      try {
-          const resposta = await fetch(
-              "http://localhost:3000/api/usuario-logado",
-              { credentials: "include" }
-          );
-
-          const dados = await resposta.json();
-
-          if (!resposta.ok || !dados.usuario) {
-              location.replace("index.html");
-              return;
-          }
-
-          usuario = dados.usuario;
-          tipo = usuario.tipo;
-
-          // Compatibilidade com o frontend atual
-          localStorage.setItem("usuario", JSON.stringify(usuario));
-          localStorage.setItem("usuarioLogado", "true");
-
-      } catch (erro) {
-          console.error("Erro ao verificar sessão:", erro);
-          location.replace("index.html");
-          return;
-      }
-
-      if (soProfessor.includes(pagina) && tipo !== "professor") {
-          location.replace(home(tipo));
-          return;
-      }
-
-      if (soAluno.includes(pagina) && tipo !== "aluno") {
-          location.replace(home(tipo));
-          return;
-      }
-
-  } else if (pagina === "login.html") {
-      try {
-          const resposta = await fetch(
-              "http://localhost:3000/api/usuario-logado",
-              { credentials: "include" }
-          );
-
-          const dados = await resposta.json();
-
-          if (resposta.ok && dados.usuario) {
-              usuario = dados.usuario;
-              tipo = usuario.tipo;
-              location.replace(home(tipo));
-              return;
-          }
-
-      } catch (erro) {
-          console.error("Erro ao verificar sessão:", erro);
-      }
-  }
-
-  // Navegação canônica (Guia de Estilo v1.3): mesmos nomes e ícones nos dois perfis.
-  const NAV = {
-    aluno: [
-      ["aluno-inicio.html", "house", "Início"],
-      ["aluno-meus-cursos.html", "book", "Meus cursos"],
-      ["certificados.html", "award", "Certificados"],
-      ["aluno-suporte.html", "circle-question", "Suporte"],
-    ],
-    professor: [
-      ["professor-inicio.html", "house", "Início"],
-      ["professor-meus-cursos.html", "book", "Meus cursos"],
-      ["criar-curso.html", "plus", "Criar curso"],
-      ["usuarios.html", "users", "Usuários"],
-      ["relatorios.html", "chart-line", "Relatórios"],
-      ["financas.html", "chart-pie", "Finanças"],
-      ["configuracoes-niveis.html", "gear", "Configurações"],
-    ],
-  };
-  const ativoComo = { "aula.html": "aluno-meus-cursos.html" };
-  const suporteDe = (t) => (t === "aluno" ? "aluno-suporte.html" : "professor-suporte.html");
-
-  function montarShell() {
-    if (!tipo || !NAV[tipo]) return;
-    const ul = document.querySelector(".sidebar ul");
-    if (ul) {
-      const ativo = ativoComo[pagina] || pagina;
-      ul.innerHTML = NAV[tipo]
-        .map(([p, i, t]) => `<li><a href="./${p}"${p === ativo ? ' class="menu-ativo" aria-current="page"' : ""}><i class="fa-solid fa-${i}"></i> ${t}</a></li>`)
-        .join("");
-    }
-    const logoLink = document.querySelector(".logo-side a");
-    if (logoLink) logoLink.href = "./" + home(tipo);
-    const raiz = document.querySelector(".breadcrumb a:first-child");
-    if (raiz) raiz.href = "./" + home(tipo);
-    const tag = document.querySelector(".perfil-tag");
-    if (tag) tag.textContent = tipo === "aluno" ? "Aluno" : "Professor";
-    document.querySelectorAll(".link-suporte").forEach((a) => (a.href = "./" + suporteDe(tipo)));
-  }
-  montarShell();
-
-  if (!document.querySelector('link[rel="icon"]')) document.head.insertAdjacentHTML("beforeend", '<link rel="icon" href="./img/favicon.png">');
-
-  document.querySelectorAll('a[href$="criar-curso.html"]').forEach((a) =>
-    a.addEventListener("click", () => localStorage.removeItem("cursoEditando")));
-
   const visivel = (n) => !n.para || n.para === tipo;
-  function atualizarSino() {
-    const naoLidas = ls("notificacoes", []).filter(visivel).filter((n) => !n.lida).length;
-    const badge = document.getElementById("badgeNotificacao");
-    if (badge) { badge.textContent = naoLidas; badge.style.display = naoLidas > 0 ? "flex" : "none"; }
-    const link = badge && badge.closest("a");
-    if (link) {
-      link.setAttribute(
-        "aria-label",
-        naoLidas > 0 ? `Notificações (${naoLidas} não lidas)` : "Notificações",
-      );
-    }
-  }
+  
   function notificar(titulo, descricao, tipoNotif, para) {
     const l = ls("notificacoes", []);
     const lista = Array.isArray(l) ? l : [];
     lista.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), titulo, descricao, tipo: tipoNotif, para, lida: false, data: new Date().toLocaleString("pt-BR") });
     salvar("notificacoes", lista);
+    atualizarSino();
   }
-  atualizarSino();
+
+  function atualizarSino() {
+    const badge = document.getElementById("badgeNotificacao");
+
+    if (!badge) return;
+
+    const notificacoes = ls("notificacoes", []);
+
+    const naoLidas = (Array.isArray(notificacoes) ? notificacoes : [])
+      .filter((n) => !n.para || n.para === tipo)
+      .filter((n) => !n.lida).length;
+
+    badge.textContent = naoLidas > 99 ? "99+" : String(naoLidas);
+    badge.hidden = naoLidas === 0;
+
+    badge.setAttribute(
+      "aria-label",
+      naoLidas
+        ? `${naoLidas} notificações não lidas`
+        : "Nenhuma notificação não lida"
+    );
+  }
 
   const HS = {
     esc,
@@ -219,6 +103,185 @@
   };
   window.HS = HS;
 
+  Object.defineProperties(HS, {
+    usuario: { get: () => usuario },
+    tipo: { get: () => tipo }
+  });
+
+  const home = (t) =>
+      t === "aluno" ? "aluno-inicio.html" : "professor-inicio.html";
+
+  const soProfessor = [
+      "professor-inicio.html",
+      "professor-meus-cursos.html",
+      "criar-curso.html",
+      "financas.html",
+      "usuarios.html",
+      "relatorios.html",
+      "professor-suporte.html",
+      "configuracoes-niveis.html"
+  ];
+
+  const soAluno = [
+      "aluno-inicio.html",
+      "aluno-meus-cursos.html",
+      "aluno-suporte.html",
+      "aula.html",
+      "certificados.html"
+  ];
+
+  const publicas = ["index.html", "login.html", "validar.html"];
+
+  HS.ready = (async () => {
+
+    if (!publicas.includes(pagina)) {
+
+      try {
+
+        const resposta = await fetch(
+          "http://localhost:3000/api/usuario-logado",
+          {
+            credentials: "include"
+          }
+        );
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok || !dados.usuario) {
+          location.replace("index.html");
+          return false;
+        }
+
+        usuario = dados.usuario;
+        tipo = usuario.tipo;
+
+        localStorage.setItem(
+          "usuario",
+          JSON.stringify(usuario)
+        );
+
+        localStorage.setItem("usuarioLogado", "true");
+
+      } catch (erro) {
+
+        console.error(
+          "Erro ao verificar sessão:",
+          erro
+        );
+
+        location.replace("index.html");
+        return false;
+      }
+
+      if (
+        soProfessor.includes(pagina) &&
+        tipo !== "professor"
+      ) {
+        location.replace(home(tipo));
+        return false;
+      }
+
+      if (
+        soAluno.includes(pagina) &&
+        tipo !== "aluno"
+      ) {
+        location.replace(home(tipo));
+        return false;
+      }
+
+    } else if (pagina === "login.html") {
+
+      try {
+
+        const resposta = await fetch(
+          "http://localhost:3000/api/usuario-logado",
+          {
+            credentials: "include"
+          }
+        );
+
+        const dados = await resposta.json();
+
+        if (resposta.ok && dados.usuario) {
+          usuario = dados.usuario;
+          tipo = usuario.tipo;
+
+          localStorage.setItem(
+            "usuario",
+            JSON.stringify(usuario)
+          );
+
+          location.replace(home(tipo));
+          return false;
+        }
+
+      } catch (erro) {
+        console.error(
+          "Erro ao verificar sessão:",
+          erro
+        );
+      }
+    }
+
+    return true;
+
+  })();
+
+  // Navegação canônica (Guia de Estilo v1.3): mesmos nomes e ícones nos dois perfis.
+  const NAV = {
+    aluno: [
+      ["aluno-inicio.html", "house", "Início"],
+      ["aluno-meus-cursos.html", "book", "Meus cursos"],
+      ["certificados.html", "award", "Certificados"],
+      ["aluno-suporte.html", "circle-question", "Suporte"],
+    ],
+    professor: [
+      ["professor-inicio.html", "house", "Início"],
+      ["professor-meus-cursos.html", "book", "Meus cursos"],
+      ["criar-curso.html", "plus", "Criar curso"],
+      ["usuarios.html", "users", "Usuários"],
+      ["relatorios.html", "chart-line", "Relatórios"],
+      ["financas.html", "chart-pie", "Finanças"],
+      ["configuracoes-niveis.html", "gear", "Configurações"],
+    ],
+  };
+  const ativoComo = { "aula.html": "aluno-meus-cursos.html" };
+  const suporteDe = (t) => (t === "aluno" ? "aluno-suporte.html" : "professor-suporte.html");
+
+  function montarShell() {
+    if (!tipo || !NAV[tipo]) return;
+
+    const ul = document.querySelector(".sidebar ul");
+
+    if (ul) {
+      const ativo = ativoComo[pagina] || pagina;
+
+      ul.innerHTML = NAV[tipo]
+        .map(([p, i, t]) =>
+          `<li><a href="./${p}"${p === ativo ? ' class="menu-ativo" aria-current="page"' : ""}><i class="fa-solid fa-${i}"></i> ${t}</a></li>`
+        )
+        .join("");
+    }
+
+    const logoLink = document.querySelector(".logo-side a");
+    if (logoLink) logoLink.href = "./" + home(tipo);
+
+    const raiz = document.querySelector(".breadcrumb a:first-child");
+    if (raiz) raiz.href = "./" + home(tipo);
+
+    const tag = document.querySelector(".perfil-tag");
+    if (tag) tag.textContent = tipo === "aluno" ? "Aluno" : "Professor";
+
+    document.querySelectorAll(".link-suporte").forEach((a) => {
+      a.href = "./" + suporteDe(tipo);
+    });
+  }
+
+  if (!document.querySelector('link[rel="icon"]')) document.head.insertAdjacentHTML("beforeend", '<link rel="icon" href="./img/favicon.png">');
+
+  document.querySelectorAll('a[href$="criar-curso.html"]').forEach((a) =>
+    a.addEventListener("click", () => localStorage.removeItem("cursoEditando")));
+
   HS.boasVindas = function (forcar) {
     const chave = `boasVindas_${usuario.email}`;
     if (!forcar && localStorage.getItem(chave)) return;
@@ -250,7 +313,17 @@
     ov.querySelector("#bvComecar").onclick = fechar;
     v.addEventListener("ended", () => setTimeout(fechar, 600));
   };
-  if (tipo && (pagina === "professor-inicio.html" || pagina === "aluno-inicio.html")) setTimeout(() => HS.boasVindas(false), 700);
+
+  HS.ready.then((ok) => {
+    if (!ok) return;
+
+    montarShell();
+    atualizarSino();
+
+    if (pagina === "professor-inicio.html" || pagina === "aluno-inicio.html") {
+      setTimeout(() => HS.boasVindas(false), 700);
+    }
+  });
 
   const btnLogout = document.getElementById("btnLogout");
 

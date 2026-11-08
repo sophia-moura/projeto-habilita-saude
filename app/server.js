@@ -1,6 +1,6 @@
 require("dotenv").config();
 
-const cors = require("cors");
+const path = require("path");
 const express = require("express");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
@@ -10,11 +10,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(express.json());
-
-app.use(cors({
-    origin: "http://127.0.0.1:5500",
-    credentials: true
-}));
 
 app.use(session({
     secret: process.env.SESSION_SECRET,
@@ -340,7 +335,6 @@ app.get("/api/cursos/:id", async (req, res) => {
     }
 });
 
-
 // Listar cursos do professor autenticado
 app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
     try {
@@ -350,9 +344,18 @@ app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
             SELECT
                 id_curso,
                 nome_curso,
+                subtitulo,
                 descricao,
+                area_tematica,
+                publico_alvo,
+                carga_horaria,
+                nivel,
+                certificado,
+                checklist,
+                imagem_url,
                 preco,
-                status
+                status,
+                data_criacao
             FROM curso
             WHERE id_professor = ?
             ORDER BY id_curso DESC
@@ -369,19 +372,85 @@ app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
     }
 });
 
+// Consultar um curso específico do professor autenticado
+app.get("/api/professor/cursos/:id", exigirProfessor, async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "ID do curso inválido."
+            });
+        }
+
+        const [cursos] = await banco.execute(`
+            SELECT
+                id_curso,
+                nome_curso,
+                subtitulo,
+                descricao,
+                area_tematica,
+                publico_alvo,
+                carga_horaria,
+                nivel,
+                certificado,
+                checklist,
+                imagem_url,
+                preco,
+                status,
+                data_criacao
+            FROM curso
+            WHERE id_curso = ?
+              AND id_professor = ?
+        `, [
+            id,
+            req.session.usuario.id
+        ]);
+
+        if (cursos.length === 0) {
+            return res.status(404).json({
+                erro: "Curso não encontrado ou não pertence a você."
+            });
+        }
+
+        res.json(cursos[0]);
+
+    } catch (erro) {
+        console.error("Erro ao consultar curso:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível consultar o curso."
+        });
+    }
+});
 
 // Criar curso
 app.post("/api/cursos", exigirProfessor, async (req, res) => {
     try {
-        const { nome_curso, descricao, preco, status } = req.body;
+        const {
+            nome_curso,
+            subtitulo,
+            descricao,
+            area_tematica,
+            publico_alvo,
+            carga_horaria,
+            nivel,
+            certificado,
+            checklist,
+            imagem_url,
+            preco,
+            status
+        } = req.body;
 
         const nome = typeof nome_curso === "string"
             ? nome_curso.trim()
             : "";
 
         const valor = Number(preco);
-
         const situacao = status || "rascunho";
+        const carga = carga_horaria === "" || carga_horaria == null
+            ? null
+            : Number(carga_horaria);
 
         if (!nome || nome.length > 150) {
             return res.status(400).json({
@@ -401,19 +470,72 @@ app.post("/api/cursos", exigirProfessor, async (req, res) => {
             });
         }
 
+        if (
+            carga !== null &&
+            (!Number.isInteger(carga) || carga < 0 || carga > 65535)
+        ) {
+            return res.status(400).json({
+                erro: "Carga horária inválida."
+            });
+        }
+
+        if (subtitulo && subtitulo.length > 200) {
+            return res.status(400).json({
+                erro: "O subtítulo deve ter até 200 caracteres."
+            });
+        }
+
+        if (area_tematica && area_tematica.length > 80) {
+            return res.status(400).json({
+                erro: "A área temática deve ter até 80 caracteres."
+            });
+        }
+
+        if (publico_alvo && publico_alvo.length > 200) {
+            return res.status(400).json({
+                erro: "O público-alvo deve ter até 200 caracteres."
+            });
+        }
+
+        if (imagem_url && imagem_url.length > 500) {
+            return res.status(400).json({
+                erro: "O endereço da imagem é muito longo."
+            });
+        }
+
+        const checklistJSON = checklist == null
+            ? null
+            : JSON.stringify(checklist);
+
         const [resultado] = await banco.execute(`
             INSERT INTO curso (
                 id_professor,
                 nome_curso,
+                subtitulo,
                 descricao,
+                area_tematica,
+                publico_alvo,
+                carga_horaria,
+                nivel,
+                certificado,
+                checklist,
+                imagem_url,
                 preco,
                 status
             )
-            VALUES (?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
             req.session.usuario.id,
             nome,
+            subtitulo || null,
             descricao || null,
+            area_tematica || null,
+            publico_alvo || null,
+            carga,
+            nivel || null,
+            certificado || null,
+            checklistJSON,
+            imagem_url || null,
             valor,
             situacao
         ]);
@@ -444,13 +566,30 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
             });
         }
 
-        const { nome_curso, descricao, preco, status } = req.body;
+        const {
+            nome_curso,
+            subtitulo,
+            descricao,
+            area_tematica,
+            publico_alvo,
+            carga_horaria,
+            nivel,
+            certificado,
+            checklist,
+            imagem_url,
+            preco,
+            status
+        } = req.body;
 
         const nome = typeof nome_curso === "string"
             ? nome_curso.trim()
             : "";
 
         const valor = Number(preco);
+
+        const carga = carga_horaria === "" || carga_horaria == null
+            ? null
+            : Number(carga_horaria);
 
         if (!nome || nome.length > 150) {
             return res.status(400).json({
@@ -470,17 +609,71 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
             });
         }
 
+        if (
+            carga !== null &&
+            (!Number.isInteger(carga) || carga < 0 || carga > 65535)
+        ) {
+            return res.status(400).json({
+                erro: "Carga horária inválida."
+            });
+        }
+
+        if (subtitulo && subtitulo.length > 200) {
+            return res.status(400).json({
+                erro: "O subtítulo deve ter até 200 caracteres."
+            });
+        }
+
+        if (area_tematica && area_tematica.length > 80) {
+            return res.status(400).json({
+                erro: "Área temática inválida."
+            });
+        }
+
+        if (publico_alvo && publico_alvo.length > 200) {
+            return res.status(400).json({
+                erro: "Público-alvo inválido."
+            });
+        }
+
+        if (imagem_url && imagem_url.length > 500) {
+            return res.status(400).json({
+                erro: "O endereço da imagem é muito longo."
+            });
+        }
+
+        const checklistJSON = checklist == null
+            ? null
+            : JSON.stringify(checklist);
+
         const [resultado] = await banco.execute(`
             UPDATE curso
-            SET nome_curso = ?,
+            SET
+                nome_curso = ?,
+                subtitulo = ?,
                 descricao = ?,
+                area_tematica = ?,
+                publico_alvo = ?,
+                carga_horaria = ?,
+                nivel = ?,
+                certificado = ?,
+                checklist = ?,
+                imagem_url = ?,
                 preco = ?,
                 status = ?
             WHERE id_curso = ?
               AND id_professor = ?
         `, [
             nome,
+            subtitulo || null,
             descricao || null,
+            area_tematica || null,
+            publico_alvo || null,
+            carga,
+            nivel || null,
+            certificado || null,
+            checklistJSON,
+            imagem_url || null,
             valor,
             status,
             id,
@@ -495,7 +688,7 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
 
         res.json({
             sucesso: true,
-            mensagem: "Curso atualizado."
+            mensagem: "Curso atualizado com sucesso."
         });
 
     } catch (erro) {
@@ -552,6 +745,27 @@ app.delete("/api/cursos/:id", exigirProfessor, async (req, res) => {
         });
     }
 });
+
+// Bloquear acesso às pastas internas
+app.use((req, res, next) => {
+    const caminho = req.path;
+
+    if (
+        caminho === "/app" ||
+        caminho.startsWith("/app/") ||
+        caminho === "/.git" ||
+        caminho.startsWith("/.git/") ||
+        caminho === "/banco" ||
+        caminho.startsWith("/banco/")
+    ) {
+        return res.sendStatus(404);
+    }
+
+    next();
+});
+
+// Servir o frontend (HTML, CSS, JavaScript e imagens)
+app.use(express.static(path.join(__dirname, "..")));
 
 app.listen(PORT, () => {
     console.log(`API rodando em http://localhost:${PORT}`);

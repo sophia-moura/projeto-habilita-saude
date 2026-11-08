@@ -1,4 +1,8 @@
-(function () {
+(async function () {
+  const acessoPermitido = await HS.ready;
+
+  if (!acessoPermitido) return;
+
   const esc = HS.esc || ((t) =>
     String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
@@ -91,64 +95,114 @@
   categoriaCurso.addEventListener("change", renderNivel);
 
   /* ---------- Curso em edição / rascunho ---------- */
-  let cursoEditando = null;
-  try {
-    cursoEditando = JSON.parse(localStorage.getItem("cursoEditando"));
-  } catch (e) {
-    cursoEditando = null;
-  }
 
-  if (cursoEditando && Array.isArray(cursoEditando.conteudos)) {
-    conteudosCurso = [...cursoEditando.conteudos];
-  }
+  let cursoEditando = null;
+
+  const parametros = new URLSearchParams(window.location.search);
+  const idCursoEdicao = parametros.get("editar");
 
   function preencherFormulario(dados) {
-    if (!dados) return;
-    nomeCurso.value = dados.nome || "";
-    subtituloCurso.value = dados.subtitulo || "";
-    descricaoCurso.value = dados.descricao || "";
-    // Curso salvo usa { categoria: área, nivel: nível }; rascunho usa
-    // { area: área, categoria: nível }. Aceitamos os dois formatos.
-    areaCurso.value = dados.area || (dados.nivel ? dados.categoria : "") || "";
-    publicoCurso.value = dados.publico || "";
-    cargaHoraria.value = parseInt(dados.cargaHoraria, 10) || "";
-    categoriaCurso.value =
-      dados.nivel || dados.categoriaNivel || (dados.area ? dados.categoria : "") || "";
-    precoCurso.value = dados.preco ? moeda(lerPrecoDe(dados.preco)) : "";
-    document.querySelectorAll('input[name="certificado"]').forEach((radio) => {
-      radio.checked = radio.value === dados.certificado;
-    });
-    renderNivel();
-    if (Array.isArray(dados.checklist)) {
-      document.querySelectorAll(".req-nivel").forEach((req, i) => {
-        req.checked = dados.checklist[i] === true;
+      if (!dados) return;
+
+      nomeCurso.value = dados.nome_curso || "";
+      subtituloCurso.value = dados.subtitulo || "";
+      descricaoCurso.value = dados.descricao || "";
+      areaCurso.value = dados.area_tematica || "";
+      publicoCurso.value = dados.publico_alvo || "";
+      cargaHoraria.value = dados.carga_horaria || "";
+      categoriaCurso.value = dados.nivel || "";
+
+      precoCurso.value = dados.preco != null
+          ? moeda(Number(dados.preco))
+          : "";
+
+      document.querySelectorAll('input[name="certificado"]').forEach((radio) => {
+          radio.checked = radio.value === dados.certificado;
       });
-    }
+
+      renderNivel();
+
+      let checklist = dados.checklist || [];
+
+      if (typeof checklist === "string") {
+          try {
+              checklist = JSON.parse(checklist);
+          } catch (e) {
+              checklist = [];
+          }
+      }
+
+      if (Array.isArray(checklist)) {
+          document.querySelectorAll(".req-nivel").forEach((req, i) => {
+              req.checked = checklist[i] === true;
+          });
+      }
+
+      imagemBase64 = dados.imagem_url || "";
+
+      if (imagemBase64) {
+          mostrarPreview(imagemBase64);
+      }
   }
 
-  function lerPrecoDe(valor) {
-    if (typeof valor === "number") return valor;
-    const digitos = String(valor || "").replace(/\D/g, "");
-    return digitos ? Number(digitos) / 100 : 0;
-  }
+  // Buscar curso diretamente na API
+  if (idCursoEdicao) {
+      try {
+          const resposta = await fetch(
+              `http://localhost:3000/api/professor/cursos/${encodeURIComponent(idCursoEdicao)}`,
+              {
+                  method: "GET",
+                  credentials: "include"
+              }
+          );
 
-  if (cursoEditando) {
-    preencherFormulario(cursoEditando);
-    imagemBase64 = cursoEditando.imagem || "";
-    if (imagemBase64 && previewImagem) {
-      previewImagem.src = imagemBase64;
-      previewImagem.style.display = "block";
-      [uploadBox.querySelector("i"), uploadBox.querySelector("p"), uploadBox.querySelector("small")].forEach(
-        (el) => el && (el.style.display = "none"),
-      );
-    }
+          const dados = await resposta.json();
+
+          if (!resposta.ok) {
+              throw new Error(
+                  dados.erro || "Não foi possível carregar o curso."
+              );
+          }
+
+          cursoEditando = dados;
+
+          preencherFormulario(cursoEditando);
+
+      } catch (erro) {
+          console.error("Erro ao carregar curso para edição:", erro);
+
+          alert(erro.message || "Erro ao carregar o curso.");
+
+          window.location.href = "professor-meus-cursos.html";
+
+          return;
+      }
+
   } else {
-    try {
-      const rascunho = JSON.parse(localStorage.getItem("rascunhoCurso"));
-      if (rascunho) preencherFormulario(rascunho);
-    } catch (e) {
-      /* rascunho inválido: ignora */
-    }
+      // Rascunho local continua temporariamente disponível.
+      try {
+          const rascunho = JSON.parse(
+              localStorage.getItem("rascunhoCurso")
+          );
+
+          if (rascunho) {
+              nomeCurso.value = rascunho.nome || "";
+              subtituloCurso.value = rascunho.subtitulo || "";
+              descricaoCurso.value = rascunho.descricao || "";
+              areaCurso.value = rascunho.area || "";
+              publicoCurso.value = rascunho.publico || "";
+              cargaHoraria.value = parseInt(rascunho.cargaHoraria, 10) || "";
+              categoriaCurso.value = rascunho.categoria || "";
+
+              precoCurso.value = rascunho.preco
+                  ? moeda(lerPrecoDe(rascunho.preco))
+                  : "";
+
+              renderNivel();
+          }
+      } catch (e) {
+          console.error("Erro ao carregar rascunho:", e);
+      }
   }
 
   /* ---------- Imagem ---------- */
@@ -443,21 +497,12 @@
     }
   });
 
-  /* ---------- Publicação ---------- */
-  function salvarListaCursos(cursos) {
-    try {
-      localStorage.setItem("cursos", JSON.stringify(cursos));
-      return true;
-    } catch (e) {
-      alert("Não foi possível salvar o curso: o armazenamento do navegador está cheio. Remova imagens ou arquivos grandes e tente novamente.");
-      return false;
-    }
-  }
-
   function montarCurso(status) {
-    const certificado = document.querySelector('input[name="certificado"]:checked');
+    const certificado = document.querySelector(
+      'input[name="certificado"]:checked'
+    );
+
     return {
-      id: cursoEditando ? cursoEditando.id : Date.now(),
       nome: nomeCurso.value.trim(),
       subtitulo: subtituloCurso.value.trim(),
       categoria: areaCurso.value,
@@ -467,16 +512,62 @@
       descricao: descricaoCurso.value.trim(),
       conteudos: conteudosCurso,
       certificado: certificado ? certificado.value : "",
-      checklist: [...document.querySelectorAll(".req-nivel")].map((req) => req.checked),
+      checklist: [...document.querySelectorAll(".req-nivel")].map(
+        (req) => req.checked
+      ),
       preco: lerPreco(),
       professor: usuarioAtual.nome || "Professor(a)",
       imagem: imagemBase64 || IMG_PADRAO,
-      alunos: cursoEditando?.alunos || 0,
-      vendas: cursoEditando?.vendas || 0,
-      avaliacao: cursoEditando?.avaliacao || 5,
       status,
-      dataCriacao: cursoEditando?.dataCriacao || new Date().toISOString(),
+      dataCriacao: new Date().toISOString()
     };
+  }
+
+  /* ---------- Publicação integrada ao MySQL ---------- */
+
+  async function salvarCursoAPI(status) {
+    const curso = montarCurso(status);
+
+    const dadosAPI = {
+        nome_curso: curso.nome,
+        subtitulo: curso.subtitulo,
+        descricao: curso.descricao,
+        area_tematica: curso.categoria,
+        publico_alvo: curso.publico,
+        carga_horaria: Number(cargaHoraria.value),
+        nivel: curso.nivel,
+        certificado: curso.certificado,
+        checklist: curso.checklist,
+        preco: curso.preco,
+        status: status
+    };
+
+    const editando = cursoEditando && cursoEditando.id_curso;
+
+    const url = editando
+        ? `http://localhost:3000/api/cursos/${cursoEditando.id_curso}`
+        : "http://localhost:3000/api/cursos";
+
+    const metodo = editando ? "PUT" : "POST";
+
+    const resposta = await fetch(url, {
+        method: metodo,
+        headers: {
+            "Content-Type": "application/json"
+        },
+        credentials: "include",
+        body: JSON.stringify(dadosAPI)
+    });
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+        throw new Error(
+            dados.erro || "Não foi possível salvar o curso."
+        );
+    }
+
+    return dados;
   }
 
   function validarPublicacao() {
@@ -496,7 +587,10 @@
     if (!nv) return "Selecione o nível de certificação pretendido.";
 
     if (ch < nv.chMin || ch > nv.chMax) {
-      const sugestao = Object.values(NIVEIS).find((x) => ch >= x.chMin && ch <= x.chMax);
+      const sugestao = Object.values(NIVEIS).find(
+        (x) => ch >= x.chMin && ch <= x.chMax
+      );
+
       return (
         `A carga horária de ${ch}h não se enquadra no ${nv.nome} (` +
         `${nv.chMin}h${nv.chMax >= 9999 ? " ou mais" : " a " + nv.chMax + "h"}).` +
@@ -505,6 +599,7 @@
     }
 
     const preco = lerPreco();
+
     if (preco < nv.precoMin || preco > nv.precoMax) {
       return `O preço deve estar entre ${moeda(nv.precoMin)} e ${moeda(nv.precoMax)} para o ${nv.nome}.`;
     }
@@ -514,117 +609,79 @@
     }
 
     const reqs = [...document.querySelectorAll(".req-nivel")];
+
     if (!reqs.length || !reqs.every((r) => r.checked)) {
       return "Marque todos os requisitos da autoavaliação para enviar à curadoria.";
     }
+
     return "";
   }
 
-  form.addEventListener("submit", (e) => {
+  /* ---------- Publicar curso ---------- */
+
+  form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
     const erro = validarPublicacao();
+
     if (erro) {
       alert(erro);
       return;
     }
 
-    const cursos = (() => {
-      try {
-        const lista = JSON.parse(localStorage.getItem("cursos"));
-        return Array.isArray(lista) ? lista : [];
-      } catch (err) {
-        return [];
-      }
-    })();
+    const btnPublicar = form.querySelector('button[type="submit"]');
 
-    const novoCurso = montarCurso("Publicado");
+    if (btnPublicar) btnPublicar.disabled = true;
 
-    let curadoria;
     try {
-      curadoria =
-        typeof HS.curar === "function"
-          ? HS.curar(novoCurso, 1)
-          : { aprovado: true, parecer: "Curso publicado.", linhas: [], nota: 10 };
-    } catch (err) {
-      curadoria = { aprovado: true, parecer: "Curso publicado.", linhas: [], nota: 10 };
-    }
-    novoCurso.curadoria = curadoria;
-    novoCurso.status = curadoria.aprovado ? "Publicado" : "Em ajuste";
-    novoCurso.publicadoEm = curadoria.aprovado
-      ? cursoEditando?.publicadoEm || new Date().toISOString()
-      : null;
+      await salvarCursoAPI("publicado");
 
-    if (cursoEditando) {
-      const index = cursos.findIndex((c) => String(c.id) === String(cursoEditando.id));
-      if (index >= 0) cursos[index] = novoCurso;
-      else cursos.push(novoCurso);
-    } else {
-      cursos.push(novoCurso);
-    }
+      localStorage.removeItem("cursoEditando");
+      localStorage.removeItem("rascunhoCurso");
 
-    if (!salvarListaCursos(cursos)) return;
-
-    localStorage.removeItem("cursoEditando");
-    localStorage.removeItem("rascunhoCurso");
-
-    if (curadoria.aprovado) {
       sessionStorage.setItem("confete", "1");
-      HS.notificar("Curso aprovado e publicado", `"${novoCurso.nome}": ${curadoria.parecer}`, "curso", "professor");
-      if (!cursoEditando) {
-        HS.notificar(
-          "Novo curso disponível",
-          `"${novoCurso.nome}" já pode ser feito. Veja na página inicial.`,
-          "curso",
-          "aluno",
-        );
-      }
-    } else {
-      HS.notificar(
-        "Curadoria: ajustes necessários",
-        `"${novoCurso.nome}": ${curadoria.parecer}`,
-        "alerta",
-        "professor",
-      );
-      alert(
-        "Relatório de curadoria:\n\n" +
-          curadoria.parecer +
-          "\n\n" +
-          (Array.isArray(curadoria.linhas) ? curadoria.linhas.join("\n") : ""),
-      );
+
+      alert("Curso publicado com sucesso!");
+
+      window.location.href = "professor-meus-cursos.html";
+
+    } catch (erro) {
+      console.error("Erro ao publicar curso:", erro);
+      alert(erro.message || "Erro ao publicar curso.");
+    } finally {
+      if (btnPublicar) btnPublicar.disabled = false;
     }
-    window.location.href = "professor-meus-cursos.html";
   });
 
-  btnRascunho?.addEventListener("click", () => {
+  /* ---------- Salvar rascunho ---------- */
+
+  btnRascunho?.addEventListener("click", async () => {
     if (!nomeCurso.value.trim()) {
       alert("Informe pelo menos o nome do curso antes de salvar o rascunho.");
       nomeCurso.focus();
       return;
     }
-    const cursos = (() => {
-      try {
-        const lista = JSON.parse(localStorage.getItem("cursos"));
-        return Array.isArray(lista) ? lista : [];
-      } catch (err) {
-        return [];
-      }
-    })();
 
-    const cursoPrivado = montarCurso("Privado");
-    if (cursoEditando) {
-      const index = cursos.findIndex((c) => String(c.id) === String(cursoEditando.id));
-      if (index >= 0) cursos[index] = cursoPrivado;
-      else cursos.push(cursoPrivado);
-    } else {
-      cursos.push(cursoPrivado);
+    btnRascunho.disabled = true;
+
+    try {
+      await salvarCursoAPI("rascunho");
+
+      // Mantém os dados adicionais no navegador temporariamente.
+      salvarRascunho(true);
+
+      localStorage.removeItem("cursoEditando");
+
+      alert("Rascunho salvo no banco de dados!");
+
+      window.location.href = "professor-meus-cursos.html";
+
+    } catch (erro) {
+      console.error("Erro ao salvar rascunho:", erro);
+      alert(erro.message || "Erro ao salvar rascunho.");
+    } finally {
+      btnRascunho.disabled = false;
     }
-
-    if (!salvarListaCursos(cursos)) return;
-    localStorage.removeItem("cursoEditando");
-    localStorage.removeItem("rascunhoCurso");
-    alert("Rascunho salvo!");
-    window.location.href = "professor-meus-cursos.html";
   });
 
   renderizarConteudos();

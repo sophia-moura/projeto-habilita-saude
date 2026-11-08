@@ -8,27 +8,29 @@ Plataforma de cursos online voltada para profissionais e estudantes da área da 
 - Node.js e Express
 - MySQL
 - bcrypt para hash de senhas
-- express-session para sessões de autenticação
+- express-session para gerenciamento de sessões
 - Git e GitHub
 - Figma
 
 ## Funcionalidades
 
 ### Área do aluno
+
 - Visualização de cursos
 - Acompanhamento de progresso
 - Certificados
 - Notificações
 
 ### Área do professor
+
 - Dashboard
-- Gerenciamento e criação de cursos
+- Criação e gerenciamento de cursos
 - Relatórios
-- Usuários
+- Gerenciamento de usuários
 - Notificações
 - Suporte
 
-> **Status:** Em desenvolvimento. Algumas funcionalidades ainda utilizam dados locais/demonstrativos e estão sendo integradas ao backend e ao MySQL.
+> **Status:** Em desenvolvimento. Algumas funcionalidades ainda utilizam dados locais ou demonstrativos e estão passando por integração com a API e o banco de dados MySQL.
 
 ## Estrutura do projeto
 
@@ -38,27 +40,28 @@ projeto-habilita-saude/
 │   ├── server.js
 │   ├── package.json
 │   ├── package-lock.json
-│   └── .env                # Criado localmente (não versionado)
+│   └── .env                # Configurações locais (não versionado)
 ├── banco/
 │   └── habilita_saude_bd.sql
-├── css/                    # Estilos
-├── js/                     # Scripts do frontend
+├── css/                    # Arquivos de estilo
+├── js/                     # Scripts JavaScript
 ├── img/                    # Imagens
 ├── media/                  # Vídeos e outros arquivos
 ├── *.html                  # Páginas da plataforma
+├── .gitignore
 └── README.md
 ```
 
 ## Pré-requisitos
 
-Instale antes de começar:
+Antes de começar, instale:
 
 - [Node.js (LTS)](https://nodejs.org/) — inclui npm
 - [MySQL Server](https://dev.mysql.com/downloads/mysql/)
 - [Git](https://git-scm.com/downloads)
-- Um editor, como [Visual Studio Code](https://code.visualstudio.com/)
+- [Visual Studio Code](https://code.visualstudio.com/) ou outro editor de código
 
-Confira as instalações no terminal:
+Para verificar as instalações, execute no terminal:
 
 ```bash
 node -v
@@ -74,7 +77,7 @@ git clone URL_DO_REPOSITORIO
 cd projeto-habilita-saude
 ```
 
-Substitua `URL_DO_REPOSITORIO` pela URL HTTPS ou SSH do repositório GitHub.
+Substitua `URL_DO_REPOSITORIO` pelo endereço HTTPS ou SSH do repositório no GitHub.
 
 ## 2. Configurar o banco de dados
 
@@ -82,9 +85,9 @@ Substitua `URL_DO_REPOSITORIO` pela URL HTTPS ou SSH do repositório GitHub.
 2. Abra o MySQL Workbench ou o terminal MySQL.
 3. Execute o script `banco/habilita_saude_bd.sql`.
 
-O script cria o banco `habilita_saude` e suas tabelas.
+O script cria o banco de dados `habilita_saude` e suas respectivas tabelas.
 
-Exemplo pelo terminal, na raiz do projeto:
+Exemplo de execução pelo terminal, na raiz do projeto:
 
 ```bash
 mysql -u root -p < banco/habilita_saude_bd.sql
@@ -92,7 +95,7 @@ mysql -u root -p < banco/habilita_saude_bd.sql
 
 Digite a senha do MySQL quando solicitado.
 
-> O script também contém registros fictícios de teste. Execute-o apenas em um ambiente de desenvolvimento. Caso já exista um banco com dados importantes, faça backup antes de executar scripts que recriem ou alterem estruturas.
+> **Atenção:** o script também contém registros fictícios para testes. Execute-o apenas em um ambiente de desenvolvimento. Caso já exista um banco com informações importantes, faça um backup antes de executar o script.
 
 ## 3. Configurar o backend
 
@@ -103,7 +106,7 @@ cd app
 npm install
 ```
 
-Crie um arquivo `.env` dentro de `app/`, baseado neste exemplo:
+Crie um arquivo `.env` dentro da pasta `app`, utilizando a seguinte estrutura:
 
 ```env
 DB_HOST=localhost
@@ -116,23 +119,23 @@ SESSION_SECRET=coloque_uma_chave_aleatoria_grande_e_secreta
 PORT=3000
 ```
 
-Ajuste `DB_USER` e `DB_PASSWORD` para as credenciais do seu MySQL.
+Ajuste `DB_USER` e `DB_PASSWORD` de acordo com as credenciais configuradas no seu MySQL.
 
 ### Gerar uma chave de sessão
 
-No terminal, execute:
+Para gerar uma chave aleatória, execute:
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-Copie o resultado para `SESSION_SECRET` no `.env`.
+Copie o resultado e coloque no campo `SESSION_SECRET` do arquivo `.env`.
 
-> **Importante:** não compartilhe o `.env` e não o envie ao GitHub. Ele contém credenciais e segredos. O arquivo deve estar incluído no `.gitignore`.
+> **Importante:** nunca compartilhe o arquivo `.env` ou envie suas credenciais ao GitHub. Certifique-se de que ele esteja incluído no `.gitignore`.
 
 ## 4. Executar o backend
 
-Ainda dentro da pasta `app`:
+Ainda dentro da pasta `app`, execute:
 
 ```bash
 node server.js
@@ -144,33 +147,40 @@ Se estiver tudo configurado corretamente, o servidor ficará disponível em:
 http://localhost:3000
 ```
 
-Para testar o status da API, abra:
+Para verificar o funcionamento da API, acesse:
 
 ```text
 http://localhost:3000/api/status
 ```
 
-Mantenha esse terminal aberto enquanto utiliza a plataforma.
+Mantenha o terminal aberto enquanto utiliza a plataforma.
 
 ## 5. Executar o frontend
 
 O frontend é composto por arquivos HTML, CSS e JavaScript.
 
-Uma opção recomendada para desenvolvimento é usar a extensão **Live Server** no Visual Studio Code:
+Uma opção recomendada para desenvolvimento é utilizar a extensão **Live Server** no Visual Studio Code.
 
 1. Abra a pasta do projeto no VS Code.
-2. Instale a extensão Live Server, caso ainda não tenha.
-3. Clique com o botão direito em `index.html`.
+2. Instale a extensão Live Server, caso ainda não esteja instalada.
+3. Clique com o botão direito no arquivo `index.html`.
 4. Selecione **Open with Live Server**.
-5. Acesse a URL local exibida pela extensão.
+5. Acesse o endereço local fornecido pela extensão.
 
-Use preferencialmente `http://localhost:5500` para manter a origem configurada no CORS do backend. Se o Live Server usar outra porta, ajuste a origem permitida no `app/server.js`.
+Preferencialmente, utilize:
+
+```text
+http://localhost:3000
+```
+
+Essa é a origem esperada na configuração de CORS do backend. Caso o Live Server utilize outra porta, será necessário ajustar a origem permitida no `app/server.js`.
 
 ## 6. Fluxo de execução resumido
 
-Abra **dois terminais**:
+Para utilizar a plataforma localmente, mantenha dois terminais abertos.
 
 **Terminal 1 — Backend**
+
 ```bash
 cd app
 npm install
@@ -178,16 +188,18 @@ node server.js
 ```
 
 **Terminal 2 — Frontend**
-- Abra `index.html` com Live Server no VS Code.
 
-Depois, acesse a página inicial pelo endereço fornecido pelo Live Server.
+Abra o arquivo `index.html` com o Live Server no VS Code.
+
+Depois, acesse a página inicial pelo endereço fornecido pela extensão.
 
 ## Autenticação
 
-- O cadastro e login são processados pelo backend.
-- As senhas são armazenadas com hash usando bcrypt.
-- A autenticação utiliza sessões (`express-session`) e cookies.
-- O frontend deve enviar requisições autenticadas com `credentials: "include"`.
+- O cadastro e o login são processados pelo backend.
+- As senhas são armazenadas utilizando hash com bcrypt.
+- A autenticação utiliza sessões gerenciadas pelo express-session.
+- Os cookies são utilizados para manter a sessão do usuário.
+- As requisições autenticadas do frontend devem utilizar `credentials: "include"`.
 
 ## Equipe
 

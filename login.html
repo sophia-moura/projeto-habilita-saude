@@ -415,7 +415,8 @@
 
           try {
               // 1. Cadastrar no banco
-              const respostaCadastro = await fetch(rotaCadastro, {
+              const respostaCadastro = await fetch(
+                rotaCadastro, {
                   method: "POST",
                   headers: {
                       "Content-Type": "application/json"
@@ -434,20 +435,20 @@
 
               // 2. Fazer login automaticamente
               const respostaLogin = await fetch(
-                  rotaCadastro,
-                  {
-                      method: "POST",
-                      headers: {
-                          "Content-Type": "application/json"
-                      },
-                      credentials: "include",
-                      body: JSON.stringify({
-                          email,
-                          senha,
-                          tipo: tipoCadastro
-                      })
-                  }
-              );
+                "http://localhost:3000/api/login",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        email,
+                        senha,
+                        tipo: tipoCadastro
+                    })
+                }
+            );
 
               const dadosLogin = await respostaLogin.json();
 

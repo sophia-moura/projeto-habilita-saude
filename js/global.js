@@ -1,24 +1,94 @@
-(function () {
+(async function () {
   const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
   const salvar = (k, v) => localStorage.setItem(k, JSON.stringify(v));
   const esc = (t) =>
     String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   const pagina = location.pathname.split("/").pop() || "index.html";
-  const logado = localStorage.getItem("usuarioLogado") === "true";
-  const usuario = ls("usuario", null);
-  const tipo = usuario && usuario.tipo;
-  const home = (t) => (t === "aluno" ? "aluno-inicio.html" : "professor-inicio.html");
-  const soProfessor = ["professor-inicio.html", "professor-meus-cursos.html", "criar-curso.html", "financas.html", "usuarios.html", "relatorios.html", "professor-suporte.html", "configuracoes-niveis.html"];
-  const soAluno = ["aluno-inicio.html", "aluno-meus-cursos.html", "aluno-suporte.html", "aula.html", "certificados.html"];
+
+  const home = (t) =>
+      t === "aluno" ? "aluno-inicio.html" : "professor-inicio.html";
+
+  const soProfessor = [
+      "professor-inicio.html",
+      "professor-meus-cursos.html",
+      "criar-curso.html",
+      "financas.html",
+      "usuarios.html",
+      "relatorios.html",
+      "professor-suporte.html",
+      "configuracoes-niveis.html"
+  ];
+
+  const soAluno = [
+      "aluno-inicio.html",
+      "aluno-meus-cursos.html",
+      "aluno-suporte.html",
+      "aula.html",
+      "certificados.html"
+  ];
+
   const publicas = ["index.html", "login.html", "validar.html"];
 
+  let usuario = null;
+  let tipo = null;
+
   if (!publicas.includes(pagina)) {
-    if (!logado || !tipo) return void location.replace("index.html");
-    if (soProfessor.includes(pagina) && tipo !== "professor") return void location.replace(home(tipo));
-    if (soAluno.includes(pagina) && tipo !== "aluno") return void location.replace(home(tipo));
-  } else if (pagina === "login.html" && logado && tipo) {
-    return void location.replace(home(tipo));
+      try {
+          const resposta = await fetch(
+              "http://localhost:3000/api/usuario-logado",
+              { credentials: "include" }
+          );
+
+          const dados = await resposta.json();
+
+          if (!resposta.ok || !dados.usuario) {
+              location.replace("index.html");
+              return;
+          }
+
+          usuario = dados.usuario;
+          tipo = usuario.tipo;
+
+          // Compatibilidade com o frontend atual
+          localStorage.setItem("usuario", JSON.stringify(usuario));
+          localStorage.setItem("usuarioLogado", "true");
+
+      } catch (erro) {
+          console.error("Erro ao verificar sessão:", erro);
+          location.replace("index.html");
+          return;
+      }
+
+      if (soProfessor.includes(pagina) && tipo !== "professor") {
+          location.replace(home(tipo));
+          return;
+      }
+
+      if (soAluno.includes(pagina) && tipo !== "aluno") {
+          location.replace(home(tipo));
+          return;
+      }
+
+  } else if (pagina === "login.html") {
+      try {
+          const resposta = await fetch(
+              "http://localhost:3000/api/usuario-logado",
+              { credentials: "include" }
+          );
+
+          const dados = await resposta.json();
+
+          if (resposta.ok && dados.usuario) {
+              usuario = dados.usuario;
+              tipo = usuario.tipo;
+              location.replace(home(tipo));
+              return;
+          }
+
+      } catch (erro) {
+          console.error("Erro ao verificar sessão:", erro);
+      }
   }
 
   // Navegação canônica (Guia de Estilo v1.3): mesmos nomes e ícones nos dois perfis.
@@ -183,12 +253,26 @@
   if (tipo && (pagina === "professor-inicio.html" || pagina === "aluno-inicio.html")) setTimeout(() => HS.boasVindas(false), 700);
 
   const btnLogout = document.getElementById("btnLogout");
-  if (btnLogout) btnLogout.addEventListener("click", () => {
-    if (!confirm("Deseja realmente sair da plataforma?")) return;
-    localStorage.removeItem("usuarioLogado");
-    localStorage.removeItem("usuario");
-    location.href = "index.html";
-  });
+
+  if (btnLogout) {
+      btnLogout.addEventListener("click", async () => {
+          if (!confirm("Deseja realmente sair da plataforma?")) return;
+
+          try {
+              await fetch("http://localhost:3000/api/logout", {
+                  method: "POST",
+                  credentials: "include"
+              });
+          } catch (erro) {
+              console.error("Erro ao encerrar sessão:", erro);
+          }
+
+          localStorage.removeItem("usuarioLogado");
+          localStorage.removeItem("usuario");
+
+          location.href = "index.html";
+      });
+  }
 
   // Menu lateral no celular. Algumas páginas antigas não tinham #overlay;
   // criamos o elemento aqui para o comportamento ser igual em todas.

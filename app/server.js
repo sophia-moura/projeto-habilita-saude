@@ -225,6 +225,28 @@ app.get("/api/usuario-logado", (req, res) => {
     });
 });
 
+// Verificar se o usuário está autenticado
+function exigirLogin(req, res, next) {
+    if (!req.session.usuario) {
+        return res.status(401).json({
+            erro: "Você precisa estar autenticado."
+        });
+    }
+
+    next();
+}
+
+// Verificar se o usuário autenticado é professor
+function exigirProfessor(req, res, next) {
+    if (!req.session.usuario || req.session.usuario.tipo !== "professor") {
+        return res.status(403).json({
+            erro: "Acesso permitido somente para professores."
+        });
+    }
+
+    next();
+}
+
 app.post("/api/logout", (req, res) => {
     req.session.destroy((erro) => {
         if (erro) {
@@ -240,6 +262,295 @@ app.post("/api/logout", (req, res) => {
             mensagem: "Logout realizado."
         });
     });
+});
+
+
+/* =========================================
+   CURSOS
+========================================= */
+
+// Listar cursos publicados
+app.get("/api/cursos", async (req, res) => {
+    try {
+        const [cursos] = await banco.execute(`
+            SELECT
+                c.id_curso,
+                c.nome_curso,
+                c.descricao,
+                c.preco,
+                c.status,
+                p.nome AS nome_professor
+            FROM curso c
+            JOIN professor p ON p.id_professor = c.id_professor
+            WHERE c.status = 'publicado'
+            ORDER BY c.id_curso DESC
+        `);
+
+        res.json(cursos);
+
+    } catch (erro) {
+        console.error("Erro ao listar cursos:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível listar os cursos."
+        });
+    }
+});
+
+
+// Consultar um curso específico
+app.get("/api/cursos/:id", async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "ID do curso inválido."
+            });
+        }
+
+        const [cursos] = await banco.execute(`
+            SELECT
+                c.id_curso,
+                c.nome_curso,
+                c.descricao,
+                c.preco,
+                c.status,
+                p.nome AS nome_professor
+            FROM curso c
+            JOIN professor p ON p.id_professor = c.id_professor
+            WHERE c.id_curso = ?
+              AND c.status = 'publicado'
+        `, [id]);
+
+        if (cursos.length === 0) {
+            return res.status(404).json({
+                erro: "Curso não encontrado."
+            });
+        }
+
+        res.json(cursos[0]);
+
+    } catch (erro) {
+        console.error("Erro ao consultar curso:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível consultar o curso."
+        });
+    }
+});
+
+
+// Listar cursos do professor autenticado
+app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        const [cursos] = await banco.execute(`
+            SELECT
+                id_curso,
+                nome_curso,
+                descricao,
+                preco,
+                status
+            FROM curso
+            WHERE id_professor = ?
+            ORDER BY id_curso DESC
+        `, [idProfessor]);
+
+        res.json(cursos);
+
+    } catch (erro) {
+        console.error("Erro ao listar cursos do professor:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível listar seus cursos."
+        });
+    }
+});
+
+
+// Criar curso
+app.post("/api/cursos", exigirProfessor, async (req, res) => {
+    try {
+        const { nome_curso, descricao, preco, status } = req.body;
+
+        const nome = typeof nome_curso === "string"
+            ? nome_curso.trim()
+            : "";
+
+        const valor = Number(preco);
+
+        const situacao = status || "rascunho";
+
+        if (!nome || nome.length > 150) {
+            return res.status(400).json({
+                erro: "O nome do curso é obrigatório e deve ter até 150 caracteres."
+            });
+        }
+
+        if (!Number.isFinite(valor) || valor < 0) {
+            return res.status(400).json({
+                erro: "O preço do curso é inválido."
+            });
+        }
+
+        if (!["rascunho", "publicado"].includes(situacao)) {
+            return res.status(400).json({
+                erro: "Status do curso inválido."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            INSERT INTO curso (
+                id_professor,
+                nome_curso,
+                descricao,
+                preco,
+                status
+            )
+            VALUES (?, ?, ?, ?, ?)
+        `, [
+            req.session.usuario.id,
+            nome,
+            descricao || null,
+            valor,
+            situacao
+        ]);
+
+        res.status(201).json({
+            sucesso: true,
+            mensagem: "Curso criado com sucesso.",
+            id_curso: resultado.insertId
+        });
+
+    } catch (erro) {
+        console.error("Erro ao criar curso:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível criar o curso."
+        });
+    }
+});
+
+// Editar curso próprio
+app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "ID do curso inválido."
+            });
+        }
+
+        const { nome_curso, descricao, preco, status } = req.body;
+
+        const nome = typeof nome_curso === "string"
+            ? nome_curso.trim()
+            : "";
+
+        const valor = Number(preco);
+
+        if (!nome || nome.length > 150) {
+            return res.status(400).json({
+                erro: "Nome do curso inválido."
+            });
+        }
+
+        if (!Number.isFinite(valor) || valor < 0) {
+            return res.status(400).json({
+                erro: "Preço inválido."
+            });
+        }
+
+        if (!["rascunho", "publicado"].includes(status)) {
+            return res.status(400).json({
+                erro: "Status inválido."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            UPDATE curso
+            SET nome_curso = ?,
+                descricao = ?,
+                preco = ?,
+                status = ?
+            WHERE id_curso = ?
+              AND id_professor = ?
+        `, [
+            nome,
+            descricao || null,
+            valor,
+            status,
+            id,
+            req.session.usuario.id
+        ]);
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                erro: "Curso não encontrado ou não pertence a você."
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: "Curso atualizado."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao editar curso:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível editar o curso."
+        });
+    }
+});
+
+// Excluir curso próprio
+app.delete("/api/cursos/:id", exigirProfessor, async (req, res) => {
+    try {
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "ID do curso inválido."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            DELETE FROM curso
+            WHERE id_curso = ?
+              AND id_professor = ?
+        `, [
+            id,
+            req.session.usuario.id
+        ]);
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                erro: "Curso não encontrado ou não pertence a você."
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: "Curso excluído."
+        });
+
+    } catch (erro) {
+        if (erro.code === "ER_ROW_IS_REFERENCED_2") {
+            return res.status(409).json({
+                erro: "Este curso possui matrículas ou compras vinculadas e não pode ser excluído."
+            });
+        }
+
+        console.error("Erro ao excluir curso:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível excluir o curso."
+        });
+    }
 });
 
 app.listen(PORT, () => {

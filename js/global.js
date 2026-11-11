@@ -1,8 +1,112 @@
+
+/* ==========================================
+   API CENTRAL — HABILITA SAÚDE
+========================================== */
+
+window.API = {
+    baseURL: "/api",
+
+    async request(endpoint, options = {}) {
+        const headers = {
+            ...(options.headers || {})
+        };
+
+        const corpoEhFormData =
+            options.body instanceof FormData;
+
+        if (options.body && !corpoEhFormData) {
+            headers["Content-Type"] =
+                headers["Content-Type"] || "application/json";
+        }
+
+        const resposta = await fetch(
+            `${this.baseURL}${endpoint}`,
+            {
+                ...options,
+                credentials: "include",
+                headers
+            }
+        );
+
+        const tipoResposta =
+            resposta.headers.get("content-type") || "";
+
+        const dados = tipoResposta.includes("application/json")
+            ? await resposta.json()
+            : null;
+
+        if (!resposta.ok) {
+            throw new Error(
+                dados?.erro ||
+                `Erro na comunicação com o servidor (${resposta.status}).`
+            );
+        }
+
+        return dados;
+    },
+
+    get(endpoint) {
+        return this.request(endpoint);
+    },
+
+    post(endpoint, dados) {
+        return this.request(endpoint, {
+            method: "POST",
+            body: JSON.stringify(dados)
+        });
+    },
+
+    put(endpoint, dados) {
+        return this.request(endpoint, {
+            method: "PUT",
+            body: JSON.stringify(dados)
+        });
+    },
+
+    delete(endpoint) {
+        return this.request(endpoint, {
+            method: "DELETE"
+        });
+    }
+};
+
+
 (async function () {
-  const ls = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
-  const salvar = (k, v) => localStorage.setItem(k, JSON.stringify(v));
+
   const esc = (t) =>
-    String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    String(t ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
+
+  // Compatibilidade com as funções antigas do sistema.
+  // Leitura de dados do localStorage.
+  function ls(chave, padrao = null) {
+    try {
+      const valor = localStorage.getItem(chave);
+
+      if (valor === null) return padrao;
+
+      return JSON.parse(valor);
+    } catch (erro) {
+      console.error(`Erro ao ler ${chave}:`, erro);
+      return padrao;
+    }
+  }
+
+  // Gravação de dados no localStorage.
+  function salvar(chave, valor) {
+    try {
+      localStorage.setItem(chave, JSON.stringify(valor));
+      return true;
+    } catch (erro) {
+      console.error(`Erro ao salvar ${chave}:`, erro);
+      return false;
+    }
+  }
 
   const pagina = location.pathname.split("/").pop() || "index.html";
 
@@ -103,6 +207,35 @@
   };
   window.HS = HS;
 
+  HS.usuarioAtual = null;
+
+  HS.carregarUsuario = async function () {
+    try {
+      const dados = await API.get("/usuario-logado");
+      HS.usuarioAtual = dados?.usuario || null;
+      return HS.usuarioAtual;
+    } catch (erro) {
+      HS.usuarioAtual = null;
+      return null;
+    }
+  };
+
+  HS.exigirLogin = async function (tipoEsperado = null) {
+    const usuarioAtual = await HS.carregarUsuario();
+
+    if (!usuarioAtual) {
+      window.location.href = "login.html";
+      return null;
+    }
+
+    if (tipoEsperado && usuarioAtual.tipo !== tipoEsperado) {
+      window.location.href = "index.html";
+      return null;
+    }
+
+    return usuarioAtual;
+  };
+
   Object.defineProperties(HS, {
     usuario: { get: () => usuario },
     tipo: { get: () => tipo }
@@ -133,21 +266,12 @@
   const publicas = ["index.html", "login.html", "validar.html"];
 
   HS.ready = (async () => {
-
+    // Páginas que não exigem autenticação
     if (!publicas.includes(pagina)) {
-
       try {
+        const dados = await API.get("/usuario-logado");
 
-        const resposta = await fetch(
-          "http://localhost:3000/api/usuario-logado",
-          {
-            credentials: "include"
-          }
-        );
-
-        const dados = await resposta.json();
-
-        if (!resposta.ok || !dados.usuario) {
+        if (!dados || !dados.usuario) {
           location.replace("index.html");
           return false;
         }
@@ -155,76 +279,43 @@
         usuario = dados.usuario;
         tipo = usuario.tipo;
 
-        localStorage.setItem(
-          "usuario",
-          JSON.stringify(usuario)
-        );
-
-        localStorage.setItem("usuarioLogado", "true");
-
       } catch (erro) {
-
-        console.error(
-          "Erro ao verificar sessão:",
-          erro
-        );
-
+        console.error("Erro ao verificar sessão:", erro);
         location.replace("index.html");
         return false;
       }
 
-      if (
-        soProfessor.includes(pagina) &&
-        tipo !== "professor"
-      ) {
+      // Impede que alunos acessem páginas de professores
+      if (soProfessor.includes(pagina) && tipo !== "professor") {
         location.replace(home(tipo));
         return false;
       }
 
-      if (
-        soAluno.includes(pagina) &&
-        tipo !== "aluno"
-      ) {
+      // Impede que professores acessem páginas de alunos
+      if (soAluno.includes(pagina) && tipo !== "aluno") {
         location.replace(home(tipo));
         return false;
       }
 
     } else if (pagina === "login.html") {
-
+      // Se já estiver logado, redireciona para a página inicial
       try {
+        const dados = await API.get("/usuario-logado");
 
-        const resposta = await fetch(
-          "http://localhost:3000/api/usuario-logado",
-          {
-            credentials: "include"
-          }
-        );
-
-        const dados = await resposta.json();
-
-        if (resposta.ok && dados.usuario) {
+        if (dados && dados.usuario) {
           usuario = dados.usuario;
           tipo = usuario.tipo;
-
-          localStorage.setItem(
-            "usuario",
-            JSON.stringify(usuario)
-          );
 
           location.replace(home(tipo));
           return false;
         }
 
       } catch (erro) {
-        console.error(
-          "Erro ao verificar sessão:",
-          erro
-        );
+        // É normal não haver sessão ativa na página de login.
       }
     }
 
     return true;
-
   })();
 
   // Navegação canônica (Guia de Estilo v1.3): mesmos nomes e ícones nos dois perfis.
@@ -332,16 +423,10 @@
           if (!confirm("Deseja realmente sair da plataforma?")) return;
 
           try {
-              await fetch("http://localhost:3000/api/logout", {
-                  method: "POST",
-                  credentials: "include"
-              });
+              await API.post("/logout", {});
           } catch (erro) {
               console.error("Erro ao encerrar sessão:", erro);
           }
-
-          localStorage.removeItem("usuarioLogado");
-          localStorage.removeItem("usuario");
 
           location.href = "index.html";
       });

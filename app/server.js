@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 app.use(session({
+    name: "habilitasaude.sid",
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
@@ -19,6 +20,7 @@ app.use(session({
         httpOnly: true,
         secure: false,
         sameSite: "lax",
+        path: "/",
         maxAge: 1000 * 60 * 60 * 2
     }
 }));
@@ -192,10 +194,21 @@ app.post("/api/login", async (req, res) => {
             tipo: tipo
         };
 
-        res.json({
-            sucesso: true,
-            mensagem: "Login realizado!",
-            usuario: req.session.usuario
+        // Salva a sessão antes de confirmar o login.
+        req.session.save((erro) => {
+            if (erro) {
+                console.error("Erro ao salvar sessão:", erro);
+
+                return res.status(500).json({
+                    erro: "Não foi possível salvar sua sessão."
+                });
+            }
+
+            return res.json({
+                sucesso: true,
+                mensagem: "Login realizado!",
+                usuario: req.session.usuario
+            });
         });
 
     } catch (erro) {
@@ -208,6 +221,8 @@ app.post("/api/login", async (req, res) => {
 });
 
 app.get("/api/usuario-logado", (req, res) => {
+    res.set("Cache-Control", "no-store");
+
     if (!req.session.usuario) {
         return res.status(401).json({
             autenticado: false
@@ -242,6 +257,19 @@ function exigirProfessor(req, res, next) {
     next();
 }
 
+// Verificar se o curso pertence ao professor autenticado
+async function professorEhDonoDoCurso(idCurso, idProfessor) {
+    const [resultado] = await banco.execute(
+        `SELECT id_curso
+         FROM curso
+         WHERE id_curso = ?
+           AND id_professor = ?`,
+        [idCurso, idProfessor]
+    );
+
+    return resultado.length > 0;
+}
+
 app.post("/api/logout", (req, res) => {
     req.session.destroy((erro) => {
         if (erro) {
@@ -250,7 +278,9 @@ app.post("/api/logout", (req, res) => {
             });
         }
 
-        res.clearCookie("connect.sid");
+        res.clearCookie("habilitasaude.sid", {
+            path: "/"
+        });
 
         res.json({
             sucesso: true,
@@ -420,6 +450,447 @@ app.get("/api/professor/cursos/:id", exigirProfessor, async (req, res) => {
 
         res.status(500).json({
             erro: "Não foi possível consultar o curso."
+        });
+    }
+});
+
+// Listar módulos e aulas de um curso
+app.get(
+    "/api/professor/cursos/:id/conteudos",
+    exigirProfessor,
+    async (req, res) => {
+        try {
+            const idCurso = Number(req.params.id);
+            const idProfessor = req.session.usuario.id;
+
+            if (!Number.isInteger(idCurso) || idCurso <= 0) {
+                return res.status(400).json({
+                    erro: "ID do curso inválido."
+                });
+            }
+
+            const pertence = await professorEhDonoDoCurso(
+                idCurso,
+                idProfessor
+            );
+
+            if (!pertence) {
+                return res.status(404).json({
+                    erro: "Curso não encontrado."
+                });
+            }
+
+            const [modulos] = await banco.execute(`
+                SELECT
+                    id_modulo,
+                    titulo,
+                    ordem
+                FROM modulo
+                WHERE id_curso = ?
+                ORDER BY ordem ASC
+            `, [idCurso]);
+
+            const [aulas] = await banco.execute(`
+                SELECT
+                    a.id_aula,
+                    a.id_modulo,
+                    a.titulo,
+                    a.conteudo,
+                    a.tipo,
+                    a.arquivo_url,
+                    a.metadados,
+                    a.ordem
+                FROM aula a
+                INNER JOIN modulo m
+                    ON m.id_modulo = a.id_modulo
+                WHERE m.id_curso = ?
+                ORDER BY a.ordem ASC
+            `, [idCurso]);
+
+            const resultado = modulos.map(modulo => ({
+                ...modulo,
+                aulas: aulas
+                    .filter(aula =>
+                        aula.id_modulo === modulo.id_modulo
+                    )
+                    .map(aula => {
+                        if (typeof aula.metadados === "string") {
+                            try {
+                                aula.metadados = JSON.parse(aula.metadados);
+                            } catch {
+                                aula.metadados = null;
+                            }
+                        }
+
+                        return aula;
+                    })
+            }));
+
+            res.json(resultado);
+
+        } catch (erro) {
+            console.error("Erro ao listar conteúdos:", erro);
+
+            res.status(500).json({
+                erro: "Não foi possível listar os conteúdos."
+            });
+        }
+    }
+);
+
+// Criar módulo
+app.post(
+    "/api/cursos/:id/modulos",
+    exigirProfessor,
+    async (req, res) => {
+        try {
+            const idCurso = Number(req.params.id);
+            const { titulo, ordem } = req.body;
+
+            if (!Number.isInteger(idCurso) || idCurso <= 0) {
+                return res.status(400).json({
+                    erro: "ID do curso inválido."
+                });
+            }
+
+            if (
+                typeof titulo !== "string" ||
+                !titulo.trim() ||
+                titulo.trim().length > 150
+            ) {
+                return res.status(400).json({
+                    erro: "Informe um título válido para o módulo."
+                });
+            }
+
+            const pertence = await professorEhDonoDoCurso(
+                idCurso,
+                req.session.usuario.id
+            );
+
+            if (!pertence) {
+                return res.status(404).json({
+                    erro: "Curso não encontrado."
+                });
+            }
+
+            let ordemFinal = ordem;
+
+            if (ordemFinal == null) {
+                const [resultado] = await banco.execute(
+                    `SELECT COALESCE(MAX(ordem), 0) + 1 AS proxima
+                     FROM modulo
+                     WHERE id_curso = ?`,
+                    [idCurso]
+                );
+
+                ordemFinal = resultado[0].proxima;
+            }
+
+            const [resultado] = await banco.execute(`
+                INSERT INTO modulo (id_curso, titulo, ordem)
+                VALUES (?, ?, ?)
+            `, [
+                idCurso,
+                titulo.trim(),
+                ordemFinal
+            ]);
+
+            res.status(201).json({
+                sucesso: true,
+                id_modulo: resultado.insertId,
+                mensagem: "Módulo criado com sucesso."
+            });
+
+        } catch (erro) {
+            console.error("Erro ao criar módulo:", erro);
+
+            res.status(500).json({
+                erro: "Não foi possível criar o módulo."
+            });
+        }
+    }
+);
+
+// Editar módulo
+app.put("/api/modulos/:id", exigirProfessor, async (req, res) => {
+    try {
+        const idModulo = Number(req.params.id);
+        const { titulo, ordem } = req.body;
+
+        if (
+            !Number.isInteger(idModulo) ||
+            idModulo <= 0 ||
+            typeof titulo !== "string" ||
+            !titulo.trim() ||
+            titulo.trim().length > 150
+        ) {
+            return res.status(400).json({
+                erro: "Dados do módulo inválidos."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            UPDATE modulo m
+            INNER JOIN curso c ON c.id_curso = m.id_curso
+            SET m.titulo = ?, m.ordem = ?
+            WHERE m.id_modulo = ?
+              AND c.id_professor = ?
+        `, [
+            titulo.trim(),
+            Number.isInteger(ordem) && ordem > 0 ? ordem : 1,
+            idModulo,
+            req.session.usuario.id
+        ]);
+
+        if (!resultado.affectedRows) {
+            return res.status(404).json({
+                erro: "Módulo não encontrado."
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: "Módulo atualizado."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao editar módulo:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível editar o módulo."
+        });
+    }
+});
+
+// Excluir módulo
+app.delete("/api/modulos/:id", exigirProfessor, async (req, res) => {
+    try {
+        const idModulo = Number(req.params.id);
+
+        const [resultado] = await banco.execute(`
+            DELETE m FROM modulo m
+            INNER JOIN curso c ON c.id_curso = m.id_curso
+            WHERE m.id_modulo = ?
+              AND c.id_professor = ?
+        `, [
+            idModulo,
+            req.session.usuario.id
+        ]);
+
+        if (!resultado.affectedRows) {
+            return res.status(404).json({
+                erro: "Módulo não encontrado."
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: "Módulo e suas aulas foram excluídos."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao excluir módulo:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível excluir o módulo."
+        });
+    }
+});
+
+// Adicionar aula a um módulo
+app.post("/api/modulos/:id/aulas", exigirProfessor, async (req, res) => {
+    try {
+        const idModulo = Number(req.params.id);
+
+        const {
+            titulo,
+            conteudo,
+            tipo,
+            arquivo_url,
+            metadados,
+            ordem
+        } = req.body;
+
+        const tiposPermitidos = [
+            "video", "pdf", "ebook", "slide", "mapa",
+            "quiz", "caso", "material", "link", "texto"
+        ];
+
+        if (
+            !Number.isInteger(idModulo) ||
+            idModulo <= 0 ||
+            typeof titulo !== "string" ||
+            !titulo.trim() ||
+            titulo.trim().length > 150 ||
+            !tiposPermitidos.includes(tipo)
+        ) {
+            return res.status(400).json({
+                erro: "Dados da aula inválidos."
+            });
+        }
+
+        const [modulos] = await banco.execute(`
+            SELECT m.id_modulo
+            FROM modulo m
+            INNER JOIN curso c ON c.id_curso = m.id_curso
+            WHERE m.id_modulo = ?
+              AND c.id_professor = ?
+        `, [
+            idModulo,
+            req.session.usuario.id
+        ]);
+
+        if (!modulos.length) {
+            return res.status(404).json({
+                erro: "Módulo não encontrado."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            INSERT INTO aula (
+                id_modulo,
+                titulo,
+                conteudo,
+                tipo,
+                arquivo_url,
+                metadados,
+                ordem
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `, [
+            idModulo,
+            titulo.trim(),
+            conteudo || null,
+            tipo,
+            arquivo_url || null,
+            metadados == null ? null : JSON.stringify(metadados),
+            Number.isInteger(ordem) && ordem > 0 ? ordem : 1
+        ]);
+
+        res.status(201).json({
+            sucesso: true,
+            id_aula: resultado.insertId,
+            mensagem: "Aula adicionada com sucesso."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao adicionar aula:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível adicionar a aula."
+        });
+    }
+});
+
+// Editar aula
+app.put("/api/aulas/:id", exigirProfessor, async (req, res) => {
+    try {
+        const idAula = Number(req.params.id);
+
+        const {
+            titulo,
+            conteudo,
+            tipo,
+            arquivo_url,
+            metadados,
+            ordem
+        } = req.body;
+
+        const tiposPermitidos = [
+            "video", "pdf", "ebook", "slide", "mapa",
+            "quiz", "caso", "material", "link", "texto"
+        ];
+
+        if (
+            !Number.isInteger(idAula) ||
+            idAula <= 0 ||
+            typeof titulo !== "string" ||
+            !titulo.trim() ||
+            titulo.trim().length > 150 ||
+            !tiposPermitidos.includes(tipo)
+        ) {
+            return res.status(400).json({
+                erro: "Dados da aula inválidos."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            UPDATE aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            INNER JOIN curso c ON c.id_curso = m.id_curso
+            SET
+                a.titulo = ?,
+                a.conteudo = ?,
+                a.tipo = ?,
+                a.arquivo_url = ?,
+                a.metadados = ?,
+                a.ordem = ?
+            WHERE a.id_aula = ?
+              AND c.id_professor = ?
+        `, [
+            titulo.trim(),
+            conteudo || null,
+            tipo,
+            arquivo_url || null,
+            metadados == null ? null : JSON.stringify(metadados),
+            Number.isInteger(ordem) && ordem > 0 ? ordem : 1,
+            idAula,
+            req.session.usuario.id
+        ]);
+
+        if (!resultado.affectedRows) {
+            return res.status(404).json({
+                erro: "Aula não encontrada."
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: "Aula atualizada com sucesso."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao editar aula:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível editar a aula."
+        });
+    }
+});
+
+// Excluir aula
+app.delete("/api/aulas/:id", exigirProfessor, async (req, res) => {
+    try {
+        const idAula = Number(req.params.id);
+
+        const [resultado] = await banco.execute(`
+            DELETE a FROM aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            INNER JOIN curso c ON c.id_curso = m.id_curso
+            WHERE a.id_aula = ?
+              AND c.id_professor = ?
+        `, [
+            idAula,
+            req.session.usuario.id
+        ]);
+
+        if (!resultado.affectedRows) {
+            return res.status(404).json({
+                erro: "Aula não encontrada."
+            });
+        }
+
+        res.json({
+            sucesso: true,
+            mensagem: "Aula excluída com sucesso."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao excluir aula:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível excluir a aula."
         });
     }
 });

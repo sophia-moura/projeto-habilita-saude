@@ -538,6 +538,7 @@
         nivel: curso.nivel,
         certificado: curso.certificado,
         checklist: curso.checklist,
+        imagem_url: cursoEditando?.imagem_url || null,
         preco: curso.preco,
         status: status
     };

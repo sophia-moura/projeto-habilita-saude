@@ -39,6 +39,7 @@
   const NIVEIS = HS.niveis ? HS.niveis() : {};
   let conteudosCurso = [];
   let imagemBase64 = "";
+  let arquivoImagem = null;
   let tipoAtual = "";
 
   const moeda = (v) =>
@@ -255,6 +256,20 @@
   }
 
   function carregarImagem(arquivo) {
+    if (!arquivo) return;
+
+    if (!/^image\/(png|jpe?g|webp)$/i.test(arquivo.type)) {
+      alert("Escolha uma imagem PNG, JPG ou WEBP.");
+      return;
+    }
+
+    if (arquivo.size > 5 * 1024 * 1024) {
+      alert("A imagem deve ter no máximo 5 MB.");
+      return;
+    }
+
+    arquivoImagem = arquivo;
+
     processarImagem(arquivo, (src) => {
       imagemBase64 = src;
       mostrarPreview(src);
@@ -526,6 +541,35 @@
   /* ---------- Publicação integrada ao MySQL ---------- */
 
   async function salvarCursoAPI(status) {
+    // Começar mantendo a imagem que já está salva no curso.
+    let imagemUrlAtual = cursoEditando?.imagem_url || null;
+
+    // Se o professor escolheu uma imagem nova, enviá-la primeiro.
+    if (arquivoImagem) {
+        const formularioImagem = new FormData();
+
+        formularioImagem.append("imagem", arquivoImagem);
+
+        const respostaImagem = await fetch(
+            "http://localhost:3000/api/cursos/imagem",
+            {
+                method: "POST",
+                credentials: "include",
+                body: formularioImagem
+            }
+        );
+
+        const dadosImagem = await respostaImagem.json();
+
+        if (!respostaImagem.ok) {
+            throw new Error(
+                dadosImagem.erro || "Não foi possível enviar a imagem."
+            );
+        }
+
+        imagemUrlAtual = dadosImagem.imagem_url;
+    }
+
     const curso = montarCurso(status);
 
     const dadosAPI = {
@@ -538,7 +582,7 @@
         nivel: curso.nivel,
         certificado: curso.certificado,
         checklist: curso.checklist,
-        imagem_url: cursoEditando?.imagem_url || null,
+        imagem_url: imagemUrlAtual,
         preco: curso.preco,
         status: status
     };

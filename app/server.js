@@ -1,13 +1,105 @@
 require("dotenv").config();
 
 const path = require("path");
+const fs = require("fs");
+const crypto = require("crypto");
 const express = require("express");
 const mysql = require("mysql2/promise");
 const bcrypt = require("bcrypt");
 const session = require("express-session");
+const multer = require("multer");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// ==========================================
+// UPLOAD DE IMAGENS DOS CURSOS
+// ==========================================
+
+const pastaImagensCursos = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    "cursos"
+);
+
+// Criar a pasta automaticamente, caso ainda não exista.
+fs.mkdirSync(pastaImagensCursos, { recursive: true });
+
+const armazenamentoImagens = multer.diskStorage({
+    destination: (req, arquivo, callback) => {
+        callback(null, pastaImagensCursos);
+    },
+
+    filename: (req, arquivo, callback) => {
+        const extensoesPermitidas = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp"
+        };
+
+        const extensao = extensoesPermitidas[arquivo.mimetype];
+
+        callback(
+            null,
+            `${crypto.randomUUID()}${extensao}`
+        );
+    }
+});
+
+const uploadImagemCurso = multer({
+    storage: armazenamentoImagens,
+
+    limits: {
+        fileSize: 5 * 1024 * 1024
+    },
+
+    fileFilter: (req, arquivo, callback) => {
+        const tiposPermitidos = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        if (!tiposPermitidos.includes(arquivo.mimetype)) {
+            return callback(
+                new Error("Envie uma imagem PNG, JPG ou WEBP.")
+            );
+        }
+
+        callback(null, true);
+    }
+});
+
+// Excluir a imagem de um curso, se ela estiver na pasta de uploads.
+async function excluirImagemCurso(imagemUrl) {
+    if (
+        typeof imagemUrl !== "string" ||
+        !imagemUrl.startsWith("/uploads/cursos/")
+    ) {
+        return;
+    }
+
+    const nomeArquivo = path.basename(imagemUrl);
+
+    // Aceitar somente nomes gerados pelo upload de imagens dos cursos.
+    if (!/^[a-f0-9-]{36}\.(jpg|png|webp)$/i.test(nomeArquivo)) {
+        return;
+    }
+
+    const caminhoArquivo = path.join(
+        pastaImagensCursos,
+        nomeArquivo
+    );
+
+    try {
+        await fs.promises.unlink(caminhoArquivo);
+    } catch (erro) {
+        if (erro.code !== "ENOENT") {
+            console.error("Erro ao excluir imagem do curso:", erro);
+        }
+    }
+}
 
 app.use(express.json());
 
@@ -256,6 +348,39 @@ function exigirProfessor(req, res, next) {
 
     next();
 }
+
+// Enviar imagem de um curso
+app.post(
+    "/api/cursos/imagem",
+    exigirProfessor,
+
+    (req, res, next) => {
+        uploadImagemCurso.single("imagem")(req, res, (erro) => {
+            if (erro) {
+                return res.status(400).json({
+                    erro: erro.message || "Não foi possível enviar a imagem."
+                });
+            }
+
+            next();
+        });
+    },
+
+    (req, res) => {
+        if (!req.file) {
+            return res.status(400).json({
+                erro: "Selecione uma imagem para enviar."
+            });
+        }
+
+        const imagemUrl = `/uploads/cursos/${req.file.filename}`;
+
+        return res.status(201).json({
+            sucesso: true,
+            imagem_url: imagemUrl
+        });
+    }
+);
 
 // Verificar se o curso pertence ao professor autenticado
 async function professorEhDonoDoCurso(idCurso, idProfessor) {
@@ -1037,6 +1162,22 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
             });
         }
 
+        const [cursosAtuais] = await banco.execute(
+            `SELECT imagem_url
+            FROM curso
+            WHERE id_curso = ?
+            AND id_professor = ?`,
+            [id, req.session.usuario.id]
+        );
+
+        if (cursosAtuais.length === 0) {
+            return res.status(404).json({
+                erro: "Curso não encontrado ou não pertence a você."
+            });
+        }
+
+        const imagemAntiga = cursosAtuais[0].imagem_url;
+
         const {
             nome_curso,
             subtitulo,
@@ -1157,6 +1298,10 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
             });
         }
 
+        if (imagemAntiga && imagemAntiga !== imagem_url) {
+            await excluirImagemCurso(imagemAntiga);
+        }
+
         res.json({
             sucesso: true,
             mensagem: "Curso atualizado com sucesso."
@@ -1182,6 +1327,22 @@ app.delete("/api/cursos/:id", exigirProfessor, async (req, res) => {
             });
         }
 
+        const [cursosAtuais] = await banco.execute(
+            `SELECT imagem_url
+            FROM curso
+            WHERE id_curso = ?
+            AND id_professor = ?`,
+            [id, req.session.usuario.id]
+        );
+
+        if (cursosAtuais.length === 0) {
+            return res.status(404).json({
+                erro: "Curso não encontrado ou não pertence a você."
+            });
+        }
+
+        const imagemAntiga = cursosAtuais[0].imagem_url;
+
         const [resultado] = await banco.execute(`
             DELETE FROM curso
             WHERE id_curso = ?
@@ -1196,6 +1357,8 @@ app.delete("/api/cursos/:id", exigirProfessor, async (req, res) => {
                 erro: "Curso não encontrado ou não pertence a você."
             });
         }
+
+        await excluirImagemCurso(imagemAntiga);
 
         res.json({
             sucesso: true,

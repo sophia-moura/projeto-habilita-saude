@@ -1,6 +1,6 @@
 # Habilita Saúde
 
-Plataforma de cursos online voltada para profissionais e estudantes da área da saúde, desenvolvida durante a Residência Porto Digital.
+Plataforma de cursos online voltada para profissionais e estudantes da área da saúde, desenvolvida durante a Residência em TIC do Porto Digital.
 
 ## Tecnologias
 
@@ -9,6 +9,7 @@ Plataforma de cursos online voltada para profissionais e estudantes da área da 
 - MySQL
 - bcrypt para hash de senhas
 - express-session para gerenciamento de sessões
+- Multer para upload de arquivos
 - Git e GitHub
 - Figma
 
@@ -25,12 +26,14 @@ Plataforma de cursos online voltada para profissionais e estudantes da área da 
 
 - Dashboard
 - Criação e gerenciamento de cursos
+- Edição e exclusão de cursos
+- Upload de imagens para os cursos
 - Relatórios
 - Gerenciamento de usuários
 - Notificações
 - Suporte
 
-> **Status:** Em desenvolvimento. Algumas funcionalidades ainda utilizam dados locais ou demonstrativos e estão passando por integração com a API e o banco de dados MySQL.
+> **Status:** Em desenvolvimento. O projeto está passando por etapas de integração entre o frontend, a API e o banco de dados MySQL. Algumas funcionalidades ainda utilizam dados locais ou demonstrativos.
 
 ## Estrutura do projeto
 
@@ -45,8 +48,10 @@ projeto-habilita-saude/
 │   └── habilita_saude_bd.sql
 ├── css/                    # Arquivos de estilo
 ├── js/                     # Scripts JavaScript
-├── img/                    # Imagens
+├── img/                    # Imagens do projeto
 ├── media/                  # Vídeos e outros arquivos
+├── uploads/
+│   └── cursos/             # Imagens enviadas pelos professores
 ├── *.html                  # Páginas da plataforma
 ├── .gitignore
 └── README.md
@@ -133,9 +138,9 @@ Copie o resultado e coloque no campo `SESSION_SECRET` do arquivo `.env`.
 
 > **Importante:** nunca compartilhe o arquivo `.env` ou envie suas credenciais ao GitHub. Certifique-se de que ele esteja incluído no `.gitignore`.
 
-## 4. Executar o backend
+## 4. Executar o backend e o frontend
 
-Ainda dentro da pasta `app`, execute:
+Na pasta `app`, execute:
 
 ```bash
 node server.js
@@ -147,59 +152,37 @@ Se estiver tudo configurado corretamente, o servidor ficará disponível em:
 http://localhost:3000
 ```
 
+O próprio backend disponibiliza os arquivos HTML, CSS, JavaScript e imagens do frontend. Portanto, não é necessário iniciar o Live Server separadamente.
+
+Acesse a plataforma pelo navegador:
+
+[http://localhost:3000](http://localhost:3000)
+
 Para verificar o funcionamento da API, acesse:
 
-```text
-http://localhost:3000/api/status
-```
+[http://localhost:3000/api/status](http://localhost:3000/api/status)
 
 Mantenha o terminal aberto enquanto utiliza a plataforma.
 
-## 5. Executar o frontend
-
-O frontend é composto por arquivos HTML, CSS e JavaScript.
-
-Uma opção recomendada para desenvolvimento é utilizar a extensão **Live Server** no Visual Studio Code.
-
-1. Abra a pasta do projeto no VS Code.
-2. Instale a extensão Live Server, caso ainda não esteja instalada.
-3. Clique com o botão direito no arquivo `index.html`.
-4. Selecione **Open with Live Server**.
-5. Acesse o endereço local fornecido pela extensão.
-
-Preferencialmente, utilize:
-
-```text
-http://localhost:3000
-```
-
-Essa é a origem esperada na configuração de CORS do backend. Caso o Live Server utilize outra porta, será necessário ajustar a origem permitida no `app/server.js`.
-
-## 6. Fluxo de execução resumido
-
-Para utilizar a plataforma localmente, mantenha dois terminais abertos.
-
-**Terminal 1 — Backend**
-
-```bash
-cd app
-npm install
-node server.js
-```
-
-**Terminal 2 — Frontend**
-
-Abra o arquivo `index.html` com o Live Server no VS Code.
-
-Depois, acesse a página inicial pelo endereço fornecido pela extensão.
-
-## Autenticação
+## 5. Autenticação
 
 - O cadastro e o login são processados pelo backend.
 - As senhas são armazenadas utilizando hash com bcrypt.
 - A autenticação utiliza sessões gerenciadas pelo express-session.
 - Os cookies são utilizados para manter a sessão do usuário.
 - As requisições autenticadas do frontend devem utilizar `credentials: "include"`.
+
+## 6. Upload de imagens dos cursos
+
+O sistema permite que professores enviem imagens para os cursos.
+
+- As imagens são recebidas pelo backend utilizando Multer.
+- Os arquivos são armazenados na pasta `uploads/cursos/`.
+- O caminho da imagem é registrado no banco de dados.
+- Ao substituir a imagem de um curso, a imagem anterior é removida do armazenamento.
+- Ao excluir um curso, sua imagem também é removida.
+
+A pasta `uploads/cursos/` é utilizada para armazenar os arquivos enviados durante a utilização da plataforma.
 
 ## Equipe
 

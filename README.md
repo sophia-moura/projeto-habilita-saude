@@ -17,8 +17,13 @@ Plataforma de cursos online voltada para profissionais e estudantes da área da 
 
 ### Área do aluno
 
-- Visualização de cursos
-- Acompanhamento de progresso
+- Visualização de cursos disponíveis
+- Visualização de cursos adquiridos e matrículas
+- Acesso aos conteúdos dos cursos
+- Visualização de aulas em diferentes formatos
+- Realização de quizzes
+- Acompanhamento do progresso das aulas e cursos
+- Marcação de aulas como concluídas
 - Certificados
 - Notificações
 
@@ -27,35 +32,54 @@ Plataforma de cursos online voltada para profissionais e estudantes da área da 
 - Dashboard
 - Criação e gerenciamento de cursos
 - Edição e exclusão de cursos
-- Upload de imagens para os cursos
-- Relatórios
+- Publicação e gerenciamento de cursos
+- Upload de imagens dos cursos
+- Criação e organização de módulos e aulas
+- Adição de conteúdos em diferentes formatos
+- Upload de arquivos para as aulas
+- Criação de quizzes com perguntas e alternativas
 - Gerenciamento de usuários
+- Relatórios
 - Notificações
 - Suporte
 
-> **Status:** Em desenvolvimento. O projeto está passando por etapas de integração entre o frontend, a API e o banco de dados MySQL. Algumas funcionalidades ainda utilizam dados locais ou demonstrativos.
+### Backend e integração
+
+- API REST desenvolvida com Node.js e Express
+- Integração com banco de dados MySQL
+- Cadastro e autenticação de usuários
+- Gerenciamento de sessões
+- Controle de acesso por tipo de usuário
+- Gerenciamento de cursos, módulos e aulas
+- Registro de matrículas e progresso
+- Simulação de pagamentos em ambiente de desenvolvimento
+
+> **Status:** Em desenvolvimento. As principais integrações entre frontend, API e banco de dados já foram implementadas. Algumas funcionalidades ainda estão em desenvolvimento ou utilizam dados demonstrativos.
 
 ## Estrutura do projeto
 
 ```text
 projeto-habilita-saude/
-├── app/                    # Backend Node.js/Express
+├── app/
 │   ├── server.js
 │   ├── package.json
 │   ├── package-lock.json
-│   └── .env                # Configurações locais (não versionado)
+│   └── .env
 ├── banco/
 │   └── habilita_saude_bd.sql
-├── css/                    # Arquivos de estilo
-├── js/                     # Scripts JavaScript
-├── img/                    # Imagens do projeto
-├── media/                  # Vídeos e outros arquivos
+├── css/
+├── js/
+├── img/
+├── media/
 ├── uploads/
-│   └── cursos/             # Imagens enviadas pelos professores
-├── *.html                  # Páginas da plataforma
+│   ├── cursos/
+│   └── conteudos/
+├── *.html
 ├── .gitignore
 └── README.md
 ```
+
+A pasta `.env` contém configurações locais e não deve ser enviada ao GitHub. A pasta `uploads/` armazena arquivos enviados durante a utilização da plataforma e também deve ser ignorada pelo Git.
 
 ## Pré-requisitos
 
@@ -122,6 +146,8 @@ DB_NAME=habilita_saude
 
 SESSION_SECRET=coloque_uma_chave_aleatoria_grande_e_secreta
 PORT=3000
+
+PAGAMENTO_SIMULADO=true
 ```
 
 Ajuste `DB_USER` e `DB_PASSWORD` de acordo com as credenciais configuradas no seu MySQL.
@@ -171,18 +197,49 @@ Mantenha o terminal aberto enquanto utiliza a plataforma.
 - A autenticação utiliza sessões gerenciadas pelo express-session.
 - Os cookies são utilizados para manter a sessão do usuário.
 - As requisições autenticadas do frontend devem utilizar `credentials: "include"`.
+- O sistema possui controle de acesso de acordo com o tipo de usuário.
 
-## 6. Upload de imagens dos cursos
+## 6. Gerenciamento de cursos e conteúdos
 
-O sistema permite que professores enviem imagens para os cursos.
+O sistema permite que professores criem e gerenciem cursos, organizando seus conteúdos em módulos e aulas.
 
-- As imagens são recebidas pelo backend utilizando Multer.
-- Os arquivos são armazenados na pasta `uploads/cursos/`.
-- O caminho da imagem é registrado no banco de dados.
-- Ao substituir a imagem de um curso, a imagem anterior é removida do armazenamento.
-- Ao excluir um curso, sua imagem também é removida.
+Os conteúdos podem utilizar diferentes formatos, como:
 
-A pasta `uploads/cursos/` é utilizada para armazenar os arquivos enviados durante a utilização da plataforma.
+- Vídeos
+- PDFs
+- E-books
+- Slides
+- Mapas
+- Quizzes
+- Estudos de caso
+- Materiais
+- Links externos
+- Textos
+
+Os conteúdos são armazenados no banco de dados e disponibilizados aos alunos conforme as regras de acesso da plataforma.
+
+## 7. Upload de arquivos
+
+O sistema utiliza Multer para receber arquivos enviados pelos professores.
+
+- As imagens dos cursos são armazenadas na pasta de uploads correspondente.
+- Os arquivos utilizados nas aulas são armazenados em `uploads/conteudos/`.
+- Os caminhos dos arquivos são registrados no banco de dados.
+- O backend disponibiliza os arquivos para acesso pela plataforma.
+
+A pasta `uploads/` contém arquivos gerados durante a utilização do sistema e não deve ser versionada no Git.
+
+## 8. Pagamentos
+
+O projeto possui uma funcionalidade de simulação de pagamentos para testes em ambiente de desenvolvimento.
+
+Para habilitar a simulação, configure no `.env`:
+
+```env
+PAGAMENTO_SIMULADO=true
+```
+
+Essa configuração não representa uma integração com um serviço real de pagamentos.
 
 ## Equipe
 

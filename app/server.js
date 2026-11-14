@@ -406,6 +406,93 @@ async function professorEhDonoDoCurso(idCurso, idProfessor) {
     return resultado.length > 0;
 }
 
+// ==========================================
+// UPLOAD DE ARQUIVOS DOS CONTEÚDOS DO CURSO
+// ==========================================
+
+const pastaConteudos = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    "conteudos"
+);
+
+fs.mkdirSync(pastaConteudos, { recursive: true });
+
+const armazenamentoConteudos = multer.diskStorage({
+    destination: (req, arquivo, callback) => {
+        callback(null, pastaConteudos);
+    },
+
+    filename: (req, arquivo, callback) => {
+        const extensao = path.extname(arquivo.originalname).toLowerCase();
+        callback(null, `${crypto.randomUUID()}${extensao}`);
+    }
+});
+
+const uploadConteudo = multer({
+    storage: armazenamentoConteudos,
+    limits: {
+        fileSize: 500 * 1024 * 1024
+    }
+});
+
+app.post(
+    "/api/cursos/:id/conteudos/arquivo",
+    exigirProfessor,
+    async (req, res) => {
+        try {
+            const idCurso = Number(req.params.id);
+            const idProfessor = req.session.usuario.id;
+
+            if (!Number.isInteger(idCurso) || idCurso <= 0) {
+                return res.status(400).json({
+                    erro: "ID do curso inválido."
+                });
+            }
+
+            const pertence = await professorEhDonoDoCurso(
+                idCurso,
+                idProfessor
+            );
+
+            if (!pertence) {
+                return res.status(403).json({
+                    erro: "Você não tem permissão para enviar arquivos para este curso."
+                });
+            }
+
+            uploadConteudo.single("arquivo")(req, res, (erro) => {
+                if (erro) {
+                    return res.status(400).json({
+                        erro: erro.message || "Falha no envio do arquivo."
+                    });
+                }
+
+                if (!req.file) {
+                    return res.status(400).json({
+                        erro: "Selecione um arquivo."
+                    });
+                }
+
+                return res.status(201).json({
+                    sucesso: true,
+                    arquivo_url: `/uploads/conteudos/${req.file.filename}`,
+                    nome: req.file.originalname,
+                    tamanho: req.file.size,
+                    mime: req.file.mimetype
+                });
+            });
+        } catch (erro) {
+            console.error("Erro no upload do conteúdo:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível enviar o arquivo."
+            });
+        }
+    }
+);
+
 app.post("/api/logout", (req, res) => {
     req.session.destroy((erro) => {
         if (erro) {
@@ -440,6 +527,7 @@ app.get("/api/cursos", async (req, res) => {
                 c.descricao,
                 c.preco,
                 c.status,
+                c.imagem_url,
                 p.nome AS nome_professor
             FROM curso c
             JOIN professor p ON p.id_professor = c.id_professor
@@ -572,6 +660,145 @@ app.get("/api/aluno/matriculas", exigirLogin, exigirAluno, async (req, res) => {
         });
     }
 });
+
+/* =========================================
+   PAGAMENTO SIMULADO — AMBIENTE DE TESTES
+========================================= */
+
+app.post(
+    "/api/pagamentos/simular",
+    exigirLogin,
+    exigirAluno,
+    async (req, res) => {
+        // A simulação precisa estar explicitamente habilitada.
+        if (
+            process.env.NODE_ENV === "production" ||
+            process.env.PAGAMENTO_SIMULADO !== "true"
+        ) {
+            return res.status(403).json({
+                erro: "Pagamento simulado desabilitado."
+            });
+        }
+
+        const conexao = await banco.getConnection();
+
+        try {
+            const idAluno = req.session.usuario.id;
+            const idCurso = Number(req.body.id_curso);
+
+            if (!Number.isInteger(idCurso) || idCurso <= 0) {
+                return res.status(400).json({
+                    erro: "ID do curso inválido."
+                });
+            }
+
+            await conexao.beginTransaction();
+
+            const [cursos] = await conexao.execute(`
+                SELECT id_curso, nome_curso, preco
+                FROM curso
+                WHERE id_curso = ?
+                  AND status = 'publicado'
+            `, [idCurso]);
+
+            if (!cursos.length) {
+                await conexao.rollback();
+
+                return res.status(404).json({
+                    erro: "Curso não encontrado ou indisponível."
+                });
+            }
+
+            const curso = cursos[0];
+            const valor = Number(curso.preco);
+
+            if (valor <= 0) {
+                await conexao.rollback();
+
+                return res.status(400).json({
+                    erro: "Este curso não precisa de pagamento."
+                });
+            }
+
+            const [matriculas] = await conexao.execute(`
+                SELECT id_matricula
+                FROM matricula
+                WHERE id_aluno = ?
+                  AND id_curso = ?
+            `, [idAluno, idCurso]);
+
+            if (matriculas.length) {
+                await conexao.rollback();
+
+                return res.status(409).json({
+                    erro: "Você já está matriculado neste curso."
+                });
+            }
+
+            const [comprasExistentes] = await conexao.execute(`
+                SELECT c.id_compra
+                FROM compra c
+                INNER JOIN item_compra i
+                    ON i.id_compra = c.id_compra
+                WHERE c.id_aluno = ?
+                  AND i.id_curso = ?
+                  AND c.status = 'paga'
+                LIMIT 1
+            `, [idAluno, idCurso]);
+
+            if (comprasExistentes.length) {
+                await conexao.rollback();
+
+                return res.json({
+                    sucesso: true,
+                    pagamento: "aprovado",
+                    mensagem: "Este curso já possui pagamento confirmado."
+                });
+            }
+
+            const [compra] = await conexao.execute(`
+                INSERT INTO compra (
+                    id_aluno,
+                    valor_total,
+                    status
+                )
+                VALUES (?, ?, 'paga')
+            `, [idAluno, valor]);
+
+            await conexao.execute(`
+                INSERT INTO item_compra (
+                    id_compra,
+                    id_curso,
+                    valor_unitario
+                )
+                VALUES (?, ?, ?)
+            `, [compra.insertId, idCurso, valor]);
+
+            await conexao.commit();
+
+            return res.json({
+                sucesso: true,
+                pagamento: "aprovado",
+                simulado: true,
+                id_compra: compra.insertId,
+                curso: curso.nome_curso,
+                valor
+            });
+
+        } catch (erro) {
+            await conexao.rollback();
+
+            console.error("Erro no pagamento simulado:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível simular o pagamento."
+            });
+
+        } finally {
+            conexao.release();
+        }
+    }
+);
 
 // Matricular aluno em um curso
 app.post(

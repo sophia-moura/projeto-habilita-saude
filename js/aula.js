@@ -189,6 +189,7 @@
 
   /* ---------- Lição em texto e quiz ---------- */
   const ehQuiz = (it) => it.tipo === "quiz" && Array.isArray(it.perguntas) && it.perguntas.length > 0;
+  console.log("TESTE QUIZ:", itens.filter(it => it.tipo === "quiz"));
   const ehLeitura = (it) => it.tipo === "texto" || ehQuiz(it);
 
   // Texto simples: parágrafos, "## subtítulo", listas com "- " e **negrito**.
@@ -218,7 +219,15 @@
     const perguntas = it.perguntas;
     const nota = Math.min(100, Math.max(1, Number(it.notaMinima) || 70));
     const chaveQ = `quiz_${u.email}_${id}_${i}`;
-    const estado = ls(chaveQ, { tentativas: 0, melhor: null });
+    let estado = { tentativas: 0, melhor: null };
+    try {
+      estado = {
+        ...estado,
+        ...JSON.parse(localStorage.getItem(chaveQ) || "{}")
+      };
+    } catch (erro) {
+      console.warn("Não foi possível recuperar o histórico do quiz:", erro);
+    }
     const raiz = document.createElement("div");
     raiz.className = "quiz";
     palco.appendChild(raiz);
@@ -376,7 +385,7 @@
         palco.querySelector(".palco-msg").appendChild(a);
       }
     } else if (it.tipo === "link") {
-      const url = urlSegura(it.nome);
+      const url = urlSegura(it.arquivo_url || it.nome);
       const emb = url && incorporar(url);
       if (emb) {
         const f = document.createElement("iframe");

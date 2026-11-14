@@ -30,6 +30,32 @@
 
   if (!form || !nomeCurso || !categoriaCurso || !precoCurso) return;
 
+  /* ---------- Conteúdos ---------- */
+  const ICONES_CONTEUDO = {
+    video: "fa-video",
+    pdf: "fa-file-pdf",
+    ebook: "fa-book",
+    slide: "fa-display",
+    mapa: "fa-sitemap",
+    quiz: "fa-circle-question",
+    caso: "fa-stethoscope",
+    material: "fa-folder-open",
+    link: "fa-link",
+    texto: "fa-file-lines",
+  };
+  const ROTULOS_CONTEUDO = {
+    video: "Vídeo",
+    pdf: "PDF",
+    ebook: "E-book",
+    slide: "Slides",
+    mapa: "Mapa mental",
+    quiz: "Quiz",
+    caso: "Estudo de caso",
+    material: "Material",
+    link: "Link externo",
+    texto: "Lição em texto",
+  };
+
   const NIVEIS = HS.niveis ? HS.niveis() : {};
   let conteudosCurso = [];
   let imagemBase64 = "";
@@ -356,32 +382,6 @@
     e.target.value = digitos ? moeda(Number(digitos) / 100) : "";
   });
 
-  /* ---------- Conteúdos ---------- */
-  const ICONES_CONTEUDO = {
-    video: "fa-video",
-    pdf: "fa-file-pdf",
-    ebook: "fa-book",
-    slide: "fa-display",
-    mapa: "fa-sitemap",
-    quiz: "fa-circle-question",
-    caso: "fa-stethoscope",
-    material: "fa-folder-open",
-    link: "fa-link",
-    texto: "fa-file-lines",
-  };
-  const ROTULOS_CONTEUDO = {
-    video: "Vídeo",
-    pdf: "PDF",
-    ebook: "E-book",
-    slide: "Slides",
-    mapa: "Mapa mental",
-    quiz: "Quiz",
-    caso: "Estudo de caso",
-    material: "Material",
-    link: "Link externo",
-    texto: "Lição em texto",
-  };
-
   function detalheConteudo(item) {
     let r = ROTULOS_CONTEUDO[item.tipo] || item.tipo || "Conteúdo";
     if (item.tipo === "quiz" && Array.isArray(item.perguntas)) {
@@ -567,16 +567,6 @@
   async function salvarCursoAPI(status) {
     let imagemUrlAtual = cursoEditando?.imagem_url || null;
 
-    const arquivoLocal = conteudosCurso.find(
-      (item) => item.arquivoId && !item.arquivo_url
-    );
-
-    if (arquivoLocal) {
-      throw new Error(
-        `O arquivo "${arquivoLocal.nome}" ainda não está enviado ao servidor.`
-      );
-    }
-
     // Enviar imagem nova para o servidor.
     if (arquivoImagem) {
       const formularioImagem = new FormData();
@@ -633,116 +623,134 @@
       throw new Error("A API não retornou o ID do curso.");
     }
 
-    // Depois de salvar o curso, persistir seus conteúdos.
+    // Enviar os arquivos locais para o servidor.
+    for (const item of conteudosCurso) {
+      if (!item.arquivoId || item.arquivo_url) continue;
+
+      const arquivo = await HSVideo.obter(item.arquivoId);
+
+      if (!arquivo) {
+        throw new Error(
+          `Não foi possível recuperar o arquivo "${item.nome}" do navegador.`
+        );
+      }
+
+      const formulario = new FormData();
+      formulario.append("arquivo", arquivo, item.nome);
+
+      const respostaUpload = await API.request(
+        `/cursos/${idCurso}/conteudos/arquivo`,
+        {
+          method: "POST",
+          body: formulario
+        }
+      );
+
+      if (!respostaUpload.sucesso || !respostaUpload.arquivo_url) {
+        throw new Error(`Falha ao enviar o arquivo "${item.nome}".`);
+      }
+
+      item.arquivo_url = respostaUpload.arquivo_url;
+    }
+
+    // Depois do upload, salvar os conteúdos no banco.
     await sincronizarConteudos(idCurso);
 
     return resposta;
   }
 
-
-async function sincronizarConteudos(idCurso) {
-  // Recupera os módulos que já existem.
-  const modulos = await API.get(
-    `/professor/cursos/${idCurso}/conteudos`
-  );
-
-  let modulo = modulos?.[0] || null;
-
-  // O editor atual trabalha com uma lista única de conteúdos.
-  // Por isso, vamos utilizar um módulo chamado Conteúdos do curso.
-  if (!modulo) {
-    const criado = await API.post(
-      `/cursos/${idCurso}/modulos`,
-      {
-        titulo: "Conteúdos do curso",
-        ordem: 1
-      }
+  async function sincronizarConteudos(idCurso) {
+    // Recupera os módulos que já existem.
+    const modulos = await API.get(
+      `/professor/cursos/${idCurso}/conteudos`
     );
 
-    modulo = {
-      id_modulo: criado.id_modulo,
-      aulas: []
-    };
-  } else {
-    await API.put(
-      `/modulos/${modulo.id_modulo}`,
-      {
-        titulo: "Conteúdos do curso",
-        ordem: 1
-      }
-    );
-  }
+    let modulo = modulos?.[0] || null;
 
-  const aulasExistentes = modulo.aulas || [];
-
-  // Arquivos guardados somente no navegador não podem
-  // ser apresentados aos alunos por meio da API.
-  const arquivoLocal = conteudosCurso.find(
-    (item) =>
-      item.arquivoId &&
-      !item.arquivo_url
-  );
-
-  if (arquivoLocal) {
-    throw new Error(
-      `O arquivo "${arquivoLocal.nome}" ainda precisa ser enviado ao servidor. Remova-o ou aguarde a integração do upload de arquivos.`
-    );
-  }
-
-  for (let i = 0; i < conteudosCurso.length; i++) {
-    const item = conteudosCurso[i];
-
-    const dadosAula = {
-      titulo: String(item.nome || "Conteúdo").trim(),
-      conteudo:
-        item.tipo === "texto"
-          ? item.texto || ""
-          : null,
-      tipo: item.tipo,
-      arquivo_url:
-        item.tipo === "link"
-          ? item.nome
-          : item.arquivo_url || null,
-      metadados:
-        item.tipo === "quiz"
-          ? {
-              perguntas: item.perguntas || [],
-              notaMinima: item.notaMinima || 70
-            }
-          : {
-              arquivoId: item.arquivoId || null,
-              mime: item.mime || "",
-              tamanho: item.tamanho || 0
-            },
-      ordem: i + 1
-    };
-
-    const aulaExistente = aulasExistentes[i];
-
-    if (aulaExistente) {
-      await API.put(
-        `/aulas/${aulaExistente.id_aula}`,
-        dadosAula
+    // O editor atual trabalha com uma lista única de conteúdos.
+    // Por isso, vamos utilizar um módulo chamado Conteúdos do curso.
+    if (!modulo) {
+      const criado = await API.post(
+        `/cursos/${idCurso}/modulos`,
+        {
+          titulo: "Conteúdos do curso",
+          ordem: 1
+        }
       );
+
+      modulo = {
+        id_modulo: criado.id_modulo,
+        aulas: []
+      };
     } else {
-      await API.post(
-        `/modulos/${modulo.id_modulo}/aulas`,
-        dadosAula
+      await API.put(
+        `/modulos/${modulo.id_modulo}`,
+        {
+          titulo: "Conteúdos do curso",
+          ordem: 1
+        }
+      );
+    }
+
+    const aulasExistentes = modulo.aulas || [];
+
+    for (let i = 0; i < conteudosCurso.length; i++) {
+      const item = conteudosCurso[i];
+
+      const dadosAula = {
+        titulo:
+        item.tipo === "link"
+          ? "Link externo"
+          : String(item.nome || "Conteúdo").trim(),
+        conteudo:
+          item.tipo === "texto"
+            ? item.texto || ""
+            : null,
+        tipo: item.tipo,
+        arquivo_url:
+          item.tipo === "link"
+            ? item.nome
+            : item.arquivo_url || null,
+        metadados:
+          item.tipo === "quiz"
+            ? {
+                perguntas: item.perguntas || [],
+                notaMinima: item.notaMinima || 70
+              }
+            : {
+                arquivoId: item.arquivoId || null,
+                mime: item.mime || "",
+                tamanho: item.tamanho || 0
+              },
+        ordem: i + 1
+      };
+
+      const aulaExistente = aulasExistentes[i];
+
+      if (aulaExistente) {
+        await API.put(
+          `/aulas/${aulaExistente.id_aula}`,
+          dadosAula
+        );
+      } else {
+        await API.post(
+          `/modulos/${modulo.id_modulo}/aulas`,
+          dadosAula
+        );
+      }
+    }
+
+    // Excluir aulas que foram removidas pelo professor.
+    for (
+      let i = conteudosCurso.length;
+      i < aulasExistentes.length;
+      i++
+    ) {
+      await API.delete(
+        `/aulas/${aulasExistentes[i].id_aula}`
       );
     }
   }
-
-  // Excluir aulas que foram removidas pelo professor.
-  for (
-    let i = conteudosCurso.length;
-    i < aulasExistentes.length;
-    i++
-  ) {
-    await API.delete(
-      `/aulas/${aulasExistentes[i].id_aula}`
-    );
-  }
-}
 
   function validarPublicacao() {
     const nome = nomeCurso.value.trim();

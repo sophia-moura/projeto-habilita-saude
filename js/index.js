@@ -141,6 +141,7 @@
         grid.appendChild(criarCard({
           id: curso.id_curso,
           nome: curso.nome_curso,
+          imagem: curso.imagem_url,
           categoria: "Curso",
           professor: curso.nome_professor,
           descricao: curso.descricao,

@@ -127,6 +127,9 @@
           <strong>${esc(curso.nome || "Curso")}</strong>
           <span class="tag-area">${esc(curso.categoria || "Curso")}</span>
           <span class="tag-area">Professor: ${esc(curso.professor || "Não informado")}</span>
+          <button class="btn-curso" data-matricular="${esc(curso.id)}">
+            Matricular-se
+          </button>
         </div>
       </div>`;
       })
@@ -145,7 +148,7 @@
           id: Number(curso.id_curso),
           nome: curso.nome_curso,
           categoria: "Curso",
-          imagem: "",
+          imagem: curso.imagem_url || "",
           preco: Number(curso.preco) || 0,
           professor: curso.nome_professor
         }));
@@ -231,15 +234,61 @@
   renderizarAvisos();
   renderizarCertificados();
 
-  document.getElementById("listaRecomendados")?.addEventListener("click", (e) => {
+  
+  document.getElementById("listaRecomendados")?.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-matricular]");
     if (!btn) return;
-    if (HS.matricular(btn.dataset.matricular)) {
-      if (window.HS.gam) HS.gam.xp(20, "Nova matrícula");
-      alert("Matrícula realizada! O curso já está em Meus cursos.");
-      location.reload();
-    } else {
-      alert("Não foi possível concluir a matrícula. O curso pode já estar na sua lista.");
+
+    const idCurso = Number(btn.dataset.matricular);
+
+    if (!Number.isInteger(idCurso) || idCurso <= 0) {
+      alert("Curso inválido.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Processando pagamento...";
+
+    try {
+      // Primeiro: simula a aprovação do pagamento.
+      const pagamento = await API.post("/pagamentos/simular", {
+        id_curso: idCurso
+      });
+
+      if (!pagamento.sucesso || pagamento.pagamento !== "aprovado") {
+        throw new Error(
+          pagamento.erro || "O pagamento simulado não foi aprovado."
+        );
+      }
+
+      // Segundo: realiza a matrícula após a aprovação.
+      btn.textContent = "Confirmando matrícula...";
+
+      const matricula = await API.post("/aluno/matriculas", {
+        id_curso: idCurso
+      });
+
+      if (!matricula.sucesso) {
+        throw new Error(
+          matricula.erro || "Pagamento aprovado, mas a matrícula não foi concluída."
+        );
+      }
+
+      if (window.HS.gam) {
+        window.HS.gam.xp(20, "Nova matrícula");
+      }
+
+      alert("Pagamento simulado aprovado! Matrícula realizada com sucesso.");
+
+      location.href = "aluno-meus-cursos.html";
+
+    } catch (erro) {
+      console.error("Erro na compra do curso:", erro);
+
+      alert(erro.message || "Não foi possível concluir a compra.");
+
+      btn.disabled = false;
+      btn.textContent = "Tentar novamente";
     }
   });
 

@@ -338,6 +338,17 @@ function exigirLogin(req, res, next) {
     next();
 }
 
+// Verificar se o usuário autenticado é aluno
+function exigirAluno(req, res, next) {
+    if (!req.session.usuario || req.session.usuario.tipo !== "aluno") {
+        return res.status(403).json({
+            erro: "Acesso permitido somente para alunos."
+        });
+    }
+
+    next();
+}
+
 // Verificar se o usuário autenticado é professor
 function exigirProfessor(req, res, next) {
     if (!req.session.usuario || req.session.usuario.tipo !== "professor") {
@@ -489,6 +500,300 @@ app.get("/api/cursos/:id", async (req, res) => {
         });
     }
 });
+
+/* =========================================
+   ÁREA DO ALUNO — MATRÍCULAS
+========================================= */
+
+app.get("/api/aluno/matriculas", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+
+        const [matriculas] = await banco.execute(`
+            SELECT
+                m.id_matricula AS idMatricula,
+                m.id_curso AS id,
+                c.nome_curso AS nome,
+                c.area_tematica AS area,
+                c.area_tematica AS categoria,
+                c.imagem_url AS imagem,
+                c.carga_horaria AS cargaHoraria,
+                c.nivel,
+                c.certificado AS tipoCertificado,
+                p.nome AS professor,
+                m.data_matricula AS dataMatricula,
+                m.ultimo_acesso AS ultimoAcesso,
+                m.progresso,
+                m.nota_final AS notaFinal,
+                m.situacao,
+                cert.id_certificado AS idCertificado,
+                cert.codigo_validacao AS codigoCertificado,
+                cert.data_emissao AS dataEmissaoCertificado
+            FROM matricula m
+            INNER JOIN curso c ON c.id_curso = m.id_curso
+            INNER JOIN professor p ON p.id_professor = c.id_professor
+            LEFT JOIN certificado cert ON cert.id_matricula = m.id_matricula
+            WHERE m.id_aluno = ?
+            ORDER BY m.data_matricula DESC, m.id_matricula DESC
+        `, [idAluno]);
+
+        const cursos = matriculas.map((matricula) => {
+            const progresso = Number(matricula.progresso) || 0;
+            let status = "andamento";
+
+            if (matricula.situacao === "aprovado" || progresso >= 100) {
+                status = "concluido";
+            } else if (progresso <= 0) {
+                status = "nao-iniciado";
+            }
+
+            return {
+                ...matricula,
+                progresso,
+                cargaHoraria: Number(matricula.cargaHoraria) || 0,
+                ultimoAcesso: matricula.ultimoAcesso || null,
+                status,
+                certificado: matricula.codigoCertificado || null
+            };
+        });
+
+        res.set("Cache-Control", "no-store");
+
+        return res.json({
+            sucesso: true,
+            total: cursos.length,
+            cursos
+        });
+    } catch (erro) {
+        console.error("Erro ao consultar matrículas do aluno:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar suas matrículas."
+        });
+    }
+});
+
+// Matricular aluno em um curso
+app.post(
+    "/api/aluno/matriculas",
+    exigirLogin,
+    exigirAluno,
+    async (req, res) => {
+        try {
+            const idAluno = req.session.usuario.id;
+            const idCurso = Number(req.body.id_curso);
+
+            if (!Number.isInteger(idCurso) || idCurso <= 0) {
+                return res.status(400).json({
+                    erro: "ID do curso inválido."
+                });
+            }
+
+            const [cursos] = await banco.execute(`
+                SELECT id_curso, preco
+                FROM curso
+                WHERE id_curso = ?
+                  AND status = 'publicado'
+            `, [idCurso]);
+
+            if (!cursos.length) {
+                return res.status(404).json({
+                    erro: "Curso não encontrado ou indisponível."
+                });
+            }
+
+            const preco = Number(cursos[0].preco);
+
+            // Cursos pagos exigem uma compra confirmada.
+            if (preco > 0) {
+                const [compras] = await banco.execute(`
+                    SELECT c.id_compra
+                    FROM compra c
+                    INNER JOIN item_compra i
+                        ON i.id_compra = c.id_compra
+                    WHERE c.id_aluno = ?
+                      AND i.id_curso = ?
+                      AND c.status = 'paga'
+                    LIMIT 1
+                `, [idAluno, idCurso]);
+
+                if (!compras.length) {
+                    return res.status(402).json({
+                        erro: "É necessário confirmar o pagamento antes da matrícula."
+                    });
+                }
+            }
+
+            const [existentes] = await banco.execute(`
+                SELECT id_matricula
+                FROM matricula
+                WHERE id_aluno = ?
+                  AND id_curso = ?
+                LIMIT 1
+            `, [idAluno, idCurso]);
+
+            if (existentes.length) {
+                return res.status(409).json({
+                    erro: "Você já está matriculado neste curso.",
+                    id_matricula: existentes[0].id_matricula
+                });
+            }
+
+            const [resultado] = await banco.execute(`
+                INSERT INTO matricula (
+                    id_aluno,
+                    id_curso,
+                    progresso,
+                    situacao
+                )
+                VALUES (?, ?, 0, 'em_andamento')
+            `, [idAluno, idCurso]);
+
+            return res.status(201).json({
+                sucesso: true,
+                mensagem: "Matrícula realizada com sucesso!",
+                id_matricula: resultado.insertId
+            });
+
+        } catch (erro) {
+            if (erro.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({
+                    erro: "Você já está matriculado neste curso."
+                });
+            }
+
+            console.error("Erro ao matricular aluno:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível realizar a matrícula."
+            });
+        }
+    }
+);
+
+// Marcar uma aula como concluída e atualizar o progresso do curso
+app.post(
+    "/api/aluno/aulas/:id/concluir",
+    exigirLogin,
+    exigirAluno,
+    async (req, res) => {
+        const conexao = await banco.getConnection();
+
+        try {
+            const idAluno = req.session.usuario.id;
+            const idAula = Number(req.params.id);
+
+            if (!Number.isInteger(idAula) || idAula <= 0) {
+                return res.status(400).json({
+                    erro: "ID da aula inválido."
+                });
+            }
+
+            await conexao.beginTransaction();
+
+            // Descobrir a qual curso a aula pertence.
+            const [aulas] = await conexao.execute(`
+                SELECT
+                    a.id_aula,
+                    m.id_curso
+                FROM aula a
+                INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+                WHERE a.id_aula = ?
+            `, [idAula]);
+
+            if (!aulas.length) {
+                await conexao.rollback();
+
+                return res.status(404).json({
+                    erro: "Aula não encontrada."
+                });
+            }
+
+            const idCurso = aulas[0].id_curso;
+
+            // Verificar se o aluno está matriculado nesse curso.
+            const [matriculas] = await conexao.execute(`
+                SELECT id_matricula
+                FROM matricula
+                WHERE id_aluno = ?
+                  AND id_curso = ?
+            `, [idAluno, idCurso]);
+
+            if (!matriculas.length) {
+                await conexao.rollback();
+
+                return res.status(403).json({
+                    erro: "Você não está matriculado neste curso."
+                });
+            }
+
+            // Registrar a conclusão sem duplicar a mesma aula.
+            await conexao.execute(`
+                INSERT IGNORE INTO aula_concluida (
+                    id_aluno,
+                    id_aula
+                )
+                VALUES (?, ?)
+            `, [idAluno, idAula]);
+
+            // Contar todas as aulas do curso.
+            const [totais] = await conexao.execute(`
+                SELECT COUNT(*) AS total
+                FROM modulo m
+                INNER JOIN aula a ON a.id_modulo = m.id_modulo
+                WHERE m.id_curso = ?
+            `, [idCurso]);
+
+            // Contar as aulas concluídas pelo aluno nesse curso.
+            const [concluidas] = await conexao.execute(`
+                SELECT COUNT(*) AS total
+                FROM aula_concluida ac
+                INNER JOIN aula a ON a.id_aula = ac.id_aula
+                INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+                WHERE ac.id_aluno = ?
+                  AND m.id_curso = ?
+            `, [idAluno, idCurso]);
+
+            const totalAulas = Number(totais[0].total);
+            const totalConcluidas = Number(concluidas[0].total);
+
+            const progresso = totalAulas > 0
+                ? Math.round((totalConcluidas / totalAulas) * 100)
+                : 0;
+
+            // Atualizar o progresso e o último acesso da matrícula.
+            await conexao.execute(`
+                UPDATE matricula
+                SET progresso = ?,
+                    ultimo_acesso = NOW()
+                WHERE id_aluno = ?
+                  AND id_curso = ?
+            `, [progresso, idAluno, idCurso]);
+
+            await conexao.commit();
+
+            return res.json({
+                sucesso: true,
+                mensagem: "Aula concluída com sucesso.",
+                progresso,
+                aulasConcluidas: totalConcluidas,
+                totalAulas
+            });
+
+        } catch (erro) {
+            await conexao.rollback();
+
+            console.error("Erro ao concluir aula:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível registrar a conclusão da aula."
+            });
+
+        } finally {
+            conexao.release();
+        }
+    }
+);
 
 // Listar cursos do professor autenticado
 app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
@@ -658,6 +963,114 @@ app.get(
 
             res.status(500).json({
                 erro: "Não foi possível listar os conteúdos."
+            });
+        }
+    }
+);
+
+/* =========================================
+   ÁREA DO ALUNO — CONTEÚDOS DO CURSO
+========================================= */
+
+app.get(
+    "/api/aluno/cursos/:id/conteudos",
+    exigirLogin,
+    exigirAluno,
+    async (req, res) => {
+        try {
+            const idCurso = Number(req.params.id);
+            const idAluno = req.session.usuario.id;
+
+            if (!Number.isInteger(idCurso) || idCurso <= 0) {
+                return res.status(400).json({
+                    erro: "ID do curso inválido."
+                });
+            }
+
+            // Verificar se o aluno está matriculado.
+            const [matriculas] = await banco.execute(`
+                SELECT id_matricula
+                FROM matricula
+                WHERE id_aluno = ?
+                  AND id_curso = ?
+            `, [idAluno, idCurso]);
+
+            if (!matriculas.length) {
+                return res.status(403).json({
+                    erro: "Você não está matriculado neste curso."
+                });
+            }
+
+            // Buscar os módulos do curso.
+            const [modulos] = await banco.execute(`
+                SELECT
+                    id_modulo,
+                    titulo,
+                    ordem
+                FROM modulo
+                WHERE id_curso = ?
+                ORDER BY ordem ASC
+            `, [idCurso]);
+
+            // Buscar as aulas e identificar as concluídas pelo aluno.
+            const [aulas] = await banco.execute(`
+                SELECT
+                    a.id_aula,
+                    a.id_modulo,
+                    a.titulo,
+                    a.conteudo,
+                    a.tipo,
+                    a.arquivo_url,
+                    a.metadados,
+                    a.ordem,
+                    CASE
+                        WHEN ac.id_aula IS NOT NULL THEN TRUE
+                        ELSE FALSE
+                    END AS concluida
+                FROM aula a
+                INNER JOIN modulo m
+                    ON m.id_modulo = a.id_modulo
+                LEFT JOIN aula_concluida ac
+                    ON ac.id_aula = a.id_aula
+                   AND ac.id_aluno = ?
+                WHERE m.id_curso = ?
+                ORDER BY m.ordem ASC, a.ordem ASC
+            `, [idAluno, idCurso]);
+
+            const resultado = modulos.map(modulo => ({
+                ...modulo,
+                aulas: aulas
+                    .filter(aula =>
+                        Number(aula.id_modulo) === Number(modulo.id_modulo)
+                    )
+                    .map(aula => {
+                        if (typeof aula.metadados === "string") {
+                            try {
+                                aula.metadados = JSON.parse(aula.metadados);
+                            } catch {
+                                aula.metadados = null;
+                            }
+                        }
+
+                        return {
+                            ...aula,
+                            concluida: Boolean(aula.concluida)
+                        };
+                    })
+            }));
+
+            res.set("Cache-Control", "no-store");
+
+            return res.json({
+                sucesso: true,
+                modulos: resultado
+            });
+
+        } catch (erro) {
+            console.error("Erro ao consultar conteúdos do aluno:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível carregar os conteúdos do curso."
             });
         }
     }

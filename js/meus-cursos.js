@@ -1,4 +1,8 @@
-(function () {
+(async function () {
+  const acessoPermitido = await HS.ready;
+
+  if (!acessoPermitido) return;
+
   const esc =
     (window.HS && HS.esc) ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
@@ -164,19 +168,9 @@
         if (!confirm("Deseja realmente excluir este curso?")) return;
 
         try {
-          const resposta = await fetch(
-            `http://localhost:3000/api/cursos/${id}`,
-            {
-              method: "DELETE",
-              credentials: "include"
-            }
+          await API.delete(
+            `/cursos/${encodeURIComponent(id)}`
           );
-
-          const dados = await resposta.json();
-
-          if (!resposta.ok) {
-            throw new Error(dados.erro || "Não foi possível excluir o curso.");
-          }
 
           cursos = cursos.filter(
             (curso) => String(curso.id) !== String(id)
@@ -215,45 +209,54 @@
   filtroCarga?.addEventListener("change", aplicarFiltros);
   filtroPublico?.addEventListener("change", aplicarFiltros);
 
+  
   async function carregarCursos() {
     try {
       grid.innerHTML = "<p>Carregando seus cursos...</p>";
 
-      const resposta = await fetch(
-        "http://localhost:3000/api/professor/cursos",
-        {
-          method: "GET",
-          credentials: "include"
-        }
-      );
+      const dados = await API.get("/professor/cursos");
 
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        throw new Error(
-          dados.erro || "Não foi possível carregar seus cursos."
-        );
+      if (!Array.isArray(dados)) {
+        throw new Error("A API retornou uma lista inválida de cursos.");
       }
 
-      cursos = dados.map((curso) => ({
-        id: curso.id_curso,
-        nome: curso.nome_curso,
-        subtitulo: curso.subtitulo || "",
-        descricao: curso.descricao || "",
-        categoria: curso.area_tematica || "",
-        publico: curso.publico_alvo || "",
-        cargaHoraria: curso.carga_horaria
+      cursos = dados.map((curso) => {
+        let checklist = curso.checklist || [];
+
+        if (typeof checklist === "string") {
+          try {
+            checklist = JSON.parse(checklist);
+          } catch {
+            checklist = [];
+          }
+        }
+
+        return {
+          id: curso.id_curso,
+          nome: curso.nome_curso,
+          subtitulo: curso.subtitulo || "",
+          descricao: curso.descricao || "",
+          categoria: curso.area_tematica || "",
+          publico: curso.publico_alvo || "",
+
+          cargaHoraria: curso.carga_horaria
             ? `${curso.carga_horaria} horas`
             : "",
-        nivel: curso.nivel || "",
-        certificado: curso.certificado || "",
-        checklist: curso.checklist || [],
-        imagem: curso.imagem_url || "./img/perfil.svg",
-        preco: Number(curso.preco) || 0,
-        status: curso.status === "publicado"
-            ? "Publicado"
-            : "Privado"
-      }));
+
+          nivel: curso.nivel || "",
+          certificado: curso.certificado || "",
+          checklist,
+
+          imagem: curso.imagem_url || "./img/perfil.svg",
+
+          preco: Number(curso.preco) || 0,
+
+          status:
+            curso.status === "publicado"
+              ? "Publicado"
+              : "Privado"
+        };
+      });
 
       carregarFiltros();
       renderCursos(cursos);

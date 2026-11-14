@@ -3,7 +3,7 @@
     HS.esc ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
   const cursosAluno = obterCursosAluno();
-  const cursosRecomendadosAluno = obterRecomendadosAluno();
+  let cursosRecomendadosAluno = [];
   const notificacoesAluno = obterNotificacoesAluno();
 
   const fotoCurso = (src) => esc(src || "./img/perfil.svg");
@@ -126,11 +126,36 @@
         <div class="curso-recomendado-info">
           <strong>${esc(curso.nome || "Curso")}</strong>
           <span class="tag-area">${esc(curso.categoria || "Curso")}</span>
-          <button class="btn-curso" data-matricular="${esc(curso.id)}">${esc(textoPreco)}</button>
+          <span class="tag-area">Professor: ${esc(curso.professor || "Não informado")}</span>
         </div>
       </div>`;
       })
       .join("");
+  }
+
+  async function carregarCursosRecomendados() {
+    const lista = document.getElementById("listaRecomendados");
+    if (!lista) return;
+
+    try {
+      const resposta = await API.get("/cursos");
+
+      cursosRecomendadosAluno = (Array.isArray(resposta) ? resposta : [])
+        .map((curso) => ({
+          id: Number(curso.id_curso),
+          nome: curso.nome_curso,
+          categoria: "Curso",
+          imagem: "",
+          preco: Number(curso.preco) || 0,
+          professor: curso.nome_professor
+        }));
+
+      renderizarRecomendados();
+
+    } catch (erro) {
+      console.error("Erro ao buscar cursos publicados:", erro);
+      lista.innerHTML = `<p class="vazio">Não foi possível carregar os cursos publicados.</p>`;
+    }
   }
 
   const iconesAviso = {
@@ -202,7 +227,7 @@
   renderizarAtalhoContinuar();
   atualizarMetricas();
   renderizarUltimosAcessados();
-  renderizarRecomendados();
+  carregarCursosRecomendados();
   renderizarAvisos();
   renderizarCertificados();
 

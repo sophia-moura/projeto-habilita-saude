@@ -1,31 +1,4 @@
 (function () {
-  /* ---------- Cursos em destaque ---------- */
-
-  // Dados de demonstração: os mesmos cursos recomendados já presentes em
-  // js/aluno-dados.js. Só são usados quando ainda não há cursos publicados.
-  const CURSOS_DEMO = [
-    {
-      nome: "Farmacologia Básica",
-      categoria: "Farmácia",
-      imagem: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&q=60",
-    },
-    {
-      nome: "Saúde Mental no Trabalho",
-      categoria: "Psicologia",
-      imagem: "https://images.unsplash.com/photo-1544027993-37dbfe43562a?w=400&q=60",
-    },
-    {
-      nome: "Enfermagem em UTI",
-      categoria: "Enfermagem",
-      imagem: "https://images.unsplash.com/photo-1584982751601-97dcc096659c?w=400&q=60",
-    },
-    {
-      nome: "Anatomia Humana Essencial",
-      categoria: "Medicina",
-      imagem: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&q=60",
-    },
-  ];
-
   // Sessão ativa: a landing continua pública, mas os atalhos apontam para o
   // painel correto em vez de obrigar o usuário a passar pelo login novamente.
   function lerUsuarioLogado() {
@@ -99,15 +72,6 @@
 
   configurarAtalhos();
 
-  function cursosPublicados() {
-    try {
-      const lista = JSON.parse(localStorage.getItem("cursos")) || [];
-      return lista.filter((c) => c && c.status === "Publicado" && c.nome).slice(0, 4);
-    } catch (e) {
-      return [];
-    }
-  }
-
   function el(tag, classe, texto) {
     const e = document.createElement(tag);
     if (classe) e.className = classe;
@@ -150,10 +114,47 @@
   }
 
   const grid = document.getElementById("cursosGrid");
-  if (grid) {
-    const reais = cursosPublicados();
-    (reais.length ? reais : CURSOS_DEMO).forEach((c) => grid.appendChild(criarCard(c)));
+
+  async function carregarCursosPublicados() {
+    if (!grid) return;
+
+    try {
+      const resposta = await fetch("/api/cursos", {
+        method: "GET",
+        credentials: "include"
+      });
+
+      if (!resposta.ok) {
+        throw new Error("Não foi possível buscar os cursos.");
+      }
+
+      const cursos = await resposta.json();
+
+      grid.innerHTML = "";
+
+      if (!Array.isArray(cursos) || cursos.length === 0) {
+        grid.textContent = "Nenhum curso publicado no momento.";
+        return;
+      }
+
+      cursos.forEach((curso) => {
+        grid.appendChild(criarCard({
+          id: curso.id_curso,
+          nome: curso.nome_curso,
+          categoria: "Curso",
+          professor: curso.nome_professor,
+          descricao: curso.descricao,
+          preco: curso.preco
+        }));
+      });
+
+    } catch (erro) {
+      console.error("Erro ao carregar cursos:", erro);
+      grid.textContent = "Não foi possível carregar os cursos.";
+    }
   }
+
+  carregarCursosPublicados();
 
   /* ---------- Menu ---------- */
 

@@ -373,120 +373,81 @@
         opcao.addEventListener("click", () => selecionarTipoCadastro(opcao.dataset.tipo));
       });
 
+      
       async function cadastrar() {
-          const nome = nomeCadastro.value.trim();
-          const email = emailCadastro.value.trim().toLowerCase();
-          const senha = senhaCadastro.value;
-          const confirmar = confirmarCadastro.value;
+        const nome = nomeCadastro.value.trim();
+        const email = emailCadastro.value.trim().toLowerCase();
+        const senha = senhaCadastro.value;
+        const confirmar = confirmarCadastro.value;
 
-          erroCadastro.textContent = "";
+        erroCadastro.textContent = "";
 
-          if (!tipoCadastro) {
-              erroCadastro.textContent = "Escolha seu perfil: Professor ou Aluno.";
-              return;
-          }
+        if (!tipoCadastro) {
+          erroCadastro.textContent = "Escolha seu perfil: Professor ou Aluno.";
+          return;
+        }
 
-          if (!nome) {
-              erroCadastro.textContent = "Informe seu nome completo.";
-              return;
-          }
+        if (!nome) {
+          erroCadastro.textContent = "Informe seu nome completo.";
+          return;
+        }
 
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-              erroCadastro.textContent = "Informe um e-mail válido.";
-              return;
-          }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          erroCadastro.textContent = "Informe um e-mail válido.";
+          return;
+        }
 
-          if (senha.length < 6) {
-              erroCadastro.textContent = "A senha deve ter no mínimo 6 caracteres.";
-              return;
-          }
+        if (senha.length < 6) {
+          erroCadastro.textContent = "A senha deve ter no mínimo 6 caracteres.";
+          return;
+        }
 
-          if (senha !== confirmar) {
-              erroCadastro.textContent = "As senhas não coincidem.";
-              return;
-          }
+        if (senha !== confirmar) {
+          erroCadastro.textContent = "As senhas não coincidem.";
+          return;
+        }
 
-          const btnCriarConta = document.getElementById("btnCriarConta");
-          btnCriarConta.disabled = true;
+        const btnCriarConta = document.getElementById("btnCriarConta");
+        btnCriarConta.disabled = true;
 
+        try {
+          // 1. Cadastrar no banco de dados.
           const rotaCadastro = tipoCadastro === "aluno"
-            ? "http://localhost:3000/api/alunos"
-            : "http://localhost:3000/api/professores";
+            ? "/alunos"
+            : "/professores";
 
-          try {
-              // 1. Cadastrar no banco
-              const respostaCadastro = await fetch(
-                rotaCadastro, {
-                  method: "POST",
-                  headers: {
-                      "Content-Type": "application/json"
-                  },
-                  credentials: "include",
-                  body: JSON.stringify({ nome, email, senha })
-              });
+          await API.post(rotaCadastro, {
+            nome,
+            email,
+            senha
+          });
 
-              const dadosCadastro = await respostaCadastro.json();
+          // 2. Autenticar automaticamente.
+          const dadosLogin = await API.post("/login", {
+            email,
+            senha,
+            tipo: tipoCadastro
+          });
 
-              if (!respostaCadastro.ok) {
-                  erroCadastro.textContent =
-                      dadosCadastro.erro || "Não foi possível criar a conta.";
-                  return;
-              }
-
-              // 2. Fazer login automaticamente
-              const respostaLogin = await fetch(
-                "http://localhost:3000/api/login",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json"
-                    },
-                    credentials: "include",
-                    body: JSON.stringify({
-                        email,
-                        senha,
-                        tipo: tipoCadastro
-                    })
-                }
-            );
-
-              const dadosLogin = await respostaLogin.json();
-
-              if (!respostaLogin.ok) {
-                  erroCadastro.textContent =
-                      "Conta criada! Faça login para continuar.";
-                  fecharCadastro();
-                  abrirEtapaLogin(tipoCadastro);
-                  emailLogin.value = email;
-                  return;
-              }
-
-              // 3. Atualizar dados locais usados pelo frontend
-              const usuario = {
-                  nome: dadosLogin.usuario.nome,
-                  email: dadosLogin.usuario.email,
-                  tipo: dadosLogin.usuario.tipo,
-                  online: true,
-                  foto: tipoCadastro === "professor"
-                      ? "./img/professor.png"
-                      : gerarFoto(nome)
-              };
-
-              localStorage.setItem("usuario", JSON.stringify(usuario));
-              localStorage.setItem("usuarioLogado", "true");
-
-              // 4. Redirecionar
-              window.location.href = tipoCadastro === "professor"
-                  ? "professor-inicio.html"
-                  : "aluno-inicio.html";
-
-          } catch (erro) {
-              console.error(erro);
-              erroCadastro.textContent =
-                  "Não foi possível conectar ao servidor.";
-          } finally {
-              btnCriarConta.disabled = false;
+          if (!dadosLogin?.usuario) {
+            throw new Error("Conta criada, mas não foi possível iniciar a sessão. Faça login.");
           }
+
+          // 3. Redirecionar conforme o perfil.
+          window.location.href =
+            tipoCadastro === "professor"
+              ? "professor-inicio.html"
+              : "aluno-inicio.html";
+
+        } catch (erro) {
+          console.error("Erro no cadastro:", erro);
+
+          erroCadastro.textContent =
+            erro.message || "Não foi possível realizar o cadastro.";
+
+        } finally {
+          btnCriarConta.disabled = false;
+        }
       }
 
       confirmarCadastro.addEventListener("keydown", (e) => {
@@ -541,8 +502,8 @@
       }
     </script>
 
-    <script src="./js/user.js"></script>
     <script src="./js/global.js"></script>
+    <script src="./js/user.js"></script>
     <script src="./js/animacoes.js"></script>
   </body>
 </html>

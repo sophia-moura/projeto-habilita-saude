@@ -1,39 +1,84 @@
-(function () {
-  const ls = (k, d) => {
-    try {
-      return JSON.parse(localStorage.getItem(k)) ?? d;
-    } catch (e) {
-      return d;
-    }
-  };
+(async function () {
   const $ = (id) => document.getElementById(id);
+
   const esc = (t) =>
-    String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    String(t ?? "").replace(/[&<>"']/g, (c) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;"
+    })[c]);
 
-  const u = ls("usuario", {}) || {};
-  const meus = ls("cursosAluno_v2", []);
+  try {
+    // Confirma a sessão e identifica o aluno autenticado.
+    const usuario = await API.get("/usuario-logado");
 
-  // Sem ?id= na URL: retoma o curso com conteúdo acessado por último.
-  let id = Number(new URLSearchParams(location.search).get("id"));
-  if (!id) {
-    const retomar = meus
-      .filter((c) => HS.conteudosDoCurso(c.id).length)
-      .sort((a, b) => String(b.ultimoAcesso || "").localeCompare(String(a.ultimoAcesso || "")))[0];
-    if (!retomar) return void location.replace("aluno-meus-cursos.html");
-    return void location.replace("aula.html?id=" + retomar.id);
-  }
-  const meu = meus.find((c) => c.id === id);
+    const u = usuario.usuario;
 
-  // Curso inexistente ou sem matrícula: volta para a lista.
-  if (!meu) return void location.replace("aluno-meus-cursos.html");
+    // Busca as matrículas reais no MySQL.
+    const respostaMatriculas = await API.get("/aluno/matriculas");
+    const meus = respostaMatriculas.cursos || [];
 
-  $("tituloCurso").textContent = meu.nome;
-  const migalhaAtual = document.querySelector(".breadcrumb .atual");
-  if (migalhaAtual) migalhaAtual.textContent = meu.nome;
-  document.title = meu.nome + " — Habilita Saúde";
-  $("subtituloCurso").textContent = [meu.professor, meu.cargaHoraria ? meu.cargaHoraria + "h" : ""].filter(Boolean).join(" · ");
+    let id = Number(new URLSearchParams(location.search).get("id"));
 
-  const itens = HS.conteudosDoCurso(id);
+    // Sem ID na URL, retoma o curso acessado mais recentemente.
+    if (!id) {
+      const retomar = [...meus]
+        .sort((a, b) =>
+          String(b.ultimoAcesso || "").localeCompare(
+            String(a.ultimoAcesso || "")
+          )
+        )[0];
+
+      if (!retomar) {
+        return void location.replace("aluno-meus-cursos.html");
+      }
+
+      return void location.replace("aula.html?id=" + retomar.id);
+    }
+
+    const meu = meus.find((curso) => Number(curso.id) === id);
+
+    // Impede acesso a cursos sem matrícula.
+    if (!meu) {
+      return void location.replace("aluno-meus-cursos.html");
+    }
+
+    // Busca os módulos e as aulas autorizados pela API.
+    const respostaConteudos = await API.get(
+      `/aluno/cursos/${id}/conteudos`
+    );
+
+    const modulos = respostaConteudos.modulos || [];
+
+    // Converte o formato da API para o formato usado pela tela.
+    const itens = modulos.flatMap((modulo) =>
+      (modulo.aulas || []).map((aula) => {
+        let metadados = aula.metadados || {};
+
+        if (typeof metadados === "string") {
+          try {
+            metadados = JSON.parse(metadados);
+          } catch {
+            metadados = {};
+          }
+        }
+
+        return {
+          ...metadados,
+          id_aula: Number(aula.id_aula),
+          id_modulo: Number(aula.id_modulo),
+          nome: aula.titulo,
+          tipo: aula.tipo,
+          texto: aula.conteudo || metadados.texto || "",
+          arquivo_url: aula.arquivo_url || null,
+          concluida: Boolean(aula.concluida)
+        };
+      })
+    );
+
+    // A partir daqui continua o restante do código da página.
 
   // Matriculado, mas o professor ainda não publicou conteúdos.
   if (!itens.length) {
@@ -56,14 +101,12 @@
   };
   const tipoDe = (it) => TIPOS[it.tipo] || ["Conteúdo", "fa-file"];
 
-  const chave = `aulas_${u.email}_${id}`;
-  const salvas = localStorage.getItem(chave);
-  const feitas = new Set(ls(chave, []).filter((i) => Number.isInteger(i) && i >= 0 && i < itens.length));
-  // Curso de exemplo que já vem com progresso: marca os primeiros conteúdos como concluídos.
-  if (salvas === null && meu.progresso > 0) {
-    const n = meu.progresso >= 100 ? itens.length : Math.floor((meu.progresso / 100) * itens.length);
-    for (let k = 0; k < n; k++) feitas.add(k);
-  }
+  // O estado de conclusão agora vem do MySQL, pela API.
+  const feitas = new Set(
+    itens
+      .map((item, indice) => item.concluida ? indice : null)
+      .filter((indice) => indice !== null)
+  );
   let atual = Math.max(0, itens.findIndex((_, i) => !feitas.has(i)));
   let urlObj = null;
   let versao = 0; // descarta aberturas antigas quando o aluno troca de conteúdo rápido
@@ -357,32 +400,75 @@
   }
 
   /* ---------- Conclusão ---------- */
-  function concluir(i, auto) {
-    if (!feitas.has(i)) {
+  async function concluir(i, auto) {
+    if (feitas.has(i)) return;
+
+    const item = itens[i];
+
+    if (!item || !item.id_aula) {
+      alert("Não foi possível identificar esta aula.");
+      return;
+    }
+
+    const botao = $("btnConcluir");
+    botao.disabled = true;
+
+    try {
+      // Registra a conclusão no banco de dados.
+      const resposta = await API.post(
+        `/aluno/aulas/${item.id_aula}/concluir`,
+        {}
+      );
+
+      if (!resposta.sucesso) {
+        throw new Error(resposta.erro || "Não foi possível concluir a aula.");
+      }
+
+      // Atualiza a interface somente após a confirmação da API.
       feitas.add(i);
-      localStorage.setItem(chave, JSON.stringify([...feitas]));
-      const p = progresso();
-      meu.progresso = p;
+
+      meu.progresso = Number(resposta.progresso);
       meu.ultimoAcesso = new Date().toISOString();
-      meu.status = p >= 100 ? "concluido" : "andamento";
-      salvarCurso();
+      meu.status = meu.progresso >= 100 ? "concluido" : "andamento";
+
+      progresso();
+      lista();
+      botoes();
+
       HS.gam.xp(15, "Conteúdo concluído");
-      if (p >= 100) {
+
+      if (meu.progresso >= 100) {
         HS.gam.xp(100, "Curso concluído");
         HS.confete && HS.confete();
-        HS.notificar("Certificado emitido", `Seu certificado de ${meu.nome} já está disponível.`, "certificado", "aluno");
-        HS.notificar("Curso concluído", `${u.nome} concluiu "${meu.nome}".`, "curso", "professor");
+
+        HS.notificar(
+          "Certificado emitido",
+          `Seu certificado de ${meu.nome} já está disponível.`,
+          "certificado",
+          "aluno"
+        );
+
+        HS.notificar(
+          "Curso concluído",
+          `${u.nome} concluiu "${meu.nome}".`,
+          "curso",
+          "professor"
+        );
+      }
+
+      // Avança automaticamente após concluir um conteúdo.
+      if (auto && atual === i && i + 1 < itens.length) {
+        setTimeout(() => {
+          if (atual === i) abrir(i + 1);
+        }, 1200);
+      }
+
+      } catch (erro) {
+        console.error("Erro ao concluir aula:", erro);
+        alert(erro.message || "Erro ao registrar a conclusão da aula.");
+        botoes();
       }
     }
-    lista();
-    botoes();
-    // Segue para o próximo conteúdo, a menos que o aluno já tenha trocado de aula.
-    if (auto && atual === i && i + 1 < itens.length) {
-      setTimeout(() => {
-        if (atual === i) abrir(i + 1);
-      }, 1200);
-    }
-  }
 
   /* ---------- Eventos ---------- */
   $("listaAulas").addEventListener("click", (e) => {
@@ -395,4 +481,10 @@
 
   progresso();
   abrir(atual);
+
+  } catch (erro) {
+    console.error("Erro ao carregar a aula:", erro);
+    alert(erro.message || "Não foi possível carregar o curso. Faça login novamente.");
+    location.replace("login.html");
+  }
 })();

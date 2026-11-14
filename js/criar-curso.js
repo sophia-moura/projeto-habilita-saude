@@ -10,13 +10,7 @@
     "data:image/svg+xml;utf8," +
     encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="400" height="240"><rect width="100%" height="100%" fill="#0055c3"/><text x="50%" y="50%" fill="#fff" font-family="sans-serif" font-size="22" text-anchor="middle">Habilita Saúde</text></svg>');
 
-  const usuarioAtual = (() => {
-    try {
-      return JSON.parse(localStorage.getItem("usuario")) || {};
-    } catch (e) {
-      return {};
-    }
-  })();
+  const usuarioAtual = HS.usuario || {};
 
   const form = document.getElementById("formCurso");
   const nomeCurso = document.getElementById("nomeCurso");
@@ -147,63 +141,93 @@
   }
 
   // Buscar curso diretamente na API
+  
   if (idCursoEdicao) {
-      try {
-          const resposta = await fetch(
-              `http://localhost:3000/api/professor/cursos/${encodeURIComponent(idCursoEdicao)}`,
-              {
-                  method: "GET",
-                  credentials: "include"
-              }
-          );
+    try {
+      cursoEditando = await API.get(
+        `/professor/cursos/${encodeURIComponent(idCursoEdicao)}`
+      );
 
-          const dados = await resposta.json();
+      preencherFormulario(cursoEditando);
 
-          if (!resposta.ok) {
-              throw new Error(
-                  dados.erro || "Não foi possível carregar o curso."
-              );
+      // Buscar módulos e aulas armazenados no MySQL.
+      const modulos = await API.get(
+        `/professor/cursos/${encodeURIComponent(idCursoEdicao)}/conteudos`
+      );
+
+      conteudosCurso = (modulos || []).flatMap((modulo) =>
+        (modulo.aulas || []).map((aula) => {
+          let metadados = aula.metadados || {};
+
+          if (typeof metadados === "string") {
+            try {
+              metadados = JSON.parse(metadados);
+            } catch {
+              metadados = {};
+            }
           }
 
-          cursoEditando = dados;
+          return {
+            id_aula: aula.id_aula,
+            tipo: aula.tipo,
+            nome:
+              aula.tipo === "link"
+                ? aula.arquivo_url || aula.titulo
+                : aula.titulo,
+            texto: aula.conteudo || "",
+            perguntas: metadados.perguntas || [],
+            notaMinima: metadados.notaMinima || 70,
+            arquivo_url: aula.arquivo_url || null,
+            arquivoId: metadados.arquivoId || null,
+            mime: metadados.mime || "",
+            tamanho: metadados.tamanho || 0
+          };
+        })
+      );
 
-          preencherFormulario(cursoEditando);
+      renderizarConteudos();
 
-      } catch (erro) {
-          console.error("Erro ao carregar curso para edição:", erro);
+    } catch (erro) {
+      console.error("Erro ao carregar curso:", erro);
 
-          alert(erro.message || "Erro ao carregar o curso.");
+      alert(
+        erro.message || "Não foi possível carregar o curso e seus conteúdos."
+      );
 
-          window.location.href = "professor-meus-cursos.html";
-
-          return;
-      }
-
+      window.location.href = "professor-meus-cursos.html";
+      return;
+    }
   } else {
-      // Rascunho local continua temporariamente disponível.
-      try {
-          const rascunho = JSON.parse(
-              localStorage.getItem("rascunhoCurso")
-          );
+    try {
+      const rascunho = JSON.parse(
+        localStorage.getItem("rascunhoCurso")
+      );
 
-          if (rascunho) {
-              nomeCurso.value = rascunho.nome || "";
-              subtituloCurso.value = rascunho.subtitulo || "";
-              descricaoCurso.value = rascunho.descricao || "";
-              areaCurso.value = rascunho.area || "";
-              publicoCurso.value = rascunho.publico || "";
-              cargaHoraria.value = parseInt(rascunho.cargaHoraria, 10) || "";
-              categoriaCurso.value = rascunho.categoria || "";
+      if (rascunho) {
+        nomeCurso.value = rascunho.nome || "";
+        subtituloCurso.value = rascunho.subtitulo || "";
+        descricaoCurso.value = rascunho.descricao || "";
+        areaCurso.value = rascunho.area || "";
+        publicoCurso.value = rascunho.publico || "";
+        cargaHoraria.value =
+          parseInt(rascunho.cargaHoraria, 10) || "";
 
-              precoCurso.value = rascunho.preco
-                  ? moeda(lerPrecoDe(rascunho.preco))
-                  : "";
+        categoriaCurso.value = rascunho.categoria || "";
 
-              renderNivel();
-          }
-      } catch (e) {
-          console.error("Erro ao carregar rascunho:", e);
+        precoCurso.value = rascunho.preco
+          ? moeda(lerPrecoDe(rascunho.preco))
+          : "";
+
+        conteudosCurso = Array.isArray(rascunho.conteudos)
+          ? rascunho.conteudos
+          : [];
+
+        renderNivel();
+        renderizarConteudos();
       }
+    } catch (erro) {
+      console.error("Erro ao carregar rascunho:", erro);
+    }
   }
 
   /* ---------- Imagem ---------- */
@@ -541,79 +565,184 @@
   /* ---------- Publicação integrada ao MySQL ---------- */
 
   async function salvarCursoAPI(status) {
-    // Começar mantendo a imagem que já está salva no curso.
     let imagemUrlAtual = cursoEditando?.imagem_url || null;
 
-    // Se o professor escolheu uma imagem nova, enviá-la primeiro.
+    const arquivoLocal = conteudosCurso.find(
+      (item) => item.arquivoId && !item.arquivo_url
+    );
+
+    if (arquivoLocal) {
+      throw new Error(
+        `O arquivo "${arquivoLocal.nome}" ainda não está enviado ao servidor.`
+      );
+    }
+
+    // Enviar imagem nova para o servidor.
     if (arquivoImagem) {
-        const formularioImagem = new FormData();
+      const formularioImagem = new FormData();
 
-        formularioImagem.append("imagem", arquivoImagem);
+      formularioImagem.append("imagem", arquivoImagem);
 
-        const respostaImagem = await fetch(
-            "http://localhost:3000/api/cursos/imagem",
-            {
-                method: "POST",
-                credentials: "include",
-                body: formularioImagem
-            }
-        );
-
-        const dadosImagem = await respostaImagem.json();
-
-        if (!respostaImagem.ok) {
-            throw new Error(
-                dadosImagem.erro || "Não foi possível enviar a imagem."
-            );
+      const dadosImagem = await API.request(
+        "/cursos/imagem",
+        {
+          method: "POST",
+          body: formularioImagem
         }
+      );
 
-        imagemUrlAtual = dadosImagem.imagem_url;
+      imagemUrlAtual = dadosImagem.imagem_url;
     }
 
     const curso = montarCurso(status);
 
     const dadosAPI = {
-        nome_curso: curso.nome,
-        subtitulo: curso.subtitulo,
-        descricao: curso.descricao,
-        area_tematica: curso.categoria,
-        publico_alvo: curso.publico,
-        carga_horaria: Number(cargaHoraria.value),
-        nivel: curso.nivel,
-        certificado: curso.certificado,
-        checklist: curso.checklist,
-        imagem_url: imagemUrlAtual,
-        preco: curso.preco,
-        status: status
+      nome_curso: curso.nome,
+      subtitulo: curso.subtitulo,
+      descricao: curso.descricao,
+      area_tematica: curso.categoria,
+      publico_alvo: curso.publico,
+      carga_horaria: Number(cargaHoraria.value),
+      nivel: curso.nivel,
+      certificado: curso.certificado,
+      checklist: curso.checklist,
+      imagem_url: imagemUrlAtual,
+      preco: curso.preco,
+      status
     };
 
-    const editando = cursoEditando && cursoEditando.id_curso;
+    const idExistente = cursoEditando?.id_curso;
 
-    const url = editando
-        ? `http://localhost:3000/api/cursos/${cursoEditando.id_curso}`
-        : "http://localhost:3000/api/cursos";
+    let resposta;
 
-    const metodo = editando ? "PUT" : "POST";
-
-    const resposta = await fetch(url, {
-        method: metodo,
-        headers: {
-            "Content-Type": "application/json"
-        },
-        credentials: "include",
-        body: JSON.stringify(dadosAPI)
-    });
-
-    const dados = await resposta.json();
-
-    if (!resposta.ok) {
-        throw new Error(
-            dados.erro || "Não foi possível salvar o curso."
-        );
+    if (idExistente) {
+      resposta = await API.put(
+        `/cursos/${idExistente}`,
+        dadosAPI
+      );
+    } else {
+      resposta = await API.post(
+        "/cursos",
+        dadosAPI
+      );
     }
 
-    return dados;
+    const idCurso = idExistente || resposta.id_curso;
+
+    if (!idCurso) {
+      throw new Error("A API não retornou o ID do curso.");
+    }
+
+    // Depois de salvar o curso, persistir seus conteúdos.
+    await sincronizarConteudos(idCurso);
+
+    return resposta;
   }
+
+
+async function sincronizarConteudos(idCurso) {
+  // Recupera os módulos que já existem.
+  const modulos = await API.get(
+    `/professor/cursos/${idCurso}/conteudos`
+  );
+
+  let modulo = modulos?.[0] || null;
+
+  // O editor atual trabalha com uma lista única de conteúdos.
+  // Por isso, vamos utilizar um módulo chamado Conteúdos do curso.
+  if (!modulo) {
+    const criado = await API.post(
+      `/cursos/${idCurso}/modulos`,
+      {
+        titulo: "Conteúdos do curso",
+        ordem: 1
+      }
+    );
+
+    modulo = {
+      id_modulo: criado.id_modulo,
+      aulas: []
+    };
+  } else {
+    await API.put(
+      `/modulos/${modulo.id_modulo}`,
+      {
+        titulo: "Conteúdos do curso",
+        ordem: 1
+      }
+    );
+  }
+
+  const aulasExistentes = modulo.aulas || [];
+
+  // Arquivos guardados somente no navegador não podem
+  // ser apresentados aos alunos por meio da API.
+  const arquivoLocal = conteudosCurso.find(
+    (item) =>
+      item.arquivoId &&
+      !item.arquivo_url
+  );
+
+  if (arquivoLocal) {
+    throw new Error(
+      `O arquivo "${arquivoLocal.nome}" ainda precisa ser enviado ao servidor. Remova-o ou aguarde a integração do upload de arquivos.`
+    );
+  }
+
+  for (let i = 0; i < conteudosCurso.length; i++) {
+    const item = conteudosCurso[i];
+
+    const dadosAula = {
+      titulo: String(item.nome || "Conteúdo").trim(),
+      conteudo:
+        item.tipo === "texto"
+          ? item.texto || ""
+          : null,
+      tipo: item.tipo,
+      arquivo_url:
+        item.tipo === "link"
+          ? item.nome
+          : item.arquivo_url || null,
+      metadados:
+        item.tipo === "quiz"
+          ? {
+              perguntas: item.perguntas || [],
+              notaMinima: item.notaMinima || 70
+            }
+          : {
+              arquivoId: item.arquivoId || null,
+              mime: item.mime || "",
+              tamanho: item.tamanho || 0
+            },
+      ordem: i + 1
+    };
+
+    const aulaExistente = aulasExistentes[i];
+
+    if (aulaExistente) {
+      await API.put(
+        `/aulas/${aulaExistente.id_aula}`,
+        dadosAula
+      );
+    } else {
+      await API.post(
+        `/modulos/${modulo.id_modulo}/aulas`,
+        dadosAula
+      );
+    }
+  }
+
+  // Excluir aulas que foram removidas pelo professor.
+  for (
+    let i = conteudosCurso.length;
+    i < aulasExistentes.length;
+    i++
+  ) {
+    await API.delete(
+      `/aulas/${aulasExistentes[i].id_aula}`
+    );
+  }
+}
 
   function validarPublicacao() {
     const nome = nomeCurso.value.trim();
@@ -711,9 +840,6 @@
 
     try {
       await salvarCursoAPI("rascunho");
-
-      // Mantém os dados adicionais no navegador temporariamente.
-      salvarRascunho(true);
 
       localStorage.removeItem("cursoEditando");
 

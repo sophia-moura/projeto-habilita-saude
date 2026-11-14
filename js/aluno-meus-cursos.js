@@ -1,4 +1,4 @@
-const cursos = obterCursosAluno();
+let cursos = [];
 
 const filtros = {
   status: "todos",
@@ -211,33 +211,55 @@ filtroOrdenacao.addEventListener("change", (e) => {
   renderizarCursos();
 });
 
-atualizarContadores();
-preencherFiltros();
-renderizarCursos();
+async function carregarCursos() {
+  try {
+    await HS.ready;
+
+    const resposta = await API.get("/aluno/matriculas");
+
+    cursos = (resposta.cursos || []).map((curso) => ({
+      ...curso,
+      id: Number(curso.id),
+      nome: curso.nome || "Curso sem título",
+      area: curso.area || "Saúde",
+      categoria: curso.categoria || curso.area || "Curso",
+      imagem: curso.imagem || "",
+      professor: curso.professor || "Professor(a)",
+      cargaHoraria: Number(curso.cargaHoraria) || 0,
+      progresso: Number(curso.progresso) || 0,
+      dataMatricula: curso.dataMatricula || null,
+      ultimoAcesso: curso.ultimoAcesso || null
+    }));
+
+    atualizarContadores();
+    preencherFiltros();
+    renderizarCursos();
+
+  } catch (erro) {
+    console.error("Erro ao carregar matrículas:", erro);
+
+    listaCursos.innerHTML = `
+      <div class="lista-vazia">
+        <p>Não foi possível carregar seus cursos. Tente novamente.</p>
+      </div>
+    `;
+  }
+}
+
+carregarCursos();
 
 listaCursos.addEventListener("click", (e) => {
   const btn = e.target.closest(".btn-curso");
   if (!btn) return;
-  const curso = cursos.find((c) => c.id === Number(btn.dataset.id));
+
+  const curso = cursos.find(
+    (c) => c.id === Number(btn.dataset.id)
+  );
+
   if (!curso) return;
-  if (HS.conteudosDoCurso(curso.id).length) { location.href = "aula.html?id=" + curso.id; return; }
-  if (curso.status === "concluido") return;
 
-  curso.progresso = Math.min(100, curso.progresso + 20);
-  curso.ultimoAcesso = new Date().toISOString();
-  curso.status = curso.progresso >= 100 ? "concluido" : "andamento";
-  salvarCursosAluno(cursos);
-
-  HS.gam.xp(30, "Avançou em " + curso.nome);
-  if (curso.status === "concluido") {
-    HS.gam.xp(100, "Curso concluído");
-    HS.confete && HS.confete();
-    HS.notificar("Certificado emitido", `Seu certificado de ${curso.nome} já está disponível.`, "certificado", "aluno");
-    const u = JSON.parse(localStorage.getItem("usuario") || "{}");
-    HS.notificar("Curso concluído", `${u.nome} concluiu "${curso.nome}".`, "curso", "professor");
-  }
-  atualizarContadores();
-  renderizarCursos();
+  // Abre o conteúdo real do curso pelo ID do banco.
+  location.href = `aula.html?id=${curso.id}`;
 });
 
 listaCursos.addEventListener("click", (e) => {

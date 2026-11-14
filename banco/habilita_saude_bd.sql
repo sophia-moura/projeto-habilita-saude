@@ -123,6 +123,7 @@ CREATE TABLE matricula (
     progresso       DECIMAL(5,2) NOT NULL DEFAULT 0.00,
     nota_final      DECIMAL(5,2) NULL,
     situacao        ENUM('em_andamento','aprovado','reprovado') NOT NULL DEFAULT 'em_andamento',
+    ultimo_acesso   DATETIME NULL DEFAULT NULL,
     CONSTRAINT pk_matricula PRIMARY KEY (id_matricula),
     CONSTRAINT uk_matricula_aluno_curso UNIQUE (id_aluno, id_curso),
     CONSTRAINT fk_matricula_aluno FOREIGN KEY (id_aluno)
@@ -209,6 +210,24 @@ CREATE TABLE chamado_suporte (
     CONSTRAINT chk_chamado_solicitante CHECK
         ((id_aluno IS NOT NULL AND id_professor IS NULL)
       OR (id_aluno IS NULL AND id_professor IS NOT NULL))
+) ENGINE=InnoDB;
+
+CREATE TABLE aula_concluida (
+    id_aluno INT UNSIGNED NOT NULL,
+    id_aula INT UNSIGNED NOT NULL,
+    data_conclusao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_aluno, id_aula),
+
+    CONSTRAINT fk_aula_concluida_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno (id_aluno)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_aula_concluida_aula
+        FOREIGN KEY (id_aula)
+        REFERENCES aula (id_aula)
+        ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- ações

@@ -35,26 +35,91 @@
     <div id="res" role="status" aria-live="polite"></div>
   </main>
   <script>
-    const campo = document.getElementById("codigo"), res = document.getElementById("res");
+    const campo = document.getElementById("codigo");
+    const res = document.getElementById("res");
+    const btn = document.getElementById("btn");
+
     const esc = (t) =>
-      String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-    function validar() {
+      String(t ?? "").replace(/[&<>"']/g, (c) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;"
+      })[c]);
+      
+    async function validar() {
       const id = campo.value.trim().toUpperCase();
-      let registros = [];
-      try {
-        registros = JSON.parse(localStorage.getItem("certificados") || "[]");
-      } catch (e) {
-        registros = [];
+
+      if (!id) {
+        res.innerHTML = `<div class="res no">Informe o código do certificado.</div>`;
+        return;
       }
-      const r = Array.isArray(registros) ? registros.find((c) => String(c.uuid || "").toUpperCase() === id) : null;
-      res.innerHTML = r
-        ? `<div class="res ok"><b>✔ Certificado autêntico</b><br>Aluno: ${esc(r.aluno)}<br>Curso: ${esc(r.curso)}<br>${esc(r.rotulo)}<br>Carga horária: ${esc(r.cargaHoraria)}h<br>Emitido em: ${esc(r.data)}</div>`
-        : `<div class="res no"><b>✖ Certificado não encontrado</b><br>Confira o código e tente novamente.</div>`;
+
+      res.innerHTML = `<div class="res">Consultando certificado...</div>`;
+      btn.disabled = true;
+
+      try {
+        const resposta = await fetch(
+          `/api/certificados/validar/${encodeURIComponent(id)}`
+        );
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok || !dados.valido) {
+          res.innerHTML = `
+            <div class="res no">
+              <b>✖ Certificado não encontrado</b><br>
+              Confira o código e tente novamente.
+            </div>
+          `;
+          return;
+        }
+
+        const c = dados.certificado;
+
+        const data = c.data
+          ? new Date(String(c.data).replace(" ", "T")).toLocaleDateString("pt-BR")
+          : "Não informada";
+
+        res.innerHTML = `
+          <div class="res ok">
+            <b>✔ Certificado autêntico</b><br>
+            Aluno: ${esc(c.aluno)}<br>
+            Curso: ${esc(c.curso)}<br>
+            Carga horária: ${esc(c.cargaHoraria)}h<br>
+            Emitido em: ${esc(data)}<br>
+            Código: ${esc(c.codigo)}
+          </div>
+        `;
+
+      } catch (erro) {
+        console.error("Erro ao validar certificado:", erro);
+
+        res.innerHTML = `
+          <div class="res no">
+            Não foi possível consultar o certificado. Tente novamente.
+          </div>
+        `;
+
+      } finally {
+        btn.disabled = false;
+      }
     }
-    document.getElementById("btn").addEventListener("click", validar);
-    campo.addEventListener("keydown", (e) => e.key === "Enter" && validar());
-    const q = new URLSearchParams(location.search).get("id") || location.pathname.split("/validar/")[1];
-    if (q) { campo.value = q; validar(); }
+
+    btn.addEventListener("click", validar);
+
+    campo.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") validar();
+    });
+
+    const q = new URLSearchParams(location.search).get("id")
+      || location.pathname.split("/validar/")[1];
+
+    if (q) {
+      campo.value = q;
+      validar();
+    }
   </script>
 </body>
 </html>

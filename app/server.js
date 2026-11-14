@@ -2048,6 +2048,73 @@ app.delete("/api/cursos/:id", exigirProfessor, async (req, res) => {
     }
 });
 
+// ==========================================
+// VALIDAÇÃO PÚBLICA DE CERTIFICADOS
+// ==========================================
+
+app.get("/api/certificados/validar/:codigo", async (req, res) => {
+    try {
+        const codigo = String(req.params.codigo || "")
+            .trim()
+            .toUpperCase();
+
+        // O código gerado possui 32 caracteres hexadecimais.
+        if (!/^[A-F0-9]{32}$/.test(codigo)) {
+            return res.status(404).json({
+                valido: false,
+                mensagem: "Certificado não encontrado."
+            });
+        }
+
+        const [certificados] = await banco.execute(`
+            SELECT
+                cert.codigo_validacao AS codigo,
+                cert.data_emissao AS dataEmissao,
+                a.nome AS aluno,
+                c.nome_curso AS curso,
+                c.carga_horaria AS cargaHoraria
+            FROM certificado cert
+            INNER JOIN matricula m
+                ON m.id_matricula = cert.id_matricula
+            INNER JOIN aluno a
+                ON a.id_aluno = m.id_aluno
+            INNER JOIN curso c
+                ON c.id_curso = m.id_curso
+            WHERE cert.codigo_validacao = ?
+            LIMIT 1
+        `, [codigo]);
+
+        if (!certificados.length) {
+            return res.status(404).json({
+                valido: false,
+                mensagem: "Certificado não encontrado."
+            });
+        }
+
+        const certificado = certificados[0];
+
+        return res.json({
+            valido: true,
+            mensagem: "Certificado autêntico.",
+            certificado: {
+                codigo: certificado.codigo,
+                aluno: certificado.aluno,
+                curso: certificado.curso,
+                cargaHoraria: Number(certificado.cargaHoraria) || 0,
+                data: certificado.dataEmissao
+            }
+        });
+
+    } catch (erro) {
+        console.error("Erro ao validar certificado:", erro);
+
+        return res.status(500).json({
+            valido: false,
+            mensagem: "Não foi possível validar o certificado."
+        });
+    }
+});
+
 // Bloquear acesso às pastas internas
 app.use((req, res, next) => {
     const caminho = req.path;

@@ -1,17 +1,19 @@
 // Geração do PDF do certificado (jsPDF + qrcode-generator).
 // Compartilhado por aluno-inicio.html e certificados.html.
 // Requer: jspdf, qrcode-generator e js/global.js (HS) carregados antes.
-function baixarCertificado(nomeCurso) {
+function baixarCertificado(curso, reg) {
   const usuario = JSON.parse(localStorage.getItem("usuario") || "null") || {};
-  const cursosAluno = JSON.parse(localStorage.getItem("cursosAluno_v2") || "[]");
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
-  const nomeAluno =
-    usuario && usuario.nome ? usuario.nome : "Aluno";
+  const nomeAluno = usuario.nome || "Aluno";
+  const nomeCurso = curso.nome;
+  const cargaHoraria = curso.cargaHoraria || "";
 
-  const curso = cursosAluno.find((c) => c.nome === nomeCurso);
-  const cargaHoraria = curso ? curso.cargaHoraria : "";
+  if (!reg || !reg.uuid) {
+    alert("Certificado ainda não possui código de validação.");
+    return;
+  }
 
   doc.setLineWidth(2);
   doc.rect(10, 10, 190, 277);
@@ -91,30 +93,27 @@ function baixarCertificado(nomeCurso) {
   doc.text("Habilita Saúde", 105, linhaAssinaturaY + 8, {
     align: "center",
   });
+  
+  const BASE_VALIDACAO = `${location.origin}/validar.html?id=`;
 
-  const BASE_VALIDACAO = "https://habilitasaude.com.br/validar/";
-  const registros = JSON.parse(localStorage.getItem("certificados") || "[]");
-  const cursoProf = (JSON.parse(localStorage.getItem("cursos") || "[]")).find((c) => curso && c.id === curso.id);
-  let reg = registros.find((r) => r.email === usuario.email && r.cursoId === (curso && curso.id));
-  if (!reg) {
-    const b = crypto.getRandomValues(new Uint8Array(16));
-    reg = {
-      uuid: Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("").toUpperCase(),
-      email: usuario.email, aluno: nomeAluno, cursoId: curso && curso.id, curso: nomeCurso,
-      rotulo: cursoProf && cursoProf.nivel && HS.rotulo ? HS.rotulo(cursoProf) : "Certificação HabilitaSaúde",
-      area: (cursoProf && cursoProf.categoria) || (curso && curso.area) || "",
-      cargaHoraria, data: new Date().toLocaleDateString("pt-BR"),
-    };
-    registros.push(reg);
-    localStorage.setItem("certificados", JSON.stringify(registros));
-  }
   const dig = String(usuario.cpf || "").replace(/\D/g, "");
-  const cpfMasc = dig.length === 11 ? `***.${dig.slice(3, 6)}.${dig.slice(6, 9)}-**` : "não informado";
+
+  const cpfMasc = dig.length === 11
+    ? `***.${dig.slice(3, 6)}.${dig.slice(6, 9)}-**`
+    : "não informado";
 
   doc.setFontSize(10);
   doc.text(`CPF: ${cpfMasc}   |   Concluído em: ${reg.data}`, 105, linhaAssinaturaY + 17, { align: "center" });
   doc.setFontSize(9);
-  doc.text(doc.splitTextToSize(reg.rotulo, 165), 105, linhaAssinaturaY + 23, { align: "center" });
+  doc.text(
+    doc.splitTextToSize(
+      `Certificado de conclusão do curso ${nomeCurso}`,
+      165
+    ),
+    105,
+    linhaAssinaturaY + 23,
+    { align: "center" }
+  );
 
   const qr = qrcode(0, "M");
   qr.addData(BASE_VALIDACAO + reg.uuid);
@@ -128,7 +127,7 @@ function baixarCertificado(nomeCurso) {
   doc.text(`Código: ${reg.uuid}`, 54, 249);
   doc.text(BASE_VALIDACAO + reg.uuid, 54, 254);
 
-  const area = (reg.area || "").toLowerCase();
+  const area = (curso.area || "").toLowerCase();
   const conselho = /enferm/.test(area) ? "COREN – no caso de Enfermagem"
     : /odont/.test(area) ? "CRO – no caso de Odontologia"
     : /medic/.test(area) ? "CFM – no caso de Medicina"

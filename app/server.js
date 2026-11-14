@@ -940,10 +940,13 @@ app.post(
 
             // Verificar se o aluno está matriculado nesse curso.
             const [matriculas] = await conexao.execute(`
-                SELECT id_matricula
-                FROM matricula
-                WHERE id_aluno = ?
-                  AND id_curso = ?
+                SELECT
+                    m.id_matricula,
+                    c.certificado AS tipoCertificado
+                FROM matricula m
+                INNER JOIN curso c ON c.id_curso = m.id_curso
+                WHERE m.id_aluno = ?
+                AND m.id_curso = ?
             `, [idAluno, idCurso]);
 
             if (!matriculas.length) {
@@ -996,6 +999,31 @@ app.post(
                 WHERE id_aluno = ?
                   AND id_curso = ?
             `, [progresso, idAluno, idCurso]);
+
+            // Emitir certificado automaticamente quando o curso for concluído.
+            let certificadoEmitido = false;
+
+            if (
+                progresso >= 100 &&
+                matriculas[0].tipoCertificado !== "Sem Certificado"
+            ) {
+                const codigoValidacao = crypto.randomUUID()
+                    .replace(/-/g, "")
+                    .toUpperCase();
+
+                const [resultadoCertificado] = await conexao.execute(`
+                    INSERT IGNORE INTO certificado (
+                        id_matricula,
+                        codigo_validacao
+                    )
+                    VALUES (?, ?)
+                `, [
+                    matriculas[0].id_matricula,
+                    codigoValidacao
+                ]);
+
+                certificadoEmitido = resultadoCertificado.affectedRows > 0;
+            }
 
             await conexao.commit();
 

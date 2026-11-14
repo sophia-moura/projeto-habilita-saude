@@ -149,7 +149,8 @@
     $("textoProgresso").textContent = `${feitas.size} de ${itens.length} conteúdos concluídos · ${p}%`;
     $("aulaFim").hidden = p < 100;
     if (p >= 100) {
-      const cert = meu.certificado !== "Sem Certificado";
+      const cert = Boolean(meu.certificado) &&
+             meu.certificado !== "Sem Certificado";
       $("aulaFimLink").hidden = !cert;
       $("aulaFimLink").href = "./certificados.html?curso=" + id;
       $("aulaFimTexto").textContent = cert ? "Seu certificado já está disponível." : "Revise os conteúdos quando quiser.";
@@ -439,6 +440,19 @@
       meu.progresso = Number(resposta.progresso);
       meu.ultimoAcesso = new Date().toISOString();
       meu.status = meu.progresso >= 100 ? "concluido" : "andamento";
+
+      // Busca novamente os dados da matrícula e do certificado.
+      if (meu.progresso >= 100) {
+        const atualizacao = await API.get("/aluno/matriculas");
+
+        const cursoAtualizado = (atualizacao.cursos || []).find(
+          (curso) => Number(curso.id) === id
+        );
+
+        if (cursoAtualizado) {
+          Object.assign(meu, cursoAtualizado);
+        }
+      }
 
       progresso();
       lista();

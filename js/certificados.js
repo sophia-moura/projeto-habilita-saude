@@ -11,21 +11,63 @@
     String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
   const usuario = ls("usuario", {}) || {};
-  const cursos = ls("cursosAluno_v2", []);
 
-  const oferece = (c) => c.certificado !== "Sem Certificado";
+  let cursos = [];
+  let concluidos = [];
+  let emitidos = [];
+  let proximos = [];
+
+  const oferece = (c) =>
+    c.tipoCertificado &&
+    c.tipoCertificado !== "Sem Certificado";
+
   const horas = (c) => Number(c.cargaHoraria) || 0;
-  const registro = (c) =>
-    ls("certificados", []).find((r) => r.email === usuario.email && r.cursoId === c.id);
 
-  const concluidos = cursos.filter((c) => c.status === "concluido");
-  const emitidos = concluidos.filter(oferece);
-  const proximos = cursos
-    .filter((c) => c.status !== "concluido" && oferece(c))
-    .sort((a, b) => b.progresso - a.progresso);
+  const registro = (c) => {
+    if (!c.codigoCertificado) return null;
+
+    return {
+      uuid: c.codigoCertificado,
+      data: c.dataEmissaoCertificado
+        ? new Date(c.dataEmissaoCertificado).toLocaleDateString("pt-BR")
+        : ""
+    };
+  };
 
   const $ = (id) => document.getElementById(id);
   const nomeAluno = usuario.nome || "Aluno";
+
+  async function carregarCertificados() {
+    try {
+      const resposta = await API.get("/aluno/matriculas");
+
+      cursos = resposta.cursos || [];
+
+      concluidos = cursos.filter(
+        (c) => c.status === "concluido"
+      );
+
+      emitidos = concluidos.filter(
+        (c) => oferece(c) && c.codigoCertificado
+      );
+
+      proximos = cursos
+        .filter(
+          (c) => c.status !== "concluido" && oferece(c)
+        )
+        .sort((a, b) => b.progresso - a.progresso);
+
+      renderizarResumo();
+      renderizarCertificados();
+      renderizarProximos();
+
+    } catch (erro) {
+      console.error("Erro ao carregar certificados:", erro);
+
+      $("listaCertificados").innerHTML =
+        '<p class="vazio">Não foi possível carregar seus certificados. Tente novamente.</p>';
+    }
+  }
 
   function papel(c) {
     return `
@@ -147,7 +189,7 @@
       return;
     }
     try {
-      baixarCertificado(c.nome);
+      baixarCertificado(c, registro(c));
     } catch (e) {
       console.error(e);
       alert("Não foi possível gerar o PDF do certificado.");
@@ -202,9 +244,7 @@
   });
 
   /* ---------- Início ---------- */
-  renderizarResumo();
-  renderizarCertificados();
-  renderizarProximos();
+  carregarCertificados();
 
   // Vindo de "Meus cursos" (?curso=ID): rola até o certificado e o destaca.
   const alvo = new URLSearchParams(location.search).get("curso");

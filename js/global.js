@@ -115,34 +115,54 @@ window.API = {
 
   const visivel = (n) => !n.para || n.para === tipo;
   
-  function notificar(titulo, descricao, tipoNotif, para) {
-    const l = ls("notificacoes", []);
-    const lista = Array.isArray(l) ? l : [];
-    lista.unshift({ id: Date.now() + Math.floor(Math.random() * 1000), titulo, descricao, tipo: tipoNotif, para, lida: false, data: new Date().toLocaleString("pt-BR") });
-    salvar("notificacoes", lista);
-    atualizarSino();
+  async function notificar(titulo, descricao, tipoNotif, para) {
+    try {
+      // Só grava quando o destinatário é o usuário logado.
+      if (!usuario || !usuario.id || para !== tipo) {
+        return false;
+      }
+
+      await API.post("/notificacoes", {
+        titulo: titulo,
+        mensagem: descricao,
+        destinatarioTipo: tipo,
+        destinatarioId: usuario.id
+      });
+
+      await atualizarSino();
+      return true;
+
+    } catch (erro) {
+      console.error("Erro ao criar notificação:", erro);
+      return false;
+    }
   }
 
-  function atualizarSino() {
+  async function atualizarSino() {
     const badge = document.getElementById("badgeNotificacao");
 
-    if (!badge) return;
+    if (!badge || !usuario) return;
 
-    const notificacoes = ls("notificacoes", []);
+    try {
+      const notificacoes = await API.get("/notificacoes");
 
-    const naoLidas = (Array.isArray(notificacoes) ? notificacoes : [])
-      .filter((n) => !n.para || n.para === tipo)
-      .filter((n) => !n.lida).length;
+      const naoLidas = notificacoes.filter(
+        (n) => !n.lida
+      ).length;
 
-    badge.textContent = naoLidas > 99 ? "99+" : String(naoLidas);
-    badge.hidden = naoLidas === 0;
+      badge.textContent = naoLidas > 99 ? "99+" : String(naoLidas);
+      badge.hidden = naoLidas === 0;
 
-    badge.setAttribute(
-      "aria-label",
-      naoLidas
-        ? `${naoLidas} notificações não lidas`
-        : "Nenhuma notificação não lida"
-    );
+      badge.setAttribute(
+        "aria-label",
+        naoLidas
+          ? `${naoLidas} notificações não lidas`
+          : "Nenhuma notificação não lida"
+      );
+
+    } catch (erro) {
+      console.error("Erro ao atualizar sino:", erro);
+    }
   }
 
   const HS = {

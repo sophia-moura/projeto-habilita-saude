@@ -2115,6 +2115,230 @@ app.get("/api/certificados/validar/:codigo", async (req, res) => {
     }
 });
 
+// ==========================================
+// NOTIFICAÇÕES
+// ==========================================
+
+ // Criar uma notificação para um usuário
+app.post("/api/notificacoes", exigirLogin, async (req, res) => {
+    try {
+        const { titulo, mensagem, destinatarioTipo, destinatarioId } = req.body;
+
+        if (!titulo || !mensagem || !destinatarioTipo || !destinatarioId) {
+            return res.status(400).json({
+                erro: "Informe título, mensagem e destinatário."
+            });
+        }
+
+        if (!["aluno", "professor"].includes(destinatarioTipo)) {
+            return res.status(400).json({
+                erro: "Tipo de destinatário inválido."
+            });
+        }
+
+        const id = Number(destinatarioId);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "Destinatário inválido."
+            });
+        }
+
+        const coluna = destinatarioTipo === "aluno"
+            ? "id_aluno"
+            : "id_professor";
+
+        const [resultado] = await banco.execute(
+            `INSERT INTO notificacao (${coluna}, titulo, mensagem)
+             VALUES (?, ?, ?)`,
+            [id, String(titulo).trim(), String(mensagem).trim()]
+        );
+
+        return res.status(201).json({
+            mensagem: "Notificação criada.",
+            id: resultado.insertId
+        });
+
+    } catch (erro) {
+        console.error("Erro ao criar notificação:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível criar a notificação."
+        });
+    }
+});
+
+// Listar notificações do usuário autenticado
+app.get("/api/notificacoes", exigirLogin, async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : usuario.tipo === "professor"
+                ? "id_professor"
+                : null;
+
+        if (!coluna) {
+            return res.status(403).json({
+                erro: "Tipo de usuário não permitido."
+            });
+        }
+
+        const [notificacoes] = await banco.execute(`
+            SELECT
+                id_notificacao AS id,
+                titulo,
+                mensagem,
+                data_envio AS data,
+                lida
+            FROM notificacao
+            WHERE ${coluna} = ?
+            ORDER BY data_envio DESC, id_notificacao DESC
+        `, [usuario.id]);
+
+        return res.json(notificacoes);
+
+    } catch (erro) {
+        console.error("Erro ao listar notificações:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar as notificações."
+        });
+    }
+});
+
+// Marcar uma notificação como lida
+app.patch("/api/notificacoes/:id/lida", exigirLogin, async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : usuario.tipo === "professor"
+                ? "id_professor"
+                : null;
+
+        if (!coluna) {
+            return res.status(403).json({
+                erro: "Tipo de usuário não permitido."
+            });
+        }
+
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "Notificação inválida."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            UPDATE notificacao
+            SET lida = TRUE
+            WHERE id_notificacao = ? AND ${coluna} = ?
+        `, [id, usuario.id]);
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                erro: "Notificação não encontrada."
+            });
+        }
+
+        return res.json({
+            mensagem: "Notificação marcada como lida."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao marcar notificação:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível atualizar a notificação."
+        });
+    }
+});
+
+// Excluir uma notificação
+app.delete("/api/notificacoes/:id", exigirLogin, async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : usuario.tipo === "professor"
+                ? "id_professor"
+                : null;
+
+        if (!coluna) {
+            return res.status(403).json({
+                erro: "Tipo de usuário não permitido."
+            });
+        }
+
+        const id = Number(req.params.id);
+
+        if (!Number.isInteger(id) || id <= 0) {
+            return res.status(400).json({
+                erro: "Notificação inválida."
+            });
+        }
+
+        const [resultado] = await banco.execute(`
+            DELETE FROM notificacao
+            WHERE id_notificacao = ? AND ${coluna} = ?
+        `, [id, usuario.id]);
+
+        if (resultado.affectedRows === 0) {
+            return res.status(404).json({
+                erro: "Notificação não encontrada."
+            });
+        }
+
+        return res.json({
+            mensagem: "Notificação excluída."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao excluir notificação:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível excluir a notificação."
+        });
+    }
+});
+
+// Excluir todas as notificações do usuário
+app.delete("/api/notificacoes", exigirLogin, async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : usuario.tipo === "professor"
+                ? "id_professor"
+                : null;
+
+        if (!coluna) {
+            return res.status(403).json({
+                erro: "Tipo de usuário não permitido."
+            });
+        }
+
+        await banco.execute(`
+            DELETE FROM notificacao
+            WHERE ${coluna} = ?
+        `, [usuario.id]);
+
+        return res.json({
+            mensagem: "Todas as notificações foram excluídas."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao excluir notificações:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível excluir as notificações."
+        });
+    }
+});
+
 // Bloquear acesso às pastas internas
 app.use((req, res, next) => {
     const caminho = req.path;

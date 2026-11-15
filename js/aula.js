@@ -145,16 +145,39 @@
   /* ---------- Progresso e lista ---------- */
   function progresso() {
     const p = Math.round((feitas.size / itens.length) * 100);
+
     $("barraAula").style.width = p + "%";
-    $("textoProgresso").textContent = `${feitas.size} de ${itens.length} conteúdos concluídos · ${p}%`;
+    $("textoProgresso").textContent =
+      `${feitas.size} de ${itens.length} conteúdos concluídos · ${p}%`;
+
     $("aulaFim").hidden = p < 100;
-    if (p >= 100) {
-      const cert = Boolean(meu.certificado) &&
-             meu.certificado !== "Sem Certificado";
-      $("aulaFimLink").hidden = !cert;
+
+    const tipo = String(meu.tipoCertificado || "").trim();
+    const profissional = tipo.toLowerCase().includes("profissional");
+
+    const temCertificado =
+      tipo.toLowerCase() !== "sem certificado" &&
+      Boolean(meu.certificado);
+
+    $("aulaFimLink").style.display =
+      p >= 100 && temCertificado ? "inline-flex" : "none";
+
+    if (temCertificado) {
       $("aulaFimLink").href = "./certificados.html?curso=" + id;
-      $("aulaFimTexto").textContent = cert ? "Seu certificado já está disponível." : "Revise os conteúdos quando quiser.";
+
+      $("aulaFimLink").textContent = profissional
+        ? "Ver certificação profissional"
+        : "Ver certificado";
     }
+
+    if (p >= 100) {
+      $("aulaFimTexto").textContent = !temCertificado
+        ? "Você concluiu todas as aulas deste curso!"
+        : profissional
+          ? "Sua certificação profissional está disponível."
+          : "Seu certificado já está disponível.";
+    }
+
     return p;
   }
 
@@ -464,12 +487,17 @@
         HS.gam.xp(100, "Curso concluído");
         HS.confete && HS.confete();
 
-        HS.notificar(
-          "Certificado emitido",
-          `Seu certificado de ${meu.nome} já está disponível.`,
-          "certificado",
-          "aluno"
-        );
+        if (
+          meu.tipoCertificado !== "Sem Certificado" &&
+          meu.certificado
+        ) {
+          HS.notificar(
+            "Certificado emitido",
+            `Seu certificado de ${meu.nome} já está disponível.`,
+            "certificado",
+            "aluno"
+          );
+        }
 
         HS.notificar(
           "Curso concluído",

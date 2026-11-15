@@ -65,12 +65,46 @@
   }
 
   function ranking() {
-    const demo = [{ nome: "Mariana S.", xp: 420 }, { nome: "Carlos P.", xp: 260 }, { nome: "Beatriz L.", xp: 150 }];
-    const reais = Object.keys(localStorage).filter((k) => k.startsWith("gam_") && k !== CHAVE).map((k) => {
-      const outro = JSON.parse(localStorage.getItem("matriculas") || "[]").find((m) => "gam_" + m.email === k);
-      return { nome: outro ? outro.nome : k.slice(4), xp: JSON.parse(localStorage.getItem(k)).xp };
-    });
-    return [...demo, ...reais, { nome: u.nome + " (você)", xp: ler().xp, eu: true }].sort((a, b) => b.xp - a.xp);
+    const demo = [
+      { nome: "Mariana S.", xp: 420 },
+      { nome: "Carlos P.", xp: 260 },
+      { nome: "Beatriz L.", xp: 150 }
+    ];
+
+    const matriculas = JSON.parse(
+      localStorage.getItem("matriculas") || "[]"
+    );
+
+    const reais = Object.keys(localStorage)
+      .filter((k) => k.startsWith("gam_") && k !== CHAVE)
+      .map((k) => {
+        try {
+          const dados = JSON.parse(localStorage.getItem(k) || "null");
+
+          if (!dados || typeof dados.xp !== "number") {
+            return null;
+          }
+
+          const outro = matriculas.find(
+            (m) => "gam_" + m.email === k
+          );
+
+          return {
+            nome: outro ? outro.nome : k.slice(4),
+            xp: dados.xp
+          };
+        } catch (erro) {
+          console.warn("Registro de XP inválido:", k);
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    return [
+      ...demo,
+      ...reais,
+      { nome: u.nome + " (você)", xp: ler().xp, eu: true }
+    ].sort((a, b) => b.xp - a.xp);
   }
 
   function renderizar(idContainer) {

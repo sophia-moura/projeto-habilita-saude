@@ -1,4 +1,4 @@
-(function () {
+(async function () {
   const ler = (chave, padrao) => {
     try {
       return JSON.parse(localStorage.getItem(chave)) ?? padrao;
@@ -9,7 +9,22 @@
 
   const salvar = (chave, valor) => localStorage.setItem(chave, JSON.stringify(valor));
 
-  const usuario = ler("usuario", {}) || {};
+  let usuario = {};
+
+  try {
+      const dados = await API.get("/usuario-logado");
+
+      if (!dados || !dados.autenticado || !dados.usuario) {
+          window.location.href = "login.html";
+          return;
+      }
+
+      usuario = dados.usuario;
+  } catch (erro) {
+      window.location.href = "login.html";
+      return;
+  }
+  
   const preview = document.getElementById("previewFoto");
   const inputFoto = document.getElementById("novaFoto");
   const campoNome = document.getElementById("nomeUsuario");
@@ -31,7 +46,7 @@
     preview.src = FOTO_PADRAO;
   };
 
-  let fotoBase64 = "";
+  let arquivoFoto = null;
 
   function mostrarMensagem(texto, erro) {
     let aviso = document.getElementById("avisoPerfil");
@@ -62,14 +77,9 @@
       return;
     }
 
-    const leitor = new FileReader();
-    leitor.onload = () => {
-      fotoBase64 = String(leitor.result || "");
-      preview.src = fotoBase64;
-      mostrarMensagem("Foto selecionada. Clique em “Salvar alterações”.", false);
-    };
-    leitor.onerror = () => mostrarMensagem("Não foi possível ler a imagem escolhida.", true);
-    leitor.readAsDataURL(arquivo);
+    arquivoFoto = arquivo;
+    preview.src = URL.createObjectURL(arquivo);
+    mostrarMensagem("Foto selecionada. Clique em “Salvar alterações”.", false);
   });
 
   function emailValido(email) {
@@ -176,10 +186,26 @@
     botao.disabled = true;
     botao.textContent = "Salvando...";
 
-    if (fotoBase64) {
-      finalizar(fotoBase64);
-    } else {
-      finalizar("");
-    }
+    (async () => {
+      try {
+          if (arquivoFoto) {
+              const formulario = new FormData();
+              formulario.append("foto", arquivoFoto);
+
+              const dados = await API.request("/perfil/foto", {
+                  method: "POST",
+                  body: formulario
+              });
+
+              finalizar(dados.foto);
+          } else {
+              finalizar("");
+          }
+      } catch (erro) {
+          mostrarMensagem(erro.message || "Não foi possível salvar a foto.", true);
+          botao.disabled = false;
+          botao.textContent = "Salvar alterações";
+      }
+  })();
   });
 })();

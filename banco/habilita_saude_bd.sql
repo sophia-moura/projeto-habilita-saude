@@ -10,6 +10,7 @@ CREATE TABLE aluno (
     nome        VARCHAR(150) NOT NULL,
     email       VARCHAR(150) NOT NULL,
     senha_hash  VARCHAR(255) NOT NULL,
+    foto_perfil VARCHAR(255) NULL,
     CONSTRAINT pk_aluno PRIMARY KEY (id_aluno),
     CONSTRAINT uk_aluno_email UNIQUE (email)
 ) ENGINE=InnoDB;
@@ -19,6 +20,7 @@ CREATE TABLE professor (
     nome         VARCHAR(150) NOT NULL,
     email        VARCHAR(150) NOT NULL,
     senha_hash   VARCHAR(255) NOT NULL,
+    foto_perfil  VARCHAR(255) NULL,
     curriculo    TEXT NULL,
     CONSTRAINT pk_professor PRIMARY KEY (id_professor),
     CONSTRAINT uk_professor_email UNIQUE (email)

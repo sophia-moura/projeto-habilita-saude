@@ -71,6 +71,59 @@ const uploadImagemCurso = multer({
     }
 });
 
+// ==========================================
+// UPLOAD DE IMAGENS DAS FOTOS DE PERFIL
+// ==========================================
+
+const pastaFotosPerfil = path.join(
+    __dirname,
+    "..",
+    "uploads",
+    "perfis"
+);
+
+const armazenamentoFotosPerfil = multer.diskStorage({
+    destination: (req, arquivo, callback) => {
+        callback(null, pastaFotosPerfil);
+    },
+
+    filename: (req, arquivo, callback) => {
+        const extensoesPermitidas = {
+            "image/jpeg": ".jpg",
+            "image/png": ".png",
+            "image/webp": ".webp"
+        };
+
+        const extensao = extensoesPermitidas[arquivo.mimetype];
+
+        callback(null, `${crypto.randomUUID()}${extensao}`);
+    }
+});
+
+const uploadFotoPerfil = multer({
+    storage: armazenamentoFotosPerfil,
+
+    limits: {
+        fileSize: 3 * 1024 * 1024
+    },
+
+    fileFilter: (req, arquivo, callback) => {
+        const tiposPermitidos = [
+            "image/jpeg",
+            "image/png",
+            "image/webp"
+        ];
+
+        if (!tiposPermitidos.includes(arquivo.mimetype)) {
+            return callback(
+                new Error("Envie uma imagem PNG, JPG ou WEBP.")
+            );
+        }
+
+        callback(null, true);
+    }
+});
+
 // Excluir a imagem de um curso, se ela estiver na pasta de uploads.
 async function excluirImagemCurso(imagemUrl) {
     if (
@@ -253,7 +306,7 @@ app.post("/api/login", async (req, res) => {
         const colunaId = tipo === "aluno" ? "id_aluno" : "id_professor";
 
         const [usuarios] = await banco.execute(
-            `SELECT ${colunaId} AS id, nome, email, senha_hash
+            `SELECT ${colunaId} AS id, nome, email, senha_hash, foto_perfil
              FROM ${tabela}
              WHERE email = ?
              LIMIT 1`,
@@ -283,7 +336,8 @@ app.post("/api/login", async (req, res) => {
             id: usuario.id,
             nome: usuario.nome,
             email: usuario.email,
-            tipo: tipo
+            tipo: tipo,
+            foto: usuario.foto_perfil || null
         };
 
         // Salva a sessão antes de confirmar o login.
@@ -324,6 +378,71 @@ app.get("/api/usuario-logado", (req, res) => {
     res.json({
         autenticado: true,
         usuario: req.session.usuario
+    });
+});
+
+app.post("/api/perfil/foto", (req, res) => {
+    uploadFotoPerfil.single("foto")(req, res, async (erro) => {
+        if (erro) {
+            return res.status(400).json({
+                erro: erro.message || "Não foi possível enviar a foto."
+            });
+        }
+
+        try {
+            if (!req.session.usuario) {
+                return res.status(401).json({
+                    erro: "Faça login para alterar sua foto."
+                });
+            }
+
+            if (!req.file) {
+                return res.status(400).json({
+                    erro: "Selecione uma foto."
+                });
+            }
+
+            const { id, tipo } = req.session.usuario;
+
+            const tabela = tipo === "aluno" ? "aluno" : "professor";
+            const colunaId = tipo === "aluno" ? "id_aluno" : "id_professor";
+
+            if (!["aluno", "professor"].includes(tipo)) {
+                return res.status(403).json({
+                    erro: "Tipo de usuário inválido."
+                });
+            }
+
+            const caminhoFoto = `/uploads/perfis/${req.file.filename}`;
+
+            await banco.execute(
+                `UPDATE ${tabela} SET foto_perfil = ? WHERE ${colunaId} = ?`,
+                [caminhoFoto, id]
+            );
+
+            req.session.usuario.foto = caminhoFoto;
+
+            req.session.save((erroSessao) => {
+                if (erroSessao) {
+                    return res.status(500).json({
+                        erro: "Foto salva, mas não foi possível atualizar a sessão."
+                    });
+                }
+
+                return res.json({
+                    sucesso: true,
+                    foto: caminhoFoto,
+                    mensagem: "Foto de perfil atualizada!"
+                });
+            });
+
+        } catch (erro) {
+            console.error("Erro ao salvar foto de perfil:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível salvar a foto de perfil."
+            });
+        }
     });
 });
 
@@ -418,6 +537,10 @@ const pastaConteudos = path.join(
 );
 
 fs.mkdirSync(pastaConteudos, { recursive: true });
+
+if (!fs.existsSync(pastaFotosPerfil)) {
+    fs.mkdirSync(pastaFotosPerfil, { recursive: true });
+}
 
 const armazenamentoConteudos = multer.diskStorage({
     destination: (req, arquivo, callback) => {

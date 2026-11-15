@@ -2,7 +2,7 @@
    - Abas acessíveis (cartão, Pix e boleto) sem depender do "event" global.
    - Máscaras, validação de cartão/CPF/CEP e resumo recalculado.
    - Cupom aplicável/removível, parcelas dinâmicas e confirmação simulada. */
-(function () {
+(async function () {
   "use strict";
 
   const form = document.getElementById("checkoutForm");
@@ -616,13 +616,20 @@
   }
 
   /* ---------- Preenchimento inicial e links por perfil ---------- */
-  function lerUsuario() {
+  async function lerUsuario() {
     try {
-      if (localStorage.getItem("usuarioLogado") !== "true") return null;
-      const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-      return usuario && ["aluno", "professor"].includes(usuario.tipo) ? usuario : null;
-    } catch (e) {
-      return null;
+        const dados = await API.get("/usuario-logado");
+
+        if (!dados || !dados.autenticado || !dados.usuario) {
+            return null;
+        }
+
+        return ["aluno", "professor"].includes(dados.usuario.tipo)
+            ? dados.usuario
+            : null;
+    } catch (erro) {
+        console.error("Erro ao verificar usuário:", erro);
+        return null;
     }
   }
 
@@ -643,10 +650,15 @@
     }
   }
 
-  const usuario = lerUsuario();
+  const usuario = await lerUsuario();
   if (usuario) {
-    if (el.billingName && !el.billingName.value) el.billingName.value = usuario.nome || "";
-    if (el.billingEmail && !el.billingEmail.value) el.billingEmail.value = usuario.email || "";
+      if (el.billingName && !el.billingName.value) {
+          el.billingName.value = usuario.nome || "";
+      }
+
+      if (el.billingEmail && !el.billingEmail.value) {
+          el.billingEmail.value = usuario.email || "";
+      }
   }
   configurarLinks(usuario);
 

@@ -286,22 +286,9 @@
                   return;
               }
 
-              const usuario = {
-                  nome: dados.usuario.nome,
-                  email: dados.usuario.email,
-                  tipo: dados.usuario.tipo,
-                  online: true,
-                  foto: dados.usuario.tipo === "professor"
-                      ? "./img/professor.png"
-                      : gerarFoto(dados.usuario.nome)
-              };
-
-              localStorage.setItem("usuario", JSON.stringify(usuario));
-              localStorage.setItem("usuarioLogado", "true");
-
-              window.location.href = tipoSelecionado === "professor"
-                  ? "professor-inicio.html"
-                  : "aluno-inicio.html";
+              window.location.href = dados.usuario.tipo === "professor"
+                ? "professor-inicio.html"
+                : "aluno-inicio.html";
 
           } catch (erro) {
               console.error(erro);

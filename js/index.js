@@ -1,20 +1,8 @@
 (function () {
-  // Sessão ativa: a landing continua pública, mas os atalhos apontam para o
-  // painel correto em vez de obrigar o usuário a passar pelo login novamente.
-  function lerUsuarioLogado() {
-    try {
-      if (localStorage.getItem("usuarioLogado") !== "true") return null;
-      const usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-      return usuario && ["aluno", "professor"].includes(usuario.tipo) ? usuario : null;
-    } catch (e) {
-      return null;
-    }
-  }
-
-  let usuarioLogado = lerUsuarioLogado();
-  let professorLogado = usuarioLogado && usuarioLogado.tipo === "professor";
-  let homeLogado = professorLogado ? "professor-inicio.html" : "aluno-inicio.html";
-  let cursosLogado = professorLogado ? "professor-meus-cursos.html" : "aluno-meus-cursos.html";
+  let usuarioLogado = null;
+  let professorLogado = false;
+  let homeLogado = "aluno-inicio.html";
+  let cursosLogado = "aluno-meus-cursos.html";
 
   function configurarAtalhos() {
     if (!usuarioLogado) return;
@@ -26,16 +14,24 @@
     });
 
     const botoesHero = document.querySelector(".hero-buttons");
+
     if (botoesHero) {
       const principal = botoesHero.querySelector("a");
       const secundario = botoesHero.querySelectorAll("a")[1];
+
       if (principal) {
         principal.href = "./" + cursosLogado;
         principal.textContent = "Meus cursos →";
       }
+
       if (secundario) {
-        secundario.href = professorLogado ? "./criar-curso.html" : "./certificados.html";
-        secundario.textContent = professorLogado ? "Criar curso" : "Meus certificados";
+        secundario.href = professorLogado
+          ? "./criar-curso.html"
+          : "./certificados.html";
+
+        secundario.textContent = professorLogado
+          ? "Criar curso"
+          : "Meus certificados";
       }
     }
 
@@ -50,7 +46,10 @@
       });
     }
 
-    const navPlataforma = document.querySelector('.rodape-nav[aria-label="Plataforma"]');
+    const navPlataforma = document.querySelector(
+      '.rodape-nav[aria-label="Plataforma"]'
+    );
+
     if (navPlataforma) {
       navPlataforma.innerHTML =
         `<h4>Plataforma</h4>` +
@@ -68,24 +67,42 @@
       if (!confirm("Deseja realmente sair da plataforma?")) return;
 
       try {
-          await API.post("/logout", {});
-
-          localStorage.removeItem("usuarioLogado");
-          localStorage.removeItem("usuario");
-
-          location.reload();
+        await API.post("/logout", {});
+        location.reload();
       } catch (erro) {
-          alert("Não foi possível encerrar sua sessão. Tente novamente.");
-          console.error("Erro ao sair:", erro);
+        alert("Não foi possível encerrar sua sessão. Tente novamente.");
+        console.error("Erro ao sair:", erro);
       }
-  });
+    });
   }
 
-  function iniciarAtalhos() {
-    configurarAtalhos();
+  async function iniciarAtalhos() {
+    try {
+      const dados = await API.get("/usuario-logado");
+
+      if (!dados || !dados.autenticado || !dados.usuario) return;
+
+      usuarioLogado = dados.usuario;
+
+      professorLogado = usuarioLogado.tipo === "professor";
+
+      homeLogado = professorLogado
+        ? "professor-inicio.html"
+        : "aluno-inicio.html";
+
+      cursosLogado = professorLogado
+        ? "professor-meus-cursos.html"
+        : "aluno-meus-cursos.html";
+
+      configurarAtalhos();
+    } catch (erro) {
+      if (!erro.message.includes("401")) {
+        console.error("Erro ao verificar sessão:", erro);
+      }
+    }
   }
 
-  iniciarAtalhos();
+  const sessaoPronta = iniciarAtalhos();
 
   function el(tag, classe, texto) {
     const e = document.createElement(tag);
@@ -170,7 +187,9 @@
     }
   }
 
-  carregarCursosPublicados();
+  sessaoPronta.then(() => {
+    carregarCursosPublicados();
+  });
 
   /* ---------- Menu ---------- */
 

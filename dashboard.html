@@ -7,15 +7,36 @@
     <title>Redirecionando — Habilita Saúde</title>
     <meta name="description" content="Acesse o painel da Habilita Saúde." />
     <script>
-      (function () {
-        var destino = "professor-inicio.html";
+      (async function () {
         try {
-          var logado = localStorage.getItem("usuarioLogado") === "true";
-          var usuario = JSON.parse(localStorage.getItem("usuario") || "null");
-          if (logado && usuario && usuario.tipo === "aluno") destino = "aluno-inicio.html";
-        } catch (e) {}
-        window.location.replace(destino);
-      })();
+            const resposta = await fetch("/api/usuario-logado", {
+                credentials: "include",
+                cache: "no-store"
+            });
+
+            if (!resposta.ok) {
+                window.location.replace("index.html");
+                return;
+            }
+
+            const dados = await resposta.json();
+
+            if (!dados.autenticado || !dados.usuario) {
+                window.location.replace("index.html");
+                return;
+            }
+
+            const destino = dados.usuario.tipo === "aluno"
+                ? "aluno-inicio.html"
+                : "professor-inicio.html";
+
+            window.location.replace(destino);
+
+        } catch (erro) {
+            console.error("Erro ao verificar sessão:", erro);
+            window.location.replace("index.html");
+        }
+    })();
     </script>
     <noscript><meta http-equiv="refresh" content="0; url=professor-inicio.html" /></noscript>
     <style>

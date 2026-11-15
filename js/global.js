@@ -442,12 +442,6 @@ window.API = {
       btnLogout.addEventListener("click", async () => {
           if (!confirm("Deseja realmente sair da plataforma?")) return;
 
-          try {
-              await API.post("/logout", {});
-          } catch (erro) {
-              console.error("Erro ao encerrar sessão:", erro);
-          }
-
           location.href = "index.html";
       });
   }

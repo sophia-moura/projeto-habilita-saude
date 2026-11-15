@@ -11,10 +11,10 @@
     }
   }
 
-  const usuarioLogado = lerUsuarioLogado();
-  const professorLogado = usuarioLogado && usuarioLogado.tipo === "professor";
-  const homeLogado = professorLogado ? "professor-inicio.html" : "aluno-inicio.html";
-  const cursosLogado = professorLogado ? "professor-meus-cursos.html" : "aluno-meus-cursos.html";
+  let usuarioLogado = lerUsuarioLogado();
+  let professorLogado = usuarioLogado && usuarioLogado.tipo === "professor";
+  let homeLogado = professorLogado ? "professor-inicio.html" : "aluno-inicio.html";
+  let cursosLogado = professorLogado ? "professor-meus-cursos.html" : "aluno-meus-cursos.html";
 
   function configurarAtalhos() {
     if (!usuarioLogado) return;
@@ -59,18 +59,33 @@
         `<a href="validar.html">Validar certificado</a>`;
     }
 
-    document.addEventListener("click", (e) => {
+    document.addEventListener("click", async (e) => {
       const sair = e.target.closest("[data-logout]");
       if (!sair) return;
+
       e.preventDefault();
+
       if (!confirm("Deseja realmente sair da plataforma?")) return;
-      localStorage.removeItem("usuarioLogado");
-      localStorage.removeItem("usuario");
-      location.reload();
-    });
+
+      try {
+          await API.post("/logout", {});
+
+          localStorage.removeItem("usuarioLogado");
+          localStorage.removeItem("usuario");
+
+          location.reload();
+      } catch (erro) {
+          alert("Não foi possível encerrar sua sessão. Tente novamente.");
+          console.error("Erro ao sair:", erro);
+      }
+  });
   }
 
-  configurarAtalhos();
+  function iniciarAtalhos() {
+    configurarAtalhos();
+  }
+
+  iniciarAtalhos();
 
   function el(tag, classe, texto) {
     const e = document.createElement(tag);

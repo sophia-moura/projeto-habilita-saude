@@ -512,7 +512,6 @@ app.post("/api/logout", (req, res) => {
     });
 });
 
-
 /* =========================================
    CURSOS
 ========================================= */
@@ -545,7 +544,6 @@ app.get("/api/cursos", async (req, res) => {
         });
     }
 });
-
 
 // Consultar um curso específico
 app.get("/api/cursos/:id", async (req, res) => {

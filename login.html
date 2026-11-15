@@ -422,16 +422,22 @@
             senha
           });
 
-          // 2. Autenticar automaticamente.
-          const dadosLogin = await API.post("/login", {
-            email,
-            senha,
-            tipo: tipoCadastro
-          });
+          // 2. Voltar para a tela de login após criar a conta.
+          window.location.href = `login.html?perfil=${tipoCadastro}`;
+          return;
 
-          if (!dadosLogin?.usuario) {
-            throw new Error("Conta criada, mas não foi possível iniciar a sessão. Faça login.");
-          }
+          const usuario = {
+            nome: dadosLogin.usuario.nome,
+            email: dadosLogin.usuario.email,
+            tipo: dadosLogin.usuario.tipo,
+            online: true,
+            foto: dadosLogin.usuario.tipo === "professor"
+              ? "./img/professor.png"
+              : gerarFoto(dadosLogin.usuario.nome)
+          };
+
+          localStorage.setItem("usuario", JSON.stringify(usuario));
+          localStorage.setItem("usuarioLogado", "true");
 
           // 3. Redirecionar conforme o perfil.
           window.location.href =
@@ -482,10 +488,6 @@
           fecharCadastro();
         });
 
-      modalCadastro.addEventListener("click", (e) => {
-        if (e.target === modalCadastro) fecharCadastro();
-      });
-
       document.addEventListener("keydown", (e) => {
         if (e.key === "Escape" && modalCadastro.classList.contains("ativo"))
           fecharCadastro();
@@ -496,7 +498,12 @@
       const params = new URLSearchParams(location.search);
       const perfilUrl = params.get("perfil");
       if (params.get("cadastro") === "1") {
-        abrirCadastro(dadosPerfil[perfilUrl] ? perfilUrl : null);
+        document.body.classList.add("tela-cadastro");
+        modalCadastro.classList.add("ativo");
+
+        if (dadosPerfil[perfilUrl]) {
+          selecionarTipoCadastro(perfilUrl);
+        }
       } else if (dadosPerfil[perfilUrl]) {
         abrirEtapaLogin(perfilUrl);
       }

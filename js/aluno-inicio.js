@@ -2,9 +2,9 @@
   const esc =
     HS.esc ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
-  const cursosAluno = obterCursosAluno();
+  let cursosAluno = [];
   let cursosRecomendadosAluno = [];
-  const notificacoesAluno = obterNotificacoesAluno();
+  let notificacoesAluno = [];
 
   const fotoCurso = (src) => esc(src || "./img/perfil.svg");
   const numero = (v) => Math.max(0, Math.min(100, Number(v) || 0));
@@ -168,33 +168,71 @@
     sistema: { classe: "sistema", icone: "fa-solid fa-gear" },
   };
 
-  function renderizarAvisos() {
+  async function renderizarAvisos() {
     const lista = document.getElementById("listaAvisos");
     if (!lista) return;
-    lista.innerHTML = "";
 
-    if (notificacoesAluno.length === 0) {
-      lista.innerHTML = `<p class="vazio">Nenhum aviso no momento.</p>`;
-      return;
+    lista.innerHTML = `<p class="vazio">Carregando avisos...</p>`;
+
+    try {
+      const resposta = await API.get("/notificacoes");
+
+      notificacoesAluno = (Array.isArray(resposta) ? resposta : [])
+        .map((aviso) => {
+          const texto = `${aviso.titulo || ""} ${aviso.mensagem || ""}`.toLowerCase();
+
+          let tipo = "sistema";
+
+          if (texto.includes("certificado")) {
+            tipo = "certificado";
+          } else if (texto.includes("matrícula") || texto.includes("curso")) {
+            tipo = "curso";
+          } else if (texto.includes("avaliação")) {
+            tipo = "avaliacao";
+          }
+
+          return {
+            id: aviso.id,
+            titulo: aviso.titulo,
+            descricao: aviso.mensagem,
+            data: aviso.data,
+            tipo,
+            lida: Boolean(aviso.lida)
+          };
+        });
+
+      if (notificacoesAluno.length === 0) {
+        lista.innerHTML = `<p class="vazio">Nenhum aviso no momento.</p>`;
+        return;
+      }
+
+      lista.innerHTML = notificacoesAluno
+        .slice(0, 5)
+        .map((aviso) => {
+          const config = iconesAviso[aviso.tipo] || iconesAviso.sistema;
+
+          const data = aviso.data
+            ? new Date(aviso.data).toLocaleString("pt-BR")
+            : "";
+
+          return `
+            <div class="aviso-item">
+              <div class="aviso-icone ${config.classe}">
+                <i class="${config.icone}"></i>
+              </div>
+              <div class="aviso-conteudo">
+                <strong>${esc(aviso.titulo || "Aviso")}</strong>
+                <p>${esc(aviso.descricao || "")}</p>
+                <small>${esc(data)}</small>
+              </div>
+            </div>`;
+        })
+        .join("");
+
+    } catch (erro) {
+      console.error("Erro ao carregar avisos:", erro);
+      lista.innerHTML = `<p class="vazio">Não foi possível carregar os avisos.</p>`;
     }
-
-    lista.innerHTML = notificacoesAluno
-      .slice(0, 5)
-      .map((aviso) => {
-        const config = iconesAviso[aviso.tipo] || iconesAviso.sistema;
-        return `
-      <div class="aviso-item">
-        <div class="aviso-icone ${config.classe}">
-          <i class="${config.icone}"></i>
-        </div>
-        <div class="aviso-conteudo">
-          <strong>${esc(aviso.titulo || "Aviso")}</strong>
-          <p>${esc(aviso.descricao || "")}</p>
-          <small>${esc(aviso.data || "")}</small>
-        </div>
-      </div>`;
-      })
-      .join("");
   }
 
   function renderizarCertificados() {
@@ -225,15 +263,45 @@
       .join("");
   }
 
-  renderizarSaudacao();
-  if (window.HS.gam) HS.gam.renderizar("painelGamificacao");
-  renderizarAtalhoContinuar();
-  atualizarMetricas();
-  renderizarUltimosAcessados();
-  carregarCursosRecomendados();
-  renderizarAvisos();
-  renderizarCertificados();
+  
+  async function inicializarPainelAluno() {
+    try {
+      // Aguarda a confirmação da sessão.
+      await HS.ready;
 
+      // Busca o progresso atualizado diretamente do MySQL.
+      const resposta = await API.get("/aluno/matriculas");
+
+      cursosAluno = Array.isArray(resposta.cursos)
+        ? resposta.cursos
+        : [];
+
+      renderizarSaudacao();
+
+      if (window.HS.gam) {
+        window.HS.gam.renderizar("painelGamificacao");
+      }
+
+      renderizarAtalhoContinuar();
+      atualizarMetricas();
+      renderizarUltimosAcessados();
+      carregarCursosRecomendados();
+      renderizarAvisos();
+      renderizarCertificados();
+
+    } catch (erro) {
+      console.error("Erro ao carregar painel do aluno:", erro);
+
+      const lista = document.getElementById("listaUltimosAcessados");
+
+      if (lista) {
+        lista.innerHTML =
+          '<p class="vazio">Não foi possível carregar seus cursos.</p>';
+      }
+    }
+  }
+
+  inicializarPainelAluno();
   
   document.getElementById("listaRecomendados")?.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-matricular]");
@@ -274,13 +342,11 @@
         );
       }
 
-      if (window.HS.gam) {
-        window.HS.gam.xp(20, "Nova matrícula");
-      }
-
       alert("Pagamento simulado aprovado! Matrícula realizada com sucesso.");
 
-      location.href = "aluno-meus-cursos.html";
+      setTimeout(() => {
+        location.href = "aluno-meus-cursos.html";
+      }, 2000);
 
     } catch (erro) {
       console.error("Erro na compra do curso:", erro);

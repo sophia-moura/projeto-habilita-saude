@@ -239,6 +239,32 @@
     palco.appendChild(d);
   }
 
+  function mostrarAvisoXP(mensagem) {
+    const caixa = document.createElement("div");
+
+    caixa.textContent = mensagem;
+
+    caixa.style.cssText = `
+      position: fixed;
+      right: 24px;
+      bottom: 24px;
+      z-index: 99999;
+      background: #0055c3;
+      color: #fff;
+      padding: 14px 18px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,.25);
+      font: 600 14px Inter,sans-serif;
+      animation: toastIn .45s cubic-bezier(.2,1.4,.4,1) both;
+    `;
+
+    document.body.appendChild(caixa);
+
+    setTimeout(() => {
+      caixa.remove();
+    }, 3500);
+  }
+
   function renderQuiz(it, i, palco) {
     const perguntas = it.perguntas;
     const nota = Math.min(100, Math.max(1, Number(it.notaMinima) || 70));
@@ -321,9 +347,19 @@
       raiz.querySelector("[data-refazer]").addEventListener("click", formulario);
 
       if (aprovado) {
-        const jaFeita = feitas.has(i);
         concluir(i, false);
-        if (!jaFeita && pct === 100) HS.gam.xp(10, "Quiz sem erros");
+
+        if (pct === 100) {
+          API.post(`/aluno/aulas/${itens[atual].id_aula}/quiz-perfeito`, {
+            respostas
+          })
+            .then((resposta) => {
+              if (resposta.sucesso && resposta.xpRecebido) {
+                mostrarAvisoXP("🎉 Parabéns! Você ganhou 10 XP!");
+              }
+            })
+            .catch((erro) => console.error("Erro ao registrar XP do quiz:", erro));
+        }
       }
     }
 
@@ -481,10 +517,7 @@
       lista();
       botoes();
 
-      HS.gam.xp(15, "Conteúdo concluído");
-
       if (meu.progresso >= 100) {
-        HS.gam.xp(100, "Curso concluído");
         HS.confete && HS.confete();
 
         if (

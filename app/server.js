@@ -876,6 +876,69 @@ app.post(
                 VALUES (?, ?, 0, 'em_andamento')
             `, [idAluno, idCurso]);
 
+            // Garantir que o aluno tenha um registro de gamificação.
+            await banco.execute(`
+                INSERT IGNORE INTO gamificacao_aluno (id_aluno)
+                VALUES (?)
+            `, [idAluno]);
+
+            // Registrar 20 XP pela matrícula, sem duplicar.
+            const [xpMatricula] = await banco.execute(`
+                INSERT IGNORE INTO historico_xp (
+                    id_aluno,
+                    quantidade,
+                    motivo,
+                    chave_evento
+                )
+                VALUES (?, 20, 'Matrícula em curso', ?)
+            `, [idAluno, `matricula-${resultado.insertId}`]);
+
+            // Verificar conquistas de matrícula.
+            const [totalMatriculas] = await banco.execute(`
+                SELECT COUNT(*) AS total
+                FROM matricula
+                WHERE id_aluno = ?
+            `, [idAluno]);
+
+            const total = Number(totalMatriculas[0].total);
+
+            const conquistasMatricula = [];
+
+            if (total >= 1) {
+                conquistasMatricula.push("matricula");
+            }
+
+            if (total >= 3) {
+                conquistasMatricula.push("tres");
+            }
+
+            for (const codigo of conquistasMatricula) {
+                const [existente] = await banco.execute(`
+                    SELECT codigo_conquista
+                    FROM conquista_aluno
+                    WHERE id_aluno = ? AND codigo_conquista = ?
+                    LIMIT 1
+                `, [idAluno, codigo]);
+
+                if (existente.length === 0) {
+                    await banco.execute(`
+                        INSERT INTO conquista_aluno (
+                            id_aluno,
+                            codigo_conquista
+                        )
+                        VALUES (?, ?)
+                    `, [idAluno, codigo]);
+                }
+            }
+
+            if (xpMatricula.affectedRows > 0) {
+                await banco.execute(`
+                    UPDATE gamificacao_aluno
+                    SET xp = xp + 20
+                    WHERE id_aluno = ?
+                `, [idAluno]);
+            }
+
             return res.status(201).json({
                 sucesso: true,
                 mensagem: "Matrícula realizada com sucesso!",
@@ -990,6 +1053,52 @@ app.post(
             const progresso = totalAulas > 0
                 ? Math.round((totalConcluidas / totalAulas) * 100)
                 : 0;
+
+            // Garantir que o aluno tenha um registro de gamificação.
+            await conexao.execute(`
+                INSERT IGNORE INTO gamificacao_aluno (id_aluno)
+                VALUES (?)
+            `, [idAluno]);
+
+            // Conceder 30 XP pela conclusão desta aula, sem duplicar.
+            const [xpAula] = await conexao.execute(`
+                INSERT IGNORE INTO historico_xp (
+                    id_aluno,
+                    quantidade,
+                    motivo,
+                    chave_evento
+                )
+                VALUES (?, 30, 'Aula concluída', ?)
+            `, [idAluno, `aula-${idAula}`]);
+
+            if (xpAula.affectedRows > 0) {
+                await conexao.execute(`
+                    UPDATE gamificacao_aluno
+                    SET xp = xp + 30
+                    WHERE id_aluno = ?
+                `, [idAluno]);
+            }
+
+            // Conceder 100 XP ao concluir o curso, apenas uma vez.
+            if (progresso >= 100) {
+                const [xpCurso] = await conexao.execute(`
+                    INSERT IGNORE INTO historico_xp (
+                        id_aluno,
+                        quantidade,
+                        motivo,
+                        chave_evento
+                    )
+                    VALUES (?, 100, 'Curso concluído', ?)
+                `, [idAluno, `curso-concluido-${idCurso}`]);
+
+                if (xpCurso.affectedRows > 0) {
+                    await conexao.execute(`
+                        UPDATE gamificacao_aluno
+                        SET xp = xp + 100
+                        WHERE id_aluno = ?
+                    `, [idAluno]);
+                }
+            }
 
             // Atualizar o progresso e o último acesso da matrícula.
             await conexao.execute(`
@@ -2336,6 +2445,392 @@ app.delete("/api/notificacoes", exigirLogin, async (req, res) => {
         return res.status(500).json({
             erro: "Não foi possível excluir as notificações."
         });
+    }
+});
+
+/* ==========================================
+   GAMIFICAÇÃO DO ALUNO
+========================================== */
+
+// Consultar gamificação, histórico e ranking
+app.get("/api/aluno/gamificacao", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+
+        await banco.execute(`
+            INSERT IGNORE INTO gamificacao_aluno (id_aluno)
+            VALUES (?)
+        `, [idAluno]);
+
+        const [dados] = await banco.execute(`
+            SELECT
+                xp,
+                sequencia,
+                DATE_FORMAT(ultimo_dia, '%Y-%m-%d') AS ultimoDia
+            FROM gamificacao_aluno
+            WHERE id_aluno = ?
+        `, [idAluno]);
+
+        const [historico] = await banco.execute(`
+            SELECT
+                quantidade AS qtd,
+                motivo,
+                data_registro AS data
+            FROM historico_xp
+            WHERE id_aluno = ?
+            ORDER BY data_registro DESC
+            LIMIT 20
+        `, [idAluno]);
+
+        // Verificar conquistas de sequência e XP.
+        const conquistasPossiveis = [];
+
+        if (Number(dados[0].sequencia) >= 3) {
+            conquistasPossiveis.push("seq3");
+        }
+
+        if (Number(dados[0].xp) >= 200) {
+            conquistasPossiveis.push("nivel3");
+        }
+
+        // Registrar conquistas ainda não desbloqueadas.
+        for (const codigo of conquistasPossiveis) {
+            const [existente] = await banco.execute(`
+                SELECT codigo_conquista
+                FROM conquista_aluno
+                WHERE id_aluno = ? AND codigo_conquista = ?
+                LIMIT 1
+            `, [idAluno, codigo]);
+
+            if (existente.length === 0) {
+                await banco.execute(`
+                    INSERT INTO conquista_aluno (
+                        id_aluno,
+                        codigo_conquista
+                    )
+                    VALUES (?, ?)
+                `, [idAluno, codigo]);
+            }
+        }
+
+        // Verificar conquistas de conclusão de cursos.
+        const [cursosConcluidos] = await banco.execute(`
+            SELECT COUNT(*) AS total
+            FROM matricula
+            WHERE id_aluno = ?
+            AND progresso >= 100
+        `, [idAluno]);
+
+        const totalConcluidos = Number(cursosConcluidos[0].total);
+
+        const conquistasConclusao = [];
+
+        if (totalConcluidos >= 1) {
+            conquistasConclusao.push("concluido");
+        }
+
+        if (totalConcluidos >= 3) {
+            conquistasConclusao.push("tresconcl");
+        }
+
+        for (const codigo of conquistasConclusao) {
+            const [existente] = await banco.execute(`
+                SELECT codigo_conquista
+                FROM conquista_aluno
+                WHERE id_aluno = ? AND codigo_conquista = ?
+                LIMIT 1
+            `, [idAluno, codigo]);
+
+            if (existente.length === 0) {
+                await banco.execute(`
+                    INSERT INTO conquista_aluno (
+                        id_aluno,
+                        codigo_conquista
+                    )
+                    VALUES (?, ?)
+                `, [idAluno, codigo]);
+            }
+        }
+
+        // Buscar conquistas atualizadas.
+        const [conquistas] = await banco.execute(`
+            SELECT
+                codigo_conquista AS codigo,
+                data_desbloqueio AS data
+            FROM conquista_aluno
+            WHERE id_aluno = ?
+            ORDER BY data_desbloqueio DESC
+        `, [idAluno]);
+
+        const [ranking] = await banco.execute(`
+            SELECT
+                a.id_aluno AS id,
+                a.nome,
+                COALESCE(g.xp, 0) AS xp
+            FROM aluno a
+            LEFT JOIN gamificacao_aluno g
+                ON g.id_aluno = a.id_aluno
+            ORDER BY xp DESC, a.nome ASC
+            LIMIT 10
+        `);
+
+        return res.json({
+            sucesso: true,
+            xp: Number(dados[0].xp),
+            sequencia: Number(dados[0].sequencia),
+            ultimoDia: dados[0].ultimoDia,
+            conquistas,
+            historico,
+            ranking
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar gamificação:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar a gamificação."
+        });
+    }
+});
+
+// Bônus de 10 XP por acertar todas as perguntas de um quiz
+app.post("/api/aluno/aulas/:id/quiz-perfeito", exigirLogin, exigirAluno, async (req, res) => {
+    const conexao = await banco.getConnection();
+
+    try {
+        const idAluno = req.session.usuario.id;
+        const idAula = Number(req.params.id);
+        const respostas = req.body.respostas;
+
+        if (
+            !Number.isInteger(idAula) ||
+            idAula <= 0 ||
+            !Array.isArray(respostas)
+        ) {
+            return res.status(400).json({
+                erro: "Dados do quiz inválidos."
+            });
+        }
+
+        await conexao.beginTransaction();
+
+        // Buscar o quiz diretamente no banco.
+        const [aulas] = await conexao.execute(`
+            SELECT
+                a.tipo,
+                a.metadados,
+                m.id_curso
+            FROM aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            WHERE a.id_aula = ?
+            LIMIT 1
+        `, [idAula]);
+
+        if (!aulas.length || aulas[0].tipo !== "quiz") {
+            await conexao.rollback();
+
+            return res.status(404).json({
+                erro: "Quiz não encontrado."
+            });
+        }
+
+        // Conferir a matrícula do aluno.
+        const [matriculas] = await conexao.execute(`
+            SELECT id_matricula
+            FROM matricula
+            WHERE id_aluno = ?
+            AND id_curso = ?
+            LIMIT 1
+        `, [idAluno, aulas[0].id_curso]);
+
+        if (!matriculas.length) {
+            await conexao.rollback();
+
+            return res.status(403).json({
+                erro: "Você não está matriculado neste curso."
+            });
+        }
+
+        // Interpretar os dados cadastrados do quiz.
+        const metadados = typeof aulas[0].metadados === "string"
+            ? JSON.parse(aulas[0].metadados)
+            : aulas[0].metadados;
+
+        const perguntas = metadados?.perguntas;
+
+        if (
+            !Array.isArray(perguntas) ||
+            perguntas.length === 0 ||
+            respostas.length !== perguntas.length
+        ) {
+            await conexao.rollback();
+
+            return res.status(400).json({
+                erro: "Respostas incompletas ou quiz inválido."
+            });
+        }
+
+        // Conferir todas as respostas usando o gabarito do banco.
+        const acertouTudo = perguntas.every((pergunta, indice) =>
+            Number(respostas[indice]) === Number(pergunta.correta)
+        );
+
+        if (!acertouTudo) {
+            await conexao.rollback();
+
+            return res.json({
+                sucesso: true,
+                xpRecebido: 0,
+                mensagem: "O quiz não foi respondido totalmente sem erros."
+            });
+        }
+
+        // Garantir que exista o registro de gamificação.
+        await conexao.execute(`
+            INSERT IGNORE INTO gamificacao_aluno (id_aluno)
+            VALUES (?)
+        `, [idAluno]);
+
+        // Registrar o bônus sem permitir recebimento duplicado.
+        const [registro] = await conexao.execute(`
+            INSERT IGNORE INTO historico_xp (
+                id_aluno,
+                quantidade,
+                motivo,
+                chave_evento
+            )
+            VALUES (?, 10, 'Quiz sem erros', ?)
+        `, [idAluno, `quiz-perfeito-${idAluno}-${idAula}`]);
+
+        if (registro.affectedRows > 0) {
+            await conexao.execute(`
+                UPDATE gamificacao_aluno
+                SET xp = xp + 10
+                WHERE id_aluno = ?
+            `, [idAluno]);
+        }
+
+        await conexao.commit();
+
+        return res.json({
+            sucesso: true,
+            xpRecebido: registro.affectedRows > 0 ? 10 : 0,
+            jaRecebido: registro.affectedRows === 0
+        });
+
+    } catch (erro) {
+        await conexao.rollback();
+
+        console.error("Erro ao conceder XP do quiz:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível registrar o bônus do quiz."
+        });
+
+    } finally {
+        conexao.release();
+    }
+});
+
+// Check-in diário: concede 10 XP uma única vez por dia
+app.post("/api/aluno/gamificacao/checkin", exigirLogin, exigirAluno, async (req, res) => {
+    const conexao = await banco.getConnection();
+
+    try {
+        const idAluno = req.session.usuario.id;
+
+        await conexao.beginTransaction();
+
+        await conexao.execute(`
+            INSERT IGNORE INTO gamificacao_aluno (id_aluno)
+            VALUES (?)
+        `, [idAluno]);
+
+        const [dados] = await conexao.execute(`
+            SELECT
+                xp,
+                sequencia,
+                DATE_FORMAT(ultimo_dia, '%Y-%m-%d') AS ultimoDia
+            FROM gamificacao_aluno
+            WHERE id_aluno = ?
+            FOR UPDATE
+        `, [idAluno]);
+
+        const [datas] = await conexao.execute(`
+            SELECT
+                DATE_FORMAT(CURDATE(), '%Y-%m-%d') AS hoje,
+                DATE_FORMAT(
+                    DATE_SUB(CURDATE(), INTERVAL 1 DAY),
+                    '%Y-%m-%d'
+                ) AS ontem
+        `);
+
+        const hoje = datas[0].hoje;
+        const ontem = datas[0].ontem;
+
+        // Já recebeu o XP do check-in de hoje.
+        if (dados[0].ultimoDia === hoje) {
+            await conexao.commit();
+
+            return res.json({
+                sucesso: true,
+                jaRealizado: true,
+                xp: Number(dados[0].xp),
+                sequencia: Number(dados[0].sequencia)
+            });
+        }
+
+        const sequencia = dados[0].ultimoDia === ontem
+            ? Number(dados[0].sequencia) + 1
+            : 1;
+
+        const [registro] = await conexao.execute(`
+            INSERT IGNORE INTO historico_xp (
+                id_aluno,
+                quantidade,
+                motivo,
+                chave_evento
+            )
+            VALUES (?, 10, 'Login diário', ?)
+        `, [idAluno, `checkin-${hoje}`]);
+
+        if (registro.affectedRows > 0) {
+            await conexao.execute(`
+                UPDATE gamificacao_aluno
+                SET xp = xp + 10,
+                    sequencia = ?,
+                    ultimo_dia = ?
+                WHERE id_aluno = ?
+            `, [sequencia, hoje, idAluno]);
+        }
+
+        const [atualizado] = await conexao.execute(`
+            SELECT xp, sequencia
+            FROM gamificacao_aluno
+            WHERE id_aluno = ?
+        `, [idAluno]);
+
+        await conexao.commit();
+
+        return res.json({
+            sucesso: true,
+            jaRealizado: false,
+            xp: Number(atualizado[0].xp),
+            sequencia: Number(atualizado[0].sequencia),
+            xpRecebido: registro.affectedRows > 0 ? 10 : 0
+        });
+
+    } catch (erro) {
+        await conexao.rollback();
+
+        console.error("Erro no check-in diário:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível registrar o check-in."
+        });
+
+    } finally {
+        conexao.release();
     }
 });
 

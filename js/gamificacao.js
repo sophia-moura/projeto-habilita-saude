@@ -50,18 +50,20 @@
     salvar(g);
   }
 
-  function checkin() {
-    const g = ler();
-    if (g.ultimoDia === hoje()) return;
-    const ontem = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
-    g.sequencia = g.ultimoDia === ontem ? g.sequencia + 1 : 1;
-    g.ultimoDia = hoje();
-    g.xp += 10;
-    salvar(g);
-    toast(`🔥 Sequência de ${g.sequencia} dia(s)! +10 XP`);
-    const g2 = ler();
-    conferirConquistas(g2);
-    salvar(g2);
+  async function checkin() {
+      try {
+          const resultado = await API.post("/aluno/gamificacao/checkin", {});
+
+          if (!resultado.sucesso) {
+              throw new Error("Não foi possível realizar o check-in.");
+          }
+
+          if (!resultado.jaRealizado) {
+              toast(`🔥 Sequência de ${resultado.sequencia} dia(s)! +${resultado.xpRecebido} XP`);
+          }
+      } catch (erro) {
+          console.error("Erro no check-in diário:", erro);
+      }
   }
 
   function ranking() {
@@ -107,10 +109,32 @@
     ].sort((a, b) => b.xp - a.xp);
   }
 
-  function renderizar(idContainer) {
+  async function renderizar(idContainer) {
     const el = document.getElementById(idContainer);
     if (!el) return;
-    const g = ler();
+
+    let dados;
+
+    try {
+        dados = await API.get("/aluno/gamificacao");
+
+        if (!dados.sucesso) {
+            throw new Error("Não foi possível carregar a gamificação.");
+        }
+    } catch (erro) {
+        console.error("Erro ao carregar gamificação:", erro);
+        return;
+    }
+
+    const g = {
+        xp: dados.xp,
+        sequencia: dados.sequencia,
+        conquistas: dados.conquistas,
+        historico: dados.historico
+    };
+
+    const rankingAtual = dados.ranking;
+
     const nivel = Math.floor(g.xp / XP_NIVEL) + 1;
     const noNivel = g.xp % XP_NIVEL;
     const medalhas = ["🥇", "🥈", "🥉"];
@@ -138,11 +162,11 @@
             <div style="flex:1"><strong>Nível ${nivel}</strong> · ${g.xp} XP · 🔥 ${g.sequencia} dia(s) seguidos
               <div class="gam-barra"><div style="width:${noNivel}%"></div></div>
               <small>${XP_NIVEL - noNivel} XP para o nível ${nivel + 1}</small></div></div>
-          <div class="gam-badges">${CONQUISTAS.map((c) => `<div class="gam-badge ${g.conquistas.includes(c.id) ? "" : "off"}" title="${c.desc}"><span>${c.icone}</span><strong>${c.nome}</strong><br><small>${c.desc}</small></div>`).join("")}</div>
+          <div class="gam-badges">${CONQUISTAS.map((c) => `<div class="gam-badge ${g.conquistas.some((conquista) => conquista.codigo === c.id) ? "" : "off"}" title="${c.desc}"><span>${c.icone}</span><strong>${c.nome}</strong><br><small>${c.desc}</small></div>`).join("")}</div>
         </div>
         <div class="gam-card gam-rank">
           <h2>🏆 Ranking de alunos</h2>
-          ${ranking().map((r, i) => `<div class="${r.eu ? "eu" : ""}"><span>${medalhas[i] || i + 1 + "º"} ${r.nome}</span><span>${r.xp} XP</span></div>`).join("")}
+          ${rankingAtual.map((r, i) => `<div class="${r.eu ? "eu" : ""}"><span>${medalhas[i] || i + 1 + "º"} ${r.nome}</span><span>${r.xp} XP</span></div>`).join("")}
           <small style="display:block;margin-top:10px;color:var(--hs-legenda,#5b6b80)">Ganhe XP: matrícula +20 · avançar no curso +30 · concluir +100 · login diário +10</small>
         </div>
       </div>`;

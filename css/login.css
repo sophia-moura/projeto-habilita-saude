@@ -454,3 +454,43 @@ button {
     height: 300px;
   }
 }
+/* Ajustes do formulário de cadastro */
+.modal-cadastro {
+  background: transparent;
+  padding: 20px;
+  overflow-y: auto;
+  align-items: flex-start;
+}
+
+.cadastro-box {
+  border-radius: 12px;
+  max-height: none;
+  overflow-y: visible;
+  padding-bottom: 28px;
+  scrollbar-width: none;
+  margin: auto;
+}
+
+.cadastro-box #btnCriarConta {
+  flex-shrink: 0;
+  min-height: 48px;
+  margin-bottom: 8px;
+}
+
+.cadastro-box .link-entrar {
+  flex-shrink: 0;
+  padding-bottom: 4px;
+}
+body:has(.modal-cadastro.ativo) .login-box {
+  visibility: hidden;
+}
+
+body:has(.modal-cadastro.ativo) {
+  overflow: hidden;
+}
+
+.modal-cadastro {
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}

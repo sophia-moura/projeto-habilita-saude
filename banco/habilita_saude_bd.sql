@@ -230,6 +230,54 @@ CREATE TABLE aula_concluida (
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
+-- Dados principais da gamificação de cada aluno
+CREATE TABLE IF NOT EXISTS gamificacao_aluno (
+    id_aluno INT UNSIGNED NOT NULL,
+    xp INT UNSIGNED NOT NULL DEFAULT 0,
+    sequencia INT UNSIGNED NOT NULL DEFAULT 0,
+    ultimo_dia DATE NULL,
+    data_atualizacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_aluno),
+
+    CONSTRAINT fk_gamificacao_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno (id_aluno)
+) ENGINE=InnoDB;
+
+-- Histórico de XP recebido
+CREATE TABLE IF NOT EXISTS historico_xp (
+    id_historico INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_aluno INT UNSIGNED NOT NULL,
+    quantidade INT NOT NULL,
+    motivo VARCHAR(150) NOT NULL,
+    chave_evento VARCHAR(120) NOT NULL,
+    data_registro DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_historico),
+    UNIQUE KEY uk_historico_evento (id_aluno, chave_evento),
+
+    CONSTRAINT fk_historico_xp_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno (id_aluno)
+) ENGINE=InnoDB;
+
+-- Conquistas desbloqueadas
+CREATE TABLE IF NOT EXISTS conquista_aluno (
+    id_conquista_aluno INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_aluno INT UNSIGNED NOT NULL,
+    codigo_conquista VARCHAR(50) NOT NULL,
+    data_desbloqueio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_conquista_aluno),
+    UNIQUE KEY uk_conquista_aluno (id_aluno, codigo_conquista),
+
+    CONSTRAINT fk_conquista_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno (id_aluno)
+) ENGINE=InnoDB;
+
 -- ações
 SHOW TABLES;            
 DESCRIBE matricula;     

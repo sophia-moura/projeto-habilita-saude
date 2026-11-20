@@ -9,17 +9,21 @@
   const fotoCurso = (src) => esc(src || "./img/perfil.svg");
   const numero = (v) => Math.max(0, Math.min(100, Number(v) || 0));
 
-  function renderizarSaudacao() {
-    const usuario = JSON.parse(localStorage.getItem("usuario") || "null") || {};
+  async function renderizarSaudacao() {
     const saudacaoEl = document.getElementById("saudacaoAluno");
     if (!saudacaoEl) return;
-    const primeiroNome = usuario.nome ? usuario.nome.split(" ")[0] : "aluno(a)";
+
+    const usuario = await HS.carregarUsuario();
+    const primeiroNome = usuario?.nome
+        ? usuario.nome.split(" ")[0]
+        : "aluno(a)";
+
     saudacaoEl.textContent = `Olá, ${primeiroNome}!`;
   }
 
   // Abre a aula quando o professor já publicou conteúdos; senão, a lista de cursos.
   function urlCurso(id) {
-    return HS.conteudosDoCurso(id).length ? "./aula.html?id=" + encodeURIComponent(id) : "./aluno-meus-cursos.html";
+    return "./aula.html?id=" + encodeURIComponent(id);
   }
 
   function renderizarAtalhoContinuar() {
@@ -46,8 +50,13 @@
 
     const curso = emAndamento[0];
     nomeEl.textContent = curso.nome || "Curso";
-    textoEl.textContent = `${numero(curso.progresso)}%`;
-    barraEl.style.width = `${numero(curso.progresso)}%`;
+    
+    const progresso = Math.max(0, Math.min(100, numero(curso.progresso)));
+
+    textoEl.textContent = `${progresso}%`;
+
+    barraEl.style.width = `${progresso}%`;
+
     btnEl.onclick = () => {
       window.location.href = urlCurso(curso.id);
     };
@@ -67,7 +76,11 @@
     set("qtdEmAndamento", emAndamento.length);
     set("qtdConcluidos", concluidos.length);
     set("progressoMedio", `${progressoMedio}%`);
-    set("qtdCertificados", concluidos.length);
+    const certificadosEmitidos = cursosAluno.filter(
+    (curso) => curso.codigoCertificado
+    );
+
+    set("qtdCertificados", certificadosEmitidos.length);
   }
 
   function renderizarUltimosAcessados() {
@@ -240,29 +253,32 @@
     if (!lista) return;
     lista.innerHTML = "";
 
-    const concluidos = cursosAluno.filter((c) => c.status === "concluido");
-    if (concluidos.length === 0) {
-      lista.innerHTML = `<p class="vazio">Você ainda não concluiu nenhum curso.</p>`;
-      return;
+    const emitidos = cursosAluno.filter(
+        (curso) => curso.codigoCertificado
+    );
+
+    if (emitidos.length === 0) {
+        lista.innerHTML = `<p class="vazio">Você ainda não tem certificados emitidos.</p>`;
+        return;
     }
 
-    lista.innerHTML = concluidos
-      .map(
-        (curso) => `
-      <div class="certificado-item">
-        <i class="fa-solid fa-award"></i>
-        <div>
-          <strong>${esc(curso.nome || "Curso")}</strong>
-          <small>Carga horária: ${esc(curso.cargaHoraria || 0)}h</small>
-        </div>
-        <button class="btn-baixar-certificado" title="Baixar certificado" data-certificado="${esc(curso.nome || "")}">
-          <i class="fa-solid fa-download"></i>
-        </button>
-      </div>`,
-      )
-      .join("");
+    lista.innerHTML = emitidos
+        .map((curso) => `
+            <div class="certificado-item">
+                <i class="fa-solid fa-award"></i>
+                <div>
+                    <strong>${esc(curso.nome || "Curso")}</strong>
+                    <small>Carga horária: ${esc(curso.cargaHoraria || 0)}h</small>
+                </div>
+                <button class="btn-baixar-certificado"
+                    title="Baixar certificado"
+                    data-certificado="${esc(curso.id)}">
+                    <i class="fa-solid fa-download"></i>
+                </button>
+            </div>
+        `)
+        .join("");
   }
-
   
   async function inicializarPainelAluno() {
     try {
@@ -276,7 +292,7 @@
         ? resposta.cursos
         : [];
 
-      renderizarSaudacao();
+      await renderizarSaudacao();
 
       if (window.HS.gam) {
         window.HS.gam.renderizar("painelGamificacao");
@@ -301,7 +317,9 @@
     }
   }
 
-  inicializarPainelAluno();
+  window.addEventListener("pageshow", () => {
+    inicializarPainelAluno();
+  });
   
   document.getElementById("listaRecomendados")?.addEventListener("click", async (e) => {
     const btn = e.target.closest("[data-matricular]");
@@ -366,20 +384,40 @@
   document.getElementById("listaCertificados")?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-certificado]");
     if (!btn) return;
-    const nome = btn.dataset.certificado;
+
+    const idCurso = Number(btn.dataset.certificado);
+
+    const curso = cursosAluno.find(
+        (c) => Number(c.id) === idCurso && c.codigoCertificado
+    );
+
+    if (!curso) {
+        alert("Certificado não encontrado.");
+        return;
+    }
+
     if (typeof window.baixarCertificado !== "function") {
-      alert("O gerador de certificados não foi carregado. Verifique sua conexão e tente novamente.");
-      return;
+        alert("O gerador de certificados não foi carregado.");
+        return;
     }
+
     if (!window.jspdf || !window.qrcode) {
-      alert("Não foi possível carregar o gerador de PDF. Verifique sua conexão e tente novamente.");
-      return;
+        alert("Não foi possível carregar o gerador de PDF.");
+        return;
     }
+
+    const registro = {
+        uuid: curso.codigoCertificado,
+        data: curso.dataEmissaoCertificado
+            ? new Date(curso.dataEmissaoCertificado).toLocaleDateString("pt-BR")
+            : ""
+    };
+
     try {
-      window.baixarCertificado(nome);
-    } catch (err) {
-      console.error(err);
-      alert("Não foi possível gerar o PDF do certificado.");
+        window.baixarCertificado(curso, registro);
+    } catch (erro) {
+        console.error(erro);
+        alert("Não foi possível gerar o PDF do certificado.");
     }
   });
 })();

@@ -1,8 +1,8 @@
 // Geração do PDF do certificado (jsPDF + qrcode-generator).
 // Compartilhado por aluno-inicio.html e certificados.html.
 // Requer: jspdf, qrcode-generator e js/global.js (HS) carregados antes.
-function baixarCertificado(curso, reg) {
-  const usuario = JSON.parse(localStorage.getItem("usuario") || "null") || {};
+async function baixarCertificado(curso, reg) {
+  const usuario = await HS.carregarUsuario() || {};
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
 
@@ -73,7 +73,7 @@ function baixarCertificado(curso, reg) {
     }
   );
 
-  const dataAtual = new Date().toLocaleDateString("pt-BR");
+  const dataAtual = reg.data || new Date().toLocaleDateString("pt-BR");
 
   doc.setFontSize(12);
   doc.text(

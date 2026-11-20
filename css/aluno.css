@@ -270,6 +270,17 @@ body {
   background: #3e9c2d;
 }
 
+.atalho-continuar .barra-progresso div {
+  width: 0%;
+  height: 100%;
+  min-width: 0;
+  display: block;
+  flex: none;
+  background: linear-gradient(90deg, #4ade80, #4ade80);
+  border-radius: inherit;
+  transition: width 1.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
 .btn-continuar {
   flex-shrink: 0;
   background: white;

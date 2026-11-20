@@ -46,7 +46,7 @@
   }, { threshold: 0.08 });
 
   const CONTAINERS = "#cursosGrid,#listaCursos,#listaNotificacoes,#listaTickets,#listaRecomendados,#listaUltimosAcessados,#listaAvisos,#listaCertificados,#listaFaq,#listaChamados,#rankingCursos,#tabelaUsuarios,#tabelaRepasses,#rankingVendas,#rankingAvaliacoes,#listaUsuariosDashboard,#listaCursosDashboard,.cards,.bottom-cards,.metricas-financeiras,.metricas-relatorios,.metricas-dashboard,.metricas-notificacao,.metricas-suporte,.acoes-suporte,.conteudos-grid,.stats";
-  const BARRAS = ".barra-progresso>div,.gam-barra>div,.barra>div,#atalhoProgressoBarra";
+  const BARRAS = ".barra-progresso>div,.gam-barra>div,.barra>div";
 
   function preparar() {
     if (reduz) return;
@@ -65,7 +65,11 @@
       el.dataset.cn = "1"; el._contar = true; io.observe(el);
     });
     document.querySelectorAll(BARRAS).forEach((el) => {
+      // A barra do atalho inicial é controlada pelo aluno-inicio.js.
+      if (el.id === "atalhoProgressoBarra") return;
+
       if (el.dataset.br || !el.style.width) return;
+
       el.dataset.br = "1";
       el._largura = el.style.width;
       el.style.transition = "none";

@@ -2904,6 +2904,14 @@ app.post("/api/aluno/aulas/:id/quiz-perfeito", exigirLogin, exigirAluno, async (
             VALUES (?)
         `, [idAluno]);
 
+        // Bloquear o registro do aluno antes de registrar o XP.
+        await conexao.execute(`
+            SELECT id_aluno
+            FROM gamificacao_aluno
+            WHERE id_aluno = ?
+            FOR UPDATE
+        `, [idAluno]);
+
         // Registrar o bônus sem permitir recebimento duplicado.
         const [registro] = await conexao.execute(`
             INSERT IGNORE INTO historico_xp (

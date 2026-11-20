@@ -10,8 +10,6 @@
   const esc = (t) =>
     String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 
-  const usuario = ls("usuario", {}) || {};
-
   let cursos = [];
   let concluidos = [];
   let emitidos = [];
@@ -35,11 +33,14 @@
   };
 
   const $ = (id) => document.getElementById(id);
-  const nomeAluno = usuario.nome || "Aluno";
+  let nomeAluno = "Aluno";
 
   async function carregarCertificados() {
     try {
       const resposta = await API.get("/aluno/matriculas");
+
+      const usuarioAtual = await HS.carregarUsuario();
+      nomeAluno = usuarioAtual?.nome || "Aluno";
 
       cursos = resposta.cursos || [];
 
@@ -109,7 +110,7 @@
               reg
                 ? `<i class="fa-solid fa-shield-halved"></i> Código <b>${esc(reg.uuid.slice(0, 8))}…</b>
                    <a href="./validar.html?id=${encodeURIComponent(reg.uuid)}" target="_blank" rel="noopener">Validar autenticidade</a>`
-                : `<i class="fa-solid fa-shield-halved"></i> O código de validação é gerado na primeira emissão do PDF.`
+                : `<i class="fa-solid fa-shield-halved"></i> Código de validação ainda não disponível.`
             }
           </p>
 
@@ -183,13 +184,13 @@
 
   /* ---------- Ações ---------- */
 
-  function baixar(c) {
+  async function baixar(c) {
     if (!window.jspdf || !window.qrcode) {
       alert("Não foi possível carregar o gerador de PDF. Verifique sua conexão e tente novamente.");
       return;
     }
     try {
-      baixarCertificado(c, registro(c));
+      await baixarCertificado(c, registro(c));
     } catch (e) {
       console.error(e);
       alert("Não foi possível gerar o PDF do certificado.");

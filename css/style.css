@@ -2395,3 +2395,38 @@ body {
   opacity:1;
   visibility:visible;
 }
+
+
+/* Cursos na tela inicial do professor */
+#listaCursosDashboard .curso {
+  display: grid;
+  grid-template-columns: 75px minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  padding: 18px 12px;
+  min-width: 0;
+}
+
+#listaCursosDashboard .curso img {
+  width: 75px;
+  height: 75px;
+  border-radius: 10px;
+  object-fit: cover;
+  display: block;
+}
+
+#listaCursosDashboard .curso > div {
+  min-width: 0;
+}
+
+#listaCursosDashboard .curso h4 {
+  margin: 0 0 6px;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+}
+
+#listaCursosDashboard .curso p {
+  margin: 0;
+  font-size: 13px;
+  color: #9caec5;
+}

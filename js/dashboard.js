@@ -3,23 +3,40 @@
     (window.HS && HS.esc) ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
-  const ler = (chave, padrao) => {
-    try {
-      const valor = JSON.parse(localStorage.getItem(chave));
-      return valor ?? padrao;
-    } catch (e) {
-      return padrao;
-    }
-  };
-
-  let cursos = ler("cursos", []);
-  if (!Array.isArray(cursos)) cursos = [];
+  let cursos = [];
 
   const numero = (v) => {
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
   };
   const imagem = (src) => esc(src || "./img/perfil.svg");
+
+  async function carregarCursos() {
+    try {
+      const resposta = await fetch("/api/professor/cursos");
+
+      if (!resposta.ok) {
+        throw new Error("Não foi possível carregar os cursos.");
+      }
+
+      cursos = await resposta.json();
+
+      if (!Array.isArray(cursos)) {
+        throw new Error("Resposta inválida da API.");
+      }
+
+      renderizarCursosDashboard();
+
+    } catch (erro) {
+      console.error("Erro ao carregar cursos:", erro);
+
+      const lista = document.getElementById("listaCursosDashboard");
+
+      if (lista) {
+        lista.innerHTML = `<p class="vazio">Não foi possível carregar os cursos.</p>`;
+      }
+    }
+  }
 
   function atualizarMetricas() {
     const totalCursos = cursos.length;
@@ -36,34 +53,44 @@
     set("receitaTotal", "R$ " + receitaTotal.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }));
     set("cursosPublicados", publicados);
   }
-
+  
   function renderizarCursosDashboard() {
     const lista = document.getElementById("listaCursosDashboard");
     if (!lista) return;
+
     const busca = document.querySelector(".cards .search input");
     const termo = (busca?.value || "").trim().toLowerCase();
+
     const filtrados = termo
-      ? cursos.filter((curso) => String(curso.nome || "").toLowerCase().includes(termo))
+      ? cursos.filter((curso) =>
+          String(curso.nome_curso || "").toLowerCase().includes(termo)
+        )
       : cursos;
 
     if (!filtrados.length) {
-      lista.innerHTML = `<p class="vazio">${termo ? "Nenhum curso encontrado para a busca." : "Nenhum curso criado ainda."}</p>`;
+      lista.innerHTML = `
+        <p class="vazio">
+          ${termo
+            ? "Nenhum curso encontrado para a busca."
+            : "Nenhum curso criado ainda."}
+        </p>
+      `;
       return;
     }
 
-    lista.innerHTML = filtrados
-      .map(
-        (curso) => `
+    lista.innerHTML = filtrados.map((curso) => `
       <div class="curso">
-        <img src="${imagem(curso.imagem)}" alt="${esc(curso.nome || "Curso")}" />
+        <img
+          src="${imagem(curso.imagem_url)}"
+          alt="${esc(curso.nome_curso || "Curso")}"
+        />
+
         <div>
-          <h4>${esc(curso.nome || "Curso sem nome")}</h4>
+          <h4>${esc(curso.nome_curso || "Curso sem nome")}</h4>
           <p>${esc(curso.status || "—")}</p>
         </div>
-        <strong>${numero(curso.alunos)}</strong>
-      </div>`,
-      )
-      .join("");
+      </div>
+    `).join("");
   }
 
   function renderizarMaisVendidos() {
@@ -220,7 +247,7 @@
   }
 
   atualizarMetricas();
-  renderizarCursosDashboard();
+  carregarCursos();
   renderizarMaisVendidos();
   renderizarAvaliacoes();
   renderizarUsuariosDashboard();

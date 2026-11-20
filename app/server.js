@@ -1788,6 +1788,93 @@ app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
     }
 });
 
+// Listar alunos matriculados nos cursos do professor
+app.get("/api/professor/usuarios", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        const [matriculas] = await banco.execute(`
+            SELECT
+                a.id_aluno AS alunoId,
+                a.nome,
+                a.email AS email,
+                c.id_curso AS cursoId,
+                c.nome_curso AS cursoNome,
+                m.progresso,
+                m.situacao,
+                m.nota_final AS nota,
+                m.data_matricula AS dataMatricula,
+                cert.codigo_validacao AS certificado
+            FROM matricula m
+            INNER JOIN aluno a
+                ON a.id_aluno = m.id_aluno
+            INNER JOIN curso c
+                ON c.id_curso = m.id_curso
+            LEFT JOIN certificado cert
+                ON cert.id_matricula = m.id_matricula
+            WHERE c.id_professor = ?
+            ORDER BY m.data_matricula DESC
+        `, [idProfessor]);
+
+        const alunos = matriculas.map((m) => {
+            const progresso = Number(m.progresso) || 0;
+
+            return {
+                ...m,
+                progresso,
+                nota: m.nota !== null ? Number(m.nota) : null,
+                status:
+                    m.situacao === "aprovado" || progresso >= 100
+                        ? "concluido"
+                        : "ativo"
+            };
+        });
+
+        const idsAlunos = new Set(alunos.map((a) => a.alunoId));
+
+        const ativos = new Set(
+            alunos
+                .filter((a) => a.status === "ativo")
+                .map((a) => a.alunoId)
+        );
+
+        const concluintes = new Set(
+            alunos
+                .filter((a) => a.status === "concluido")
+                .map((a) => a.alunoId)
+        );
+
+        const limiteSemana = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+        const novos = new Set(
+            alunos
+                .filter((a) => {
+                    const data = new Date(a.dataMatricula);
+                    return !isNaN(data) && data.getTime() >= limiteSemana;
+                })
+                .map((a) => a.alunoId)
+        );
+
+        return res.json({
+            sucesso: true,
+            metricas: {
+                totalAlunos: idsAlunos.size,
+                alunosAtivos: ativos.size,
+                concluintes: concluintes.size,
+                novosSemana: novos.size
+            },
+            matriculas: alunos
+        });
+
+    } catch (erro) {
+        console.error("Erro ao listar usuários do professor:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar os alunos."
+        });
+    }
+});
+
 // Consultar um curso específico do professor autenticado
 app.get("/api/professor/cursos/:id", exigirProfessor, async (req, res) => {
     try {

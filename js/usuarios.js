@@ -8,54 +8,20 @@
   const esc =
     HS.esc ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
-  const cursosProf = JSON.parse(localStorage.getItem("cursos") || "[]");
-  const listaCursos = Array.isArray(cursosProf) ? cursosProf : [];
-
-  if (selCurso) {
-    listaCursos.forEach((c) => {
-      if (!c || c.id === undefined || !c.nome) return;
-      selCurso.insertAdjacentHTML(
-        "beforeend",
-        `<option value="${esc(String(c.id))}">${esc(c.nome)}</option>`,
-      );
-    });
-  }
-
-  const matriculas = HS.matriculas();
-
-  function metricas() {
-    const emails = new Set(matriculas.map((m) => m.email).filter(Boolean));
-    const ativos = new Set(
-      matriculas
-        .filter((m) => m.status !== "concluido")
-        .map((m) => m.email)
-        .filter(Boolean),
-    );
-    const semana = Date.now() - 7 * 864e5;
-    const concluintes = new Set(
-      matriculas
-        .filter((m) => m.status === "concluido")
-        .map((m) => m.email)
-        .filter(Boolean),
-    );
-    const novos = new Set(
-      matriculas
-        .filter((m) => {
-          const d = new Date(m.data);
-          return !isNaN(d) && d.getTime() >= semana;
-        })
-        .map((m) => m.email)
-        .filter(Boolean),
-    );
-
+  
+  let matriculas = [];
+  let listaCursos = [];
+  
+  function metricas(dados) {
     const set = (id, valor) => {
       const el = document.getElementById(id);
       if (el) el.textContent = valor;
     };
-    set("totalAlunos", emails.size);
-    set("alunosAtivos", ativos.size);
-    set("concluintes", concluintes.size);
-    set("novosSemana", novos.size);
+
+    set("totalAlunos", dados.totalAlunos);
+    set("alunosAtivos", dados.alunosAtivos);
+    set("concluintes", dados.concluintes);
+    set("novosSemana", dados.novosSemana);
   }
 
   function render() {
@@ -67,40 +33,121 @@
       const nome = String(m.nome || "").toLowerCase();
       const email = String(m.email || "").toLowerCase();
       const cursoNome = String(m.cursoNome || "").toLowerCase();
-      const combinaTexto = !texto || nome.includes(texto) || email.includes(texto) || cursoNome.includes(texto);
+
+      const combinaTexto =
+        !texto ||
+        nome.includes(texto) ||
+        email.includes(texto) ||
+        cursoNome.includes(texto);
+
       const combinaCurso = !curso || String(m.cursoId) === curso;
+
       const combinaStatus =
-        !status || (status === "concluido" ? m.status === "concluido" : m.status !== "concluido");
+        !status || m.status === status;
+
       return combinaTexto && combinaCurso && combinaStatus;
     });
 
     if (!lista.length) {
-      tabelaAlunos.innerHTML = `<tr><td colspan="5" class="vazio">Nenhum aluno encontrado com os filtros selecionados.</td></tr>`;
+      tabelaAlunos.innerHTML = `
+        <tr>
+          <td colspan="5" class="vazio">
+            Nenhum aluno encontrado com os filtros selecionados.
+          </td>
+        </tr>
+      `;
       return;
     }
 
-    tabelaAlunos.innerHTML = lista
-      .map((m) => {
-        const cursoDoAluno = listaCursos.find((c) => String(c.id) === String(m.cursoId));
-        const cert =
-          m.status === "concluido" && cursoDoAluno?.certificado !== "Sem Certificado"
-            ? "Emitido"
-            : "—";
-        const progresso = Math.max(0, Math.min(100, Number(m.progresso) || 0));
-        return `<tr>
-          <td>${esc(m.nome)}<br><small>${esc(m.email)}</small></td>
-          <td>${esc(m.cursoNome || cursoDoAluno?.nome || "—")}</td>
+    tabelaAlunos.innerHTML = lista.map((m) => {
+      const progresso = Math.max(
+        0,
+        Math.min(100, Number(m.progresso) || 0)
+      );
+
+      const certificado = m.certificado
+        ? "Emitido"
+        : "—";
+
+      const nota = m.nota !== null && m.nota !== undefined
+        ? m.nota
+        : "—";
+
+      return `
+        <tr>
+          <td>
+            ${esc(m.nome)}
+            <br>
+            <small>${esc(m.email)}</small>
+          </td>
+          <td>${esc(m.cursoNome || "—")}</td>
           <td>${progresso}%</td>
-          <td>${cert}</td>
-          <td>—</td>
-        </tr>`;
-      })
-      .join("");
+          <td>${certificado}</td>
+          <td>${esc(String(nota))}</td>
+        </tr>
+      `;
+    }).join("");
+  }
+
+
+async function carregarUsuarios() {
+  tabelaAlunos.innerHTML = `
+    <tr>
+      <td colspan="5" class="vazio">Carregando alunos...</td>
+    </tr>
+  `;
+
+    try {
+      const resposta = await API.get("/professor/usuarios");
+
+      matriculas = resposta.matriculas || [];
+
+      metricas(resposta.metricas);
+
+      // Identifica os cursos sem repetir opções.
+      listaCursos = [
+        ...new Map(
+          matriculas.map((m) => [
+            String(m.cursoId),
+            {
+              id: m.cursoId,
+              nome: m.cursoNome
+            }
+          ])
+        ).values()
+      ];
+
+      if (selCurso) {
+        selCurso.innerHTML = '<option value="">Todos os cursos</option>';
+
+        listaCursos.forEach((curso) => {
+          const option = document.createElement("option");
+
+          option.value = curso.id;
+          option.textContent = curso.nome;
+
+          selCurso.appendChild(option);
+        });
+      }
+
+      render();
+
+    } catch (erro) {
+      console.error("Erro ao carregar usuários:", erro);
+
+      tabelaAlunos.innerHTML = `
+        <tr>
+          <td colspan="5" class="vazio">
+            Não foi possível carregar os alunos.
+          </td>
+        </tr>
+      `;
+    }
   }
 
   campoBuscaAluno?.addEventListener("input", render);
   selCurso?.addEventListener("change", render);
   selStatus?.addEventListener("change", render);
-  metricas();
-  render();
+
+  carregarUsuarios();
 })();

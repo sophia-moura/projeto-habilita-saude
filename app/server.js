@@ -707,6 +707,249 @@ app.post("/api/aluno/suporte", exigirLogin, exigirAluno, async (req, res) => {
     }
 });
 
+// Listar chamados dos alunos destinados ao professor autenticado
+app.get("/api/professor/suporte", exigirLogin, exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        const [chamados] = await banco.execute(`
+            SELECT
+                cs.id_chamado AS id,
+                cs.id_aluno,
+                a.nome AS nomeAluno,
+                cs.assunto AS titulo,
+                cs.curso,
+                cs.descricao AS mensagem,
+                cs.status,
+                cs.data_abertura AS criadoEm,
+                (
+                    SELECT COUNT(*)
+                    FROM mensagem_chamado mc
+                    WHERE mc.id_chamado = cs.id_chamado
+                ) + 1 AS totalMensagens
+            FROM chamado_suporte cs
+            INNER JOIN aluno a
+                ON a.id_aluno = cs.id_aluno
+            WHERE cs.id_professor = ?
+            ORDER BY cs.data_abertura DESC
+        `, [idProfessor]);
+
+        return res.json(chamados);
+
+    } catch (erro) {
+        console.error("Erro ao listar chamados do professor:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar os chamados."
+        });
+    }
+});
+
+// Consultar conversa de um chamado do professor
+app.get("/api/professor/suporte/:id/mensagens", exigirLogin, exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+        const idChamado = Number(req.params.id);
+
+        if (!Number.isInteger(idChamado) || idChamado <= 0) {
+            return res.status(400).json({
+                erro: "Chamado inválido."
+            });
+        }
+
+        const [chamados] = await banco.execute(`
+            SELECT
+                cs.id_chamado,
+                cs.descricao,
+                cs.data_abertura,
+                a.nome AS nomeAluno
+            FROM chamado_suporte cs
+            INNER JOIN aluno a
+                ON a.id_aluno = cs.id_aluno
+            WHERE cs.id_chamado = ?
+              AND cs.id_professor = ?
+        `, [idChamado, idProfessor]);
+
+        if (chamados.length === 0) {
+            return res.status(404).json({
+                erro: "Chamado não encontrado."
+            });
+        }
+
+        const [mensagens] = await banco.execute(`
+            SELECT
+                id_mensagem AS id,
+                remetente,
+                mensagem,
+                DATE_FORMAT(data_envio, '%d/%m/%Y %H:%i') AS data
+            FROM mensagem_chamado
+            WHERE id_chamado = ?
+            ORDER BY data_envio ASC, id_mensagem ASC
+        `, [idChamado]);
+
+        return res.json({
+            chamado: chamados[0],
+            mensagens: [
+                {
+                    id: null,
+                    remetente: "aluno",
+                    mensagem: chamados[0].descricao,
+                    data: chamados[0].data_abertura
+                },
+                ...mensagens
+            ]
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar conversa:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar a conversa."
+        });
+    }
+});
+
+// Professor responde ao chamado do aluno
+app.post(
+    "/api/professor/suporte/:id/mensagens",
+    exigirLogin,
+    exigirProfessor,
+    async (req, res) => {
+        let conexao;
+
+        try {
+            const idProfessor = req.session.usuario.id;
+            const idChamado = Number(req.params.id);
+            const mensagem = req.body.mensagem?.trim();
+
+            if (!Number.isInteger(idChamado) || idChamado <= 0) {
+                return res.status(400).json({
+                    erro: "Chamado inválido."
+                });
+            }
+
+            if (!mensagem || mensagem.length < 1) {
+                return res.status(400).json({
+                    erro: "Digite uma mensagem."
+                });
+            }
+
+            conexao = await banco.getConnection();
+            await conexao.beginTransaction();
+
+            // Confirmar que o chamado pertence ao professor
+            const [chamados] = await conexao.execute(`
+                SELECT id_aluno, status
+                FROM chamado_suporte
+                WHERE id_chamado = ?
+                  AND id_professor = ?
+                FOR UPDATE
+            `, [idChamado, idProfessor]);
+
+            if (chamados.length === 0) {
+                await conexao.rollback();
+
+                return res.status(404).json({
+                    erro: "Chamado não encontrado."
+                });
+            }
+
+            const idAluno = chamados[0].id_aluno;
+
+            // Salvar resposta do professor
+            await conexao.execute(`
+                INSERT INTO mensagem_chamado
+                    (id_chamado, remetente, mensagem)
+                VALUES (?, 'professor', ?)
+            `, [idChamado, mensagem]);
+
+            // Atualizar status do chamado
+            if (chamados[0].status !== "resolvido") {
+                await conexao.execute(`
+                    UPDATE chamado_suporte
+                    SET status = 'em_atendimento'
+                    WHERE id_chamado = ?
+                `, [idChamado]);
+            }
+
+            // Notificar o aluno sobre a resposta
+            await conexao.execute(`
+                INSERT INTO notificacao
+                    (id_aluno, titulo, mensagem)
+                VALUES (?, ?, ?)
+            `, [
+                idAluno,
+                "Nova resposta do professor",
+                `Seu professor respondeu ao seu chamado: ${mensagem}`
+            ]);
+
+            await conexao.commit();
+
+            return res.status(201).json({
+                mensagem: "Resposta enviada com sucesso!"
+            });
+
+        } catch (erro) {
+            if (conexao) {
+                await conexao.rollback();
+            }
+
+            console.error("Erro ao responder chamado:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível enviar a resposta."
+            });
+
+        } finally {
+            if (conexao) {
+                conexao.release();
+            }
+        }
+    }
+);
+
+// Professor exclui definitivamente um chamado
+app.delete(
+    "/api/professor/suporte/:id",
+    exigirLogin,
+    exigirProfessor,
+    async (req, res) => {
+        try {
+            const idProfessor = req.session.usuario.id;
+            const idChamado = Number(req.params.id);
+
+            if (!Number.isInteger(idChamado) || idChamado <= 0) {
+                return res.status(400).json({
+                    erro: "Chamado inválido."
+                });
+            }
+
+            const [resultado] = await banco.execute(`
+                DELETE FROM chamado_suporte
+                WHERE id_chamado = ?
+                  AND id_professor = ?
+            `, [idChamado, idProfessor]);
+
+            if (resultado.affectedRows === 0) {
+                return res.status(404).json({
+                    erro: "Chamado não encontrado."
+                });
+            }
+
+            return res.json({
+                mensagem: "Chamado excluído com sucesso!"
+            });
+
+        } catch (erro) {
+            console.error("Erro ao excluir chamado:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível excluir o chamado."
+            });
+        }
+    }
+);
+
 // Enviar imagem de um curso
 app.post(
     "/api/cursos/imagem",
@@ -2696,21 +2939,29 @@ app.patch("/api/notificacoes/:id/lida", exigirLogin, async (req, res) => {
         conexao = await banco.getConnection();
         await conexao.beginTransaction();
 
-        // Marcar a notificação como lida, respeitando seu destinatário.
-        const [resultado] = await conexao.execute(`
-            UPDATE notificacao
-            SET lida = TRUE
+        // Verificar se a notificação existe e pertence ao usuário.
+        const [notificacoes] = await conexao.execute(`
+            SELECT id_notificacao
+            FROM notificacao
             WHERE id_notificacao = ?
-              AND ${coluna} = ?
+            AND ${coluna} = ?
         `, [id, usuario.id]);
 
-        if (resultado.affectedRows === 0) {
+        if (notificacoes.length === 0) {
             await conexao.rollback();
 
             return res.status(404).json({
                 erro: "Notificação não encontrada."
             });
         }
+
+        // Marcar como lida, mesmo que ela já estivesse lida.
+        await conexao.execute(`
+            UPDATE notificacao
+            SET lida = TRUE
+            WHERE id_notificacao = ?
+            AND ${coluna} = ?
+        `, [id, usuario.id]);
 
         // Se for uma notificação de suporte, atualizar o chamado.
         // Somente chamados ainda abertos passam para o status "lido".

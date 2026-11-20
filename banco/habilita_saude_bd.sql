@@ -229,6 +229,22 @@ CREATE TABLE chamado_suporte (
         (id_aluno IS NOT NULL)
 ) ENGINE=InnoDB;
 
+CREATE TABLE mensagem_chamado (
+    id_mensagem INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_chamado INT UNSIGNED NOT NULL,
+    remetente ENUM('aluno', 'professor') NOT NULL,
+    mensagem TEXT NOT NULL,
+    data_envio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_mensagem_chamado
+        PRIMARY KEY (id_mensagem),
+
+    CONSTRAINT fk_mensagem_chamado
+        FOREIGN KEY (id_chamado)
+        REFERENCES chamado_suporte (id_chamado)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 CREATE TABLE aula_concluida (
     id_aluno INT UNSIGNED NOT NULL,
     id_aula INT UNSIGNED NOT NULL,

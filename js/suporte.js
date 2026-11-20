@@ -3,29 +3,76 @@
     (window.HS && HS.esc) ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
-  const lerTickets = () => {
-    try {
-      const lista = JSON.parse(localStorage.getItem("tickets"));
-      if (Array.isArray(lista)) return lista;
-    } catch (e) {
-      /* dados inválidos: recomeça */
-    }
-    return [
-      {
-        id: 1,
-        titulo: "Problema ao acessar curso",
-        status: "Aberto",
-        prioridade: "Alta",
-        criadoEm: "2026-06-10",
-        mensagens: [
-          { autor: "usuario", texto: "Não consigo entrar." },
-          { autor: "suporte", texto: "Estamos verificando seu acesso." },
-        ],
-      },
-    ];
-  };
+  function formatarData(data) {
+    if (!data) return "—";
 
-  let tickets = lerTickets();
+    const dataConvertida = new Date(data);
+
+    if (Number.isNaN(dataConvertida.getTime())) return "—";
+
+    return new Intl.DateTimeFormat("pt-BR", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(dataConvertida);
+  }
+
+  // Os chamados agora são carregados diretamente do banco de dados
+  let tickets = [];
+
+  async function carregarTickets() {
+    try {
+      const resposta = await fetch("/api/professor/suporte", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Accept": "application/json"
+        }
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível carregar os chamados.");
+      }
+
+      tickets = dados.map((chamado) => {
+        const statusMapeado = {
+          aberto: "Aberto",
+          lido: "Aberto",
+          em_atendimento: "Andamento",
+          resolvido: "Resolvido"
+        };
+
+        return {
+          id: chamado.id,
+          idAluno: chamado.id_aluno,
+          nomeAluno: chamado.nomeAluno,
+          titulo: chamado.titulo,
+          curso: chamado.curso,
+          mensagem: chamado.mensagem,
+          status: statusMapeado[chamado.status] || "Aberto",
+          statusOriginal: chamado.status,
+          criadoEm: chamado.criadoEm,
+          totalMensagens: Number(chamado.totalMensagens) || 1,
+          mensagens: []
+        };
+      });
+
+      renderizarTickets();
+      atualizarMetricas();
+
+    } catch (erro) {
+      console.error("Erro ao carregar chamados:", erro);
+      listaTickets.innerHTML = `
+        <div class="ticket-card">
+          <h3>Não foi possível carregar os chamados.</h3>
+          <p>${esc(erro.message)}</p>
+        </div>`;
+    }
+  }
   const listaTickets = document.getElementById("listaTickets");
   const modalTicket = document.getElementById("modalTicket");
   const modalChat = document.getElementById("modalChat");
@@ -83,8 +130,8 @@
           </div>
           <div class="ticket-info">
             <span>Prioridade: ${esc(ticket.prioridade || "—")}</span>
-            <span>${mensagensDe(ticket).length} mensagens</span>
-            <span>${esc(ticket.criadoEm || "—")}</span>
+            <span>${ticket.totalMensagens ?? mensagensDe(ticket).length} mensagens</span>
+            <span>${esc(formatarData(ticket.criadoEm))}</span>
           </div>
         </div>
         <button class="btn-abrir" type="button" data-abrir="${esc(ticket.id)}">Abrir</button>
@@ -94,8 +141,6 @@
       </div>`;
       })
       .join("");
-
-    salvarTickets();
   }
 
   function criarNotificacao(titulo, descricao, tipo) {
@@ -122,7 +167,10 @@
 
   function atualizarMetricas() {
     const contar = (status) => tickets.filter((ticket) => ticket.status === status).length;
-    const mensagens = tickets.reduce((total, ticket) => total + mensagensDe(ticket).length, 0);
+    const mensagens = tickets.reduce(
+      (total, ticket) => total + Number(ticket.totalMensagens ?? mensagensDe(ticket).length),
+      0
+    );
     const set = (id, valor) => {
       const el = document.getElementById(id);
       if (el) el.textContent = valor;
@@ -187,40 +235,112 @@
     if (mensagemTicket) mensagemTicket.value = "";
   });
 
-  function excluirTicket(id) {
-    if (!confirm("Deseja realmente excluir este ticket?")) return;
-    tickets = tickets.filter((ticket) => String(ticket.id) !== String(id));
-    if (!salvarTickets()) return;
-    if (ticketAtual && String(ticketAtual.id) === String(id)) {
-      ticketAtual = null;
-      fecharModal(modalChat);
+  async function excluirTicket(id) {
+    if (!confirm("Deseja realmente excluir este chamado?")) return;
+
+    try {
+      const resposta = await fetch(
+        `/api/professor/suporte/${id}`,
+        {
+          method: "DELETE",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json"
+          }
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível excluir o chamado.");
+      }
+
+      tickets = tickets.filter(
+        (ticket) => String(ticket.id) !== String(id)
+      );
+
+      if (ticketAtual && String(ticketAtual.id) === String(id)) {
+        ticketAtual = null;
+        fecharModal(modalChat);
+      }
+
+      renderizarTickets();
+      atualizarMetricas();
+
+    } catch (erro) {
+      console.error("Erro ao excluir chamado:", erro);
+      alert(erro.message);
     }
-    renderizarTickets();
-    atualizarMetricas();
   }
 
-  function renderizarMensagens() {
+    function renderizarMensagens() {
     if (!ticketAtual || !mensagensTicket) return;
+
     mensagensTicket.innerHTML = mensagensDe(ticketAtual)
-      .map(
-        (msg) =>
-          `<div class="mensagem ${msg.autor === "suporte" ? "suporte" : "usuario"}">${esc(
-            msg.texto || "",
-          )}</div>`,
-      )
+      .map((msg) => `
+        <div class="mensagem ${msg.autor === "suporte" ? "suporte" : "usuario"}">
+          ${esc(msg.texto || "")}
+        </div>
+      `)
       .join("");
   }
 
-  function abrirTicket(id) {
-    ticketAtual = tickets.find((ticket) => String(ticket.id) === String(id)) || null;
+  async function abrirTicket(id) {
+    ticketAtual = tickets.find(
+      (ticket) => String(ticket.id) === String(id)
+    ) || null;
+
     if (!ticketAtual) {
-      alert("Ticket não encontrado.");
+      alert("Chamado não encontrado.");
       return;
     }
-    renderizarMensagens();
-    abrirModal(modalChat);
+
+    const chamadoSelecionado = ticketAtual;
+
+    mensagensTicket.innerHTML = "<p>Carregando conversa...</p>";
+
     const tituloModal = modalChat.querySelector("h2");
-    if (tituloModal) tituloModal.textContent = ticketAtual.titulo || "Ticket";
+    if (tituloModal) {
+      tituloModal.textContent = chamadoSelecionado.titulo || "Chamado";
+    }
+
+    abrirModal(modalChat);
+
+    try {
+      const resposta = await fetch(
+        `/api/professor/suporte/${chamadoSelecionado.id}/mensagens`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Accept": "application/json"
+          }
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(dados.erro || "Não foi possível carregar a conversa.");
+      }
+
+      chamadoSelecionado.mensagens = (dados.mensagens || []).map((msg) => ({
+        autor: msg.remetente === "professor" ? "suporte" : "usuario",
+        texto: msg.mensagem,
+        data: msg.data
+      }));
+
+      if (ticketAtual === chamadoSelecionado) {
+        renderizarMensagens();
+      }
+
+    } catch (erro) {
+      console.error("Erro ao carregar conversa:", erro);
+      mensagensTicket.innerHTML = `
+        <p>${esc(erro.message)}</p>
+      `;
+    }
   }
 
   listaTickets.addEventListener("click", (e) => {
@@ -233,34 +353,58 @@
     if (excluir) excluirTicket(excluir.dataset.excluir);
   });
 
-  btnEnviarMensagem?.addEventListener("click", () => {
-    const texto = campoNovaMensagem?.value.trim() || "";
-    if (!texto) return;
-    if (!ticketAtual) {
-      alert("Abra um ticket antes de enviar uma mensagem.");
-      return;
+  btnEnviarMensagem?.addEventListener("click", async () => {
+  const texto = campoNovaMensagem?.value.trim() || "";
+
+  if (!texto) return;
+
+  if (!ticketAtual) {
+    alert("Abra um chamado antes de enviar uma mensagem.");
+    return;
+  }
+
+  const chamadoSelecionado = ticketAtual;
+
+  try {
+    btnEnviarMensagem.disabled = true;
+
+    const resposta = await fetch(
+      `/api/professor/suporte/${chamadoSelecionado.id}/mensagens`,
+      {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          mensagem: texto.slice(0, 2000)
+        })
+      }
+    );
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(dados.erro || "Não foi possível enviar a mensagem.");
     }
 
-    ticketAtual.mensagens = mensagensDe(ticketAtual);
-    ticketAtual.mensagens.push({ autor: "usuario", texto: texto.slice(0, 2000) });
-    if (!salvarTickets()) return;
-    renderizarMensagens();
-    atualizarMetricas();
-    if (campoNovaMensagem) campoNovaMensagem.value = "";
+    if (campoNovaMensagem) {
+      campoNovaMensagem.value = "";
+    }
 
-    const idTicket = ticketAtual.id;
-    setTimeout(() => {
-      const ticket = tickets.find((t) => String(t.id) === String(idTicket));
-      if (!ticket) return;
-      ticket.mensagens = mensagensDe(ticket);
-      ticket.mensagens.push({
-        autor: "suporte",
-        texto: "Recebemos sua mensagem. Nossa equipe retornará em breve.",
-      });
-      if (!salvarTickets()) return;
-      if (ticketAtual && String(ticketAtual.id) === String(idTicket)) renderizarMensagens();
-      atualizarMetricas();
-    }, 1000);
+    // Atualiza a conversa com as mensagens salvas no banco
+    await abrirTicket(chamadoSelecionado.id);
+
+    // Atualiza a quantidade de mensagens exibida na listagem
+    await carregarTickets();
+
+  } catch (erro) {
+    console.error("Erro ao enviar mensagem:", erro);
+    alert(erro.message);
+  } finally {
+    btnEnviarMensagem.disabled = false;
+  }
   });
 
   campoNovaMensagem?.addEventListener("keydown", (e) => {
@@ -290,6 +434,5 @@
     else if (modalTicket.classList.contains("ativo")) fecharModal(modalTicket);
   });
 
-  renderizarTickets();
-  atualizarMetricas();
+  carregarTickets();
 })();

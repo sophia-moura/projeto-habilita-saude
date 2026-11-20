@@ -1758,23 +1758,63 @@ app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
 
         const [cursos] = await banco.execute(`
             SELECT
-                id_curso,
-                nome_curso,
-                subtitulo,
-                descricao,
-                area_tematica,
-                publico_alvo,
-                carga_horaria,
-                nivel,
-                certificado,
-                checklist,
-                imagem_url,
-                preco,
-                status,
-                data_criacao
-            FROM curso
-            WHERE id_professor = ?
-            ORDER BY id_curso DESC
+                c.id_curso,
+                c.nome_curso,
+                c.nome_curso AS nome,
+                c.subtitulo,
+                c.descricao,
+                c.area_tematica,
+                c.publico_alvo,
+                c.carga_horaria,
+                c.nivel,
+                c.certificado,
+                c.checklist,
+                c.imagem_url,
+                c.preco,
+                c.status,
+                c.data_criacao,
+
+                COALESCE(v.vendas, 0) AS vendas,
+                COALESCE(av.avaliacao, 0) AS avaliacao,
+                COALESCE(mat.alunos, 0) AS alunos
+
+            FROM curso c
+
+            LEFT JOIN (
+                SELECT
+                    ic.id_curso,
+                    COUNT(*) AS vendas
+                FROM item_compra ic
+                INNER JOIN compra cp
+                    ON cp.id_compra = ic.id_compra
+                WHERE cp.status = 'paga'
+                GROUP BY ic.id_curso
+            ) v
+                ON v.id_curso = c.id_curso
+
+            LEFT JOIN (
+                SELECT
+                    m.id_curso,
+                    AVG(a.nota) AS avaliacao
+                FROM avaliacao a
+                INNER JOIN matricula m
+                    ON m.id_matricula = a.id_matricula
+                GROUP BY m.id_curso
+            ) av
+                ON av.id_curso = c.id_curso
+
+            LEFT JOIN (
+                SELECT
+                    id_curso,
+                    COUNT(*) AS alunos
+                FROM matricula
+                GROUP BY id_curso
+            ) mat
+                ON mat.id_curso = c.id_curso
+
+            WHERE c.id_professor = ?
+
+            ORDER BY c.id_curso DESC
         `, [idProfessor]);
 
         res.json(cursos);

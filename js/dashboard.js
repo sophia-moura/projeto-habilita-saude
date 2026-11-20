@@ -27,7 +27,8 @@
       }
 
       renderizarCursosDashboard();
-
+      renderizarMaisVendidos();
+      renderizarAvaliacoes();
     } catch (erro) {
       console.error("Erro ao carregar cursos:", erro);
 
@@ -118,12 +119,20 @@
     const tabela = document.getElementById("rankingVendas");
     if (!tabela) return;
 
-    if (!cursos.length) {
-      tabela.innerHTML = `<tr><td colspan="3">Nenhum curso encontrado</td></tr>`;
+    const cursosVendidos = cursos.filter(
+      (curso) => numero(curso.vendas) > 0
+    );
+
+    if (!cursosVendidos.length) {
+      tabela.innerHTML = `
+        <tr>
+          <td colspan="3">Nenhum curso vendido ainda</td>
+        </tr>
+      `;
       return;
     }
 
-    const ranking = cursos
+    const ranking = cursosVendidos
       .slice()
       .sort((a, b) => numero(b.vendas) - numero(a.vendas))
       .slice(0, 3);
@@ -131,11 +140,12 @@
     tabela.innerHTML = ranking
       .map(
         (curso, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${esc(curso.nome || "Curso")}</td>
-        <td>${numero(curso.vendas)}</td>
-      </tr>`,
+          <tr>
+            <td>${index + 1}</td>
+            <td>${esc(curso.nome || "Curso")}</td>
+            <td>${numero(curso.vendas)}</td>
+          </tr>
+        `,
       )
       .join("");
   }
@@ -145,11 +155,15 @@
     if (!tabela) return;
 
     const cursosComAvaliacao = cursos.filter(
-      (curso) => numero(curso.vendas) > 0 && numero(curso.avaliacao) > 0,
+      (curso) => numero(curso.avaliacao) > 0
     );
 
     if (!cursosComAvaliacao.length) {
-      tabela.innerHTML = `<tr><td colspan="3">Nenhum curso avaliado ainda</td></tr>`;
+      tabela.innerHTML = `
+        <tr>
+          <td colspan="3">Nenhum curso avaliado ainda</td>
+        </tr>
+      `;
       return;
     }
 
@@ -161,11 +175,12 @@
     tabela.innerHTML = ranking
       .map(
         (curso, index) => `
-      <tr>
-        <td>${index + 1}</td>
-        <td>${esc(curso.nome || "Curso")}</td>
-        <td>⭐ ${numero(curso.avaliacao).toFixed(1)}</td>
-      </tr>`,
+          <tr>
+            <td>${index + 1}</td>
+            <td>${esc(curso.nome || curso.nome_curso || "Curso")}</td>
+            <td>⭐ ${numero(curso.avaliacao).toFixed(1)}</td>
+          </tr>
+        `
       )
       .join("");
   }

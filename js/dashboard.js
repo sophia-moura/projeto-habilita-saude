@@ -4,6 +4,7 @@
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
 
   let cursos = [];
+  let matriculasDashboard = [];
 
   const numero = (v) => {
     const n = Number(v);
@@ -35,6 +36,25 @@
       if (lista) {
         lista.innerHTML = `<p class="vazio">Não foi possível carregar os cursos.</p>`;
       }
+    }
+  }
+
+  async function carregarMatriculasDashboard() {
+    try {
+      const resposta = await fetch("/api/professor/usuarios");
+
+      if (!resposta.ok) {
+        throw new Error("Não foi possível carregar as matrículas.");
+      }
+
+      const dados = await resposta.json();
+
+      matriculasDashboard = dados.matriculas || [];
+
+      criarGrafico();
+    } catch (erro) {
+      console.error("Erro ao carregar matrículas:", erro);
+      matriculasDashboard = [];
     }
   }
 
@@ -191,8 +211,37 @@
   }
 
   function dadosGrafico(qtd) {
-    const total = cursos.reduce((t, c) => t + numero(c.alunos), 0);
-    return Array.from({ length: qtd }, (_, i) => Math.round((total * (i + 1)) / qtd));
+    const hoje = new Date();
+
+    const periodos = Array.from({ length: qtd }, (_, i) => {
+      const data = new Date(
+        hoje.getFullYear(),
+        hoje.getMonth() - (qtd - 1 - i),
+        1
+      );
+
+      return {
+        ano: data.getFullYear(),
+        mes: data.getMonth() + 1
+      };
+    });
+
+    return periodos.map((periodo) => {
+      return matriculasDashboard.filter((matricula) => {
+        const valor = matricula.dataMatricula;
+
+        if (!valor) return false;
+
+        const data = new Date(valor);
+
+        if (isNaN(data.getTime())) return false;
+
+        return (
+          data.getFullYear() === periodo.ano &&
+          data.getMonth() + 1 === periodo.mes
+        );
+      }).length;
+    });
   }
 
   let grafico = null;
@@ -252,6 +301,7 @@
   renderizarAvaliacoes();
   renderizarUsuariosDashboard();
   criarGrafico();
+  carregarMatriculasDashboard();
 
   document.querySelector(".cards .search input")?.addEventListener("input", renderizarCursosDashboard);
 

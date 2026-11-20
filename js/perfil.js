@@ -1,14 +1,4 @@
 (async function () {
-  const ler = (chave, padrao) => {
-    try {
-      return JSON.parse(localStorage.getItem(chave)) ?? padrao;
-    } catch (e) {
-      return padrao;
-    }
-  };
-
-  const salvar = (chave, valor) => localStorage.setItem(chave, JSON.stringify(valor));
-
   let usuario = {};
 
   try {
@@ -86,53 +76,65 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function sincronizarCadastro(emailAntigo, novoNome, novoEmail, novaFoto) {
-    const lista = ler("usuarios", []);
-    if (!Array.isArray(lista)) return;
-    const registro = lista.find(
-      (u) => String(u.email || "").toLowerCase() === emailAntigo && u.tipo === usuario.tipo,
-    );
-    if (registro) {
-      registro.nome = novoNome;
-      registro.email = novoEmail;
-      if (novaFoto) registro.foto = novaFoto;
-      salvar("usuarios", lista);
-    }
-  }
-
   function sincronizarDadosRelacionados(emailAntigo, novoNome, novoEmail, novaFoto) {
-    const matriculas = ler("matriculas", []);
+    const lerLocal = (chave) => {
+        try {
+            return JSON.parse(localStorage.getItem(chave)) || [];
+        } catch {
+            return [];
+        }
+    };
+
+    const salvarLocal = (chave, dados) => {
+        localStorage.setItem(chave, JSON.stringify(dados));
+    };
+
+    const matriculas = lerLocal("matriculas");
+
     if (Array.isArray(matriculas)) {
-      let mudou = false;
-      matriculas.forEach((m) => {
-        if (String(m.email || "").toLowerCase() !== emailAntigo) return;
-        m.email = novoEmail;
-        m.nome = novoNome;
-        if (novaFoto) m.foto = novaFoto;
-        mudou = true;
-      });
-      if (mudou) salvar("matriculas", matriculas);
+        let mudou = false;
+
+        matriculas.forEach((m) => {
+            if (String(m.email || "").toLowerCase() !== emailAntigo) return;
+
+            m.email = novoEmail;
+            m.nome = novoNome;
+
+            if (novaFoto) m.foto = novaFoto;
+
+            mudou = true;
+        });
+
+        if (mudou) salvarLocal("matriculas", matriculas);
     }
 
-    const certificados = ler("certificados", []);
+    const certificados = lerLocal("certificados");
+
     if (Array.isArray(certificados)) {
-      let mudou = false;
-      certificados.forEach((c) => {
-        if (String(c.email || "").toLowerCase() !== emailAntigo) return;
-        c.email = novoEmail;
-        c.aluno = novoNome;
-        mudou = true;
-      });
-      if (mudou) salvar("certificados", certificados);
+        let mudou = false;
+
+        certificados.forEach((c) => {
+            if (String(c.email || "").toLowerCase() !== emailAntigo) return;
+
+            c.email = novoEmail;
+            c.aluno = novoNome;
+
+            mudou = true;
+        });
+
+        if (mudou) salvarLocal("certificados", certificados);
     }
 
     if (emailAntigo && emailAntigo !== novoEmail) {
-      ["boasVindas_", "gam_", "gamprof_"].forEach((prefixo) => {
-        const chaveAntiga = `${prefixo}${emailAntigo}`;
-        if (!localStorage.getItem(chaveAntiga)) return;
-        localStorage.setItem(`${prefixo}${novoEmail}`, localStorage.getItem(chaveAntiga));
-        localStorage.removeItem(chaveAntiga);
-      });
+        ["boasVindas_", "gam_", "gamprof_"].forEach((prefixo) => {
+            const chaveAntiga = `${prefixo}${emailAntigo}`;
+            const valor = localStorage.getItem(chaveAntiga);
+
+            if (valor === null) return;
+
+            localStorage.setItem(`${prefixo}${novoEmail}`, valor);
+            localStorage.removeItem(chaveAntiga);
+        });
     }
   }
 
@@ -151,61 +153,66 @@
       return;
     }
 
-    const lista = ler("usuarios", []);
     const emailAntigo = String(usuario.email || "").toLowerCase();
-    if (
-      Array.isArray(lista) &&
-      lista.some(
-        (u) =>
-          String(u.email || "").toLowerCase() === email &&
-          String(u.email || "").toLowerCase() !== emailAntigo,
-      )
-    ) {
-      mostrarMensagem("Este e-mail já está em uso por outra conta.", true);
-      campoEmail.focus();
-      return;
-    }
-
-    const finalizar = (foto) => {
-      usuario.nome = nome;
-      usuario.email = email;
-      if (foto) usuario.foto = foto;
-      salvar("usuario", usuario);
-
-      try {
-        sincronizarCadastro(emailAntigo, nome, email, foto);
-        sincronizarDadosRelacionados(emailAntigo, nome, email, foto);
-      } catch (e) {
-        console.warn("Não foi possível sincronizar todos os dados do perfil.", e);
-      }
-
-      mostrarMensagem("Perfil atualizado com sucesso!", false);
-      setTimeout(() => location.reload(), 650);
-    };
 
     botao.disabled = true;
     botao.textContent = "Salvando...";
 
     (async () => {
-      try {
-          if (arquivoFoto) {
-              const formulario = new FormData();
-              formulario.append("foto", arquivoFoto);
+        try {
+            // Atualiza nome e e-mail no banco de dados
+            const dadosPerfil = await API.put("/perfil", {
+                nome,
+                email
+            });
 
-              const dados = await API.request("/perfil/foto", {
-                  method: "POST",
-                  body: formulario
-              });
+            usuario = dadosPerfil.usuario;
 
-              finalizar(dados.foto);
-          } else {
-              finalizar("");
-          }
-      } catch (erro) {
-          mostrarMensagem(erro.message || "Não foi possível salvar a foto.", true);
-          botao.disabled = false;
-          botao.textContent = "Salvar alterações";
-      }
-  })();
+            // Se uma nova foto foi selecionada, envia para o servidor
+            if (arquivoFoto) {
+                const formulario = new FormData();
+                formulario.append("foto", arquivoFoto);
+
+                try {
+                    const dadosFoto = await API.request("/perfil/foto", {
+                        method: "POST",
+                        body: formulario
+                    });
+
+                    usuario.foto = dadosFoto.foto;
+                } catch (erroFoto) {
+                    mostrarMensagem(
+                        "Nome e e-mail atualizados, mas houve um erro ao salvar a foto: " + erroFoto.message,
+                        true
+                    );
+
+                    botao.disabled = false;
+                    botao.textContent = "Salvar alterações";
+                    return;
+                }
+            }
+
+            // Mantém os dados locais relacionados sincronizados
+            sincronizarDadosRelacionados(
+                emailAntigo,
+                nome,
+                email,
+                usuario.foto || ""
+            );
+
+            mostrarMensagem("Perfil atualizado com sucesso!", false);
+
+            setTimeout(() => location.reload(), 650);
+
+        } catch (erro) {
+            mostrarMensagem(
+                erro.message || "Não foi possível atualizar o perfil.",
+                true
+            );
+
+            botao.disabled = false;
+            botao.textContent = "Salvar alterações";
+        }
+    })();
   });
 })();

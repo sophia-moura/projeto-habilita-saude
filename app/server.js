@@ -381,6 +381,98 @@ app.get("/api/usuario-logado", (req, res) => {
     });
 });
 
+app.put("/api/perfil", async (req, res) => {
+    try {
+        if (!req.session.usuario) {
+            return res.status(401).json({
+                erro: "Faça login para atualizar seu perfil."
+            });
+        }
+
+        const { nome, email } = req.body;
+
+        if (typeof nome !== "string" || typeof email !== "string") {
+            return res.status(400).json({
+                erro: "Informe nome e e-mail."
+            });
+        }
+
+        const nomeLimpo = nome.trim();
+        const emailLimpo = email.trim().toLowerCase();
+
+        if (
+            nomeLimpo.length < 2 ||
+            nomeLimpo.length > 150 ||
+            emailLimpo.length > 150 ||
+            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailLimpo)
+        ) {
+            return res.status(400).json({
+                erro: "Confira o nome e o e-mail informados."
+            });
+        }
+
+        const { id, tipo } = req.session.usuario;
+
+        if (!["aluno", "professor"].includes(tipo)) {
+            return res.status(403).json({
+                erro: "Tipo de usuário inválido."
+            });
+        }
+
+        const tabela = tipo === "aluno" ? "aluno" : "professor";
+        const colunaId = tipo === "aluno" ? "id_aluno" : "id_professor";
+
+        const [existentes] = await banco.execute(
+            `SELECT ${colunaId} FROM ${tabela}
+             WHERE email = ? AND ${colunaId} <> ?`,
+            [emailLimpo, id]
+        );
+
+        if (existentes.length > 0) {
+            return res.status(409).json({
+                erro: "Este e-mail já está em uso por outra conta."
+            });
+        }
+
+        await banco.execute(
+            `UPDATE ${tabela}
+             SET nome = ?, email = ?
+             WHERE ${colunaId} = ?`,
+            [nomeLimpo, emailLimpo, id]
+        );
+
+        req.session.usuario.nome = nomeLimpo;
+        req.session.usuario.email = emailLimpo;
+
+        req.session.save((erro) => {
+            if (erro) {
+                return res.status(500).json({
+                    erro: "Dados atualizados, mas não foi possível atualizar a sessão."
+                });
+            }
+
+            return res.json({
+                sucesso: true,
+                usuario: req.session.usuario,
+                mensagem: "Perfil atualizado com sucesso!"
+            });
+        });
+
+    } catch (erro) {
+        if (erro.code === "ER_DUP_ENTRY") {
+            return res.status(409).json({
+                erro: "Este e-mail já está em uso."
+            });
+        }
+
+        console.error("Erro ao atualizar perfil:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível atualizar o perfil."
+        });
+    }
+});
+
 app.post("/api/perfil/foto", (req, res) => {
     uploadFotoPerfil.single("foto")(req, res, async (erro) => {
         if (erro) {

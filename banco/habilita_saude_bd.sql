@@ -182,36 +182,51 @@ CREATE TABLE notificacao (
     id_notificacao  INT UNSIGNED NOT NULL AUTO_INCREMENT,
     id_aluno        INT UNSIGNED NULL,
     id_professor    INT UNSIGNED NULL,
+    id_chamado      INT UNSIGNED NULL,
     titulo          VARCHAR(150) NOT NULL,
     mensagem        TEXT NOT NULL,
     data_envio      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     lida            BOOLEAN NOT NULL DEFAULT FALSE,
+
     CONSTRAINT pk_notificacao PRIMARY KEY (id_notificacao),
+
     CONSTRAINT fk_notificacao_aluno FOREIGN KEY (id_aluno)
         REFERENCES aluno (id_aluno),
+
     CONSTRAINT fk_notificacao_professor FOREIGN KEY (id_professor)
         REFERENCES professor (id_professor),
-    CONSTRAINT chk_notificacao_destinatario CHECK
-        ((id_aluno IS NOT NULL AND id_professor IS NULL)
-      OR (id_aluno IS NULL AND id_professor IS NOT NULL))
+
+    CONSTRAINT fk_notificacao_chamado FOREIGN KEY (id_chamado)
+        REFERENCES chamado_suporte (id_chamado)
+        ON DELETE SET NULL,
+
+    CONSTRAINT chk_notificacao_destinatario CHECK (
+        (id_aluno IS NOT NULL AND id_professor IS NULL)
+        OR
+        (id_aluno IS NULL AND id_professor IS NOT NULL)
+    )
 ) ENGINE=InnoDB;
 
 CREATE TABLE chamado_suporte (
     id_chamado      INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_aluno        INT UNSIGNED NULL,
+    id_aluno        INT UNSIGNED NOT NULL,
     id_professor    INT UNSIGNED NULL,
     assunto         VARCHAR(150) NOT NULL,
+    curso           VARCHAR(150) NULL,
     descricao       TEXT NOT NULL,
-    status          ENUM('aberto','em_atendimento','resolvido') NOT NULL DEFAULT 'aberto',
+    status          ENUM('aberto', 'lido', 'em_atendimento', 'resolvido') NOT NULL DEFAULT 'aberto',
     data_abertura   DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
     CONSTRAINT pk_chamado PRIMARY KEY (id_chamado),
+
     CONSTRAINT fk_chamado_aluno FOREIGN KEY (id_aluno)
         REFERENCES aluno (id_aluno),
+
     CONSTRAINT fk_chamado_professor FOREIGN KEY (id_professor)
         REFERENCES professor (id_professor),
+
     CONSTRAINT chk_chamado_solicitante CHECK
-        ((id_aluno IS NOT NULL AND id_professor IS NULL)
-      OR (id_aluno IS NULL AND id_professor IS NOT NULL))
+        (id_aluno IS NOT NULL)
 ) ENGINE=InnoDB;
 
 CREATE TABLE aula_concluida (

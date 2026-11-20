@@ -571,6 +571,142 @@ function exigirProfessor(req, res, next) {
     next();
 }
 
+// ==========================================
+// ÁREA DO ALUNO — SUPORTE
+// ==========================================
+
+// Listar chamados do aluno autenticado
+app.get("/api/aluno/suporte", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+
+        const [chamados] = await banco.execute(`
+            SELECT
+                id_chamado AS id,
+                assunto,
+                curso,
+                descricao AS mensagem,
+                status,
+                DATE_FORMAT(data_abertura, '%d/%m/%Y %H:%i') AS data
+            FROM chamado_suporte
+            WHERE id_aluno = ?
+            ORDER BY data_abertura DESC
+        `, [idAluno]);
+
+        res.json(chamados);
+
+    } catch (erro) {
+        console.error("Erro ao listar chamados:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível carregar seus chamados."
+        });
+    }
+});
+
+// Criar chamado de suporte e notificar o professor responsável
+app.post("/api/aluno/suporte", exigirLogin, exigirAluno, async (req, res) => {
+    let conexao;
+
+    try {
+        const idAluno = req.session.usuario.id;
+        const { assunto, curso, mensagem } = req.body;
+
+        if (!assunto || !mensagem || mensagem.trim().length < 10) {
+            return res.status(400).json({
+                erro: "Informe o assunto e uma descrição com pelo menos 10 caracteres."
+            });
+        }
+
+        conexao = await banco.getConnection();
+        await conexao.beginTransaction();
+
+        const [alunos] = await conexao.execute(`
+            SELECT nome
+            FROM aluno
+            WHERE id_aluno = ?
+        `, [idAluno]);
+
+        const nomeAluno = alunos[0]?.nome || "Aluno";
+
+        let idProfessor = null;
+
+        // Identificar o professor responsável pelo curso selecionado
+        if (curso) {
+            const [cursos] = await conexao.execute(`
+                SELECT c.id_professor
+                FROM curso c
+                INNER JOIN matricula m ON m.id_curso = c.id_curso
+                WHERE c.nome_curso = ?
+                  AND m.id_aluno = ?
+                LIMIT 1
+            `, [curso, idAluno]);
+
+            if (cursos.length === 0) {
+                await conexao.rollback();
+
+                return res.status(400).json({
+                    erro: "Curso não encontrado ou você não está matriculado nele."
+                });
+            }
+
+            idProfessor = cursos[0].id_professor;
+        }
+
+        // Salvar o chamado
+        const [resultado] = await conexao.execute(`
+            INSERT INTO chamado_suporte
+                (id_aluno, id_professor, assunto, curso, descricao)
+            VALUES (?, ?, ?, ?, ?)
+        `, [
+            idAluno,
+            idProfessor,
+            assunto,
+            curso || null,
+            mensagem.trim()
+        ]);
+
+        const idChamado = resultado.insertId;
+
+        // Criar notificação para o professor
+        if (idProfessor) {
+            await conexao.execute(`
+                INSERT INTO notificacao
+                    (id_professor, id_chamado, titulo, mensagem)
+                VALUES (?, ?, ?, ?)
+            `, [
+                idProfessor,
+                idChamado,
+                "Novo chamado de suporte",
+                `${nomeAluno} abriu um chamado sobre o curso ${curso}: ${assunto}`
+            ]);
+        }
+
+        await conexao.commit();
+
+        res.status(201).json({
+            mensagem: "Chamado enviado com sucesso!",
+            id: idChamado
+        });
+
+    } catch (erro) {
+        if (conexao) {
+            await conexao.rollback();
+        }
+
+        console.error("Erro ao criar chamado:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível enviar seu chamado."
+        });
+
+    } finally {
+        if (conexao) {
+            conexao.release();
+        }
+    }
+});
+
 // Enviar imagem de um curso
 app.post(
     "/api/cursos/imagem",
@@ -2532,8 +2668,11 @@ app.get("/api/notificacoes", exigirLogin, async (req, res) => {
 
 // Marcar uma notificação como lida
 app.patch("/api/notificacoes/:id/lida", exigirLogin, async (req, res) => {
+    let conexao;
+
     try {
         const usuario = req.session.usuario;
+
         const coluna = usuario.tipo === "aluno"
             ? "id_aluno"
             : usuario.tipo === "professor"
@@ -2554,28 +2693,78 @@ app.patch("/api/notificacoes/:id/lida", exigirLogin, async (req, res) => {
             });
         }
 
-        const [resultado] = await banco.execute(`
+        conexao = await banco.getConnection();
+        await conexao.beginTransaction();
+
+        // Marcar a notificação como lida, respeitando seu destinatário.
+        const [resultado] = await conexao.execute(`
             UPDATE notificacao
             SET lida = TRUE
-            WHERE id_notificacao = ? AND ${coluna} = ?
+            WHERE id_notificacao = ?
+              AND ${coluna} = ?
         `, [id, usuario.id]);
 
         if (resultado.affectedRows === 0) {
+            await conexao.rollback();
+
             return res.status(404).json({
                 erro: "Notificação não encontrada."
             });
         }
+
+        // Se for uma notificação de suporte, atualizar o chamado.
+        // Somente chamados ainda abertos passam para o status "lido".
+        if (usuario.tipo === "professor") {
+            const [atualizacao] = await conexao.execute(`
+                UPDATE chamado_suporte cs
+                INNER JOIN notificacao n
+                    ON n.id_chamado = cs.id_chamado
+                SET cs.status = 'lido'
+                WHERE n.id_notificacao = ?
+                AND n.id_professor = ?
+                AND n.id_chamado IS NOT NULL
+                AND cs.status = 'aberto'
+            `, [id, usuario.id]);
+
+        // Avisar o aluno quando o professor ler o chamado
+        if (atualizacao.affectedRows > 0) {
+            await conexao.execute(`
+                INSERT INTO notificacao
+                    (id_aluno, titulo, mensagem)
+                SELECT
+                    cs.id_aluno,
+                    'Chamado lido pelo professor',
+                    'O professor leu seu chamado de suporte.'
+                FROM chamado_suporte cs
+                INNER JOIN notificacao n
+                    ON n.id_chamado = cs.id_chamado
+                WHERE n.id_notificacao = ?
+                AND n.id_professor = ?
+            `, [id, usuario.id]);
+        }
+    }
+
+        await conexao.commit();
 
         return res.json({
             mensagem: "Notificação marcada como lida."
         });
 
     } catch (erro) {
+        if (conexao) {
+            await conexao.rollback();
+        }
+
         console.error("Erro ao marcar notificação:", erro);
 
         return res.status(500).json({
             erro: "Não foi possível atualizar a notificação."
         });
+
+    } finally {
+        if (conexao) {
+            conexao.release();
+        }
     }
 });
 

@@ -1,4 +1,3 @@
-const CHAVE_CHAMADOS = "chamadosAluno";
 const esc =
   (window.HS && HS.esc) ||
   ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
@@ -106,15 +105,7 @@ const mensagemChamado = document.getElementById("mensagemChamado");
 const mensagemRetorno = document.getElementById("mensagemRetorno");
 const btnEnviarChamado = document.getElementById("btnEnviarChamado");
 
-function obterChamados() {
-  return JSON.parse(localStorage.getItem(CHAVE_CHAMADOS)) || [];
-}
-
-function salvarChamados(chamados) {
-  localStorage.setItem(CHAVE_CHAMADOS, JSON.stringify(chamados));
-}
-
-function enviarChamado() {
+async function enviarChamado() {
   const assunto = assuntoChamado.value;
   const mensagem = mensagemChamado.value.trim();
 
@@ -131,29 +122,43 @@ function enviarChamado() {
     return;
   }
 
-  const chamados = obterChamados();
+  btnEnviarChamado.disabled = true;
 
-  const novoChamado = {
-    id: Date.now(),
-    protocolo: `#${String(Date.now()).slice(-6)}`,
-    assunto: assunto,
-    curso: cursoChamado.value || "—",
-    mensagem: mensagem,
-    status: "aberto",
-    data: new Date().toLocaleString("pt-BR"),
-  };
+  try {
+    const resposta = await fetch("/api/aluno/suporte", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        assunto,
+        curso: cursoChamado.value || null,
+        mensagem
+      })
+    });
 
-  chamados.unshift(novoChamado);
-  salvarChamados(chamados);
+    const dados = await resposta.json();
 
-  mensagemRetorno.className = "mensagem-retorno sucesso";
-  mensagemRetorno.textContent = `Chamado ${novoChamado.protocolo} enviado! Responderemos em até 24h.`;
+    if (!resposta.ok) {
+      throw new Error(dados.erro || "Não foi possível enviar o chamado.");
+    }
 
-  assuntoChamado.value = "";
-  cursoChamado.value = "";
-  mensagemChamado.value = "";
+    mensagemRetorno.className = "mensagem-retorno sucesso";
+    mensagemRetorno.textContent = dados.mensagem;
 
-  renderizarChamados();
+    assuntoChamado.value = "";
+    cursoChamado.value = "";
+    mensagemChamado.value = "";
+
+    await renderizarChamados();
+
+  } catch (erro) {
+    mensagemRetorno.className = "mensagem-retorno erro";
+    mensagemRetorno.textContent = erro.message;
+
+  } finally {
+    btnEnviarChamado.disabled = false;
+  }
 }
 
 btnEnviarChamado.addEventListener("click", enviarChamado);
@@ -166,45 +171,70 @@ const rotulosStatusChamado = {
   encerrado: { texto: "Encerrado", classe: "chamado-encerrado" },
 };
 
-function renderizarChamados() {
-  const chamados = obterChamados();
+async function renderizarChamados() {
+  listaChamados.innerHTML = "<p>Carregando chamados...</p>";
 
-  listaChamados.innerHTML = "";
+  try {
+    const resposta = await fetch("/api/aluno/suporte");
 
-  if (chamados.length === 0) {
-    listaChamados.innerHTML = `
-      <div class="lista-vazia">
-        <i class="fa-regular fa-comments"></i>
-        <p>Você ainda não abriu nenhum chamado.</p>
-      </div>
-    `;
-    return;
-  }
+    if (!resposta.ok) {
+      throw new Error("Não foi possível carregar seus chamados.");
+    }
 
-  chamados.forEach((chamado) => {
-    const status =
-      rotulosStatusChamado[chamado.status] || rotulosStatusChamado.aberto;
+    const chamados = await resposta.json();
 
-    listaChamados.innerHTML += `
-      <div class="chamado-item">
-        <div class="chamado-topo">
-          <div>
-            <strong>${esc(chamado.assunto || "Chamado")}</strong>
-            <span class="protocolo">${esc(chamado.protocolo || "")}</span>
+    listaChamados.innerHTML = "";
+
+    if (chamados.length === 0) {
+      listaChamados.innerHTML = `
+        <div class="lista-vazia">
+          <i class="fa-regular fa-comments"></i>
+          <p>Você ainda não abriu nenhum chamado.</p>
+        </div>
+      `;
+      return;
+    }
+
+    chamados.forEach((chamado) => {
+      const status = {
+        aberto: { texto: "Aberto", classe: "chamado-aberto" },
+        em_atendimento: { texto: "Em atendimento", classe: "chamado-respondido" },
+        resolvido: { texto: "Resolvido", classe: "chamado-encerrado" }
+      }[chamado.status] || {
+        texto: chamado.status,
+        classe: "chamado-aberto"
+      };
+
+      listaChamados.innerHTML += `
+        <div class="chamado-item">
+          <div class="chamado-topo">
+            <div>
+              <strong>${esc(chamado.assunto || "Chamado")}</strong>
+              <span class="protocolo">#${esc(chamado.id)}</span>
+            </div>
+
+            <span class="status-chamado ${status.classe}">
+              ${esc(status.texto)}
+            </span>
           </div>
 
-          <span class="status-chamado ${status.classe}">${status.texto}</span>
-        </div>
+          <p class="chamado-mensagem">${esc(chamado.mensagem || "")}</p>
 
-        <p class="chamado-mensagem">${esc(chamado.mensagem || "")}</p>
-
-        <div class="chamado-rodape">
-          <span><i class="fa-solid fa-book"></i> ${esc(chamado.curso || "—")}</span>
-          <span><i class="fa-regular fa-clock"></i> ${esc(chamado.data || "—")}</span>
+          <div class="chamado-rodape">
+            <span><i class="fa-solid fa-book"></i> ${esc(chamado.curso || "—")}</span>
+            <span><i class="fa-regular fa-clock"></i> ${esc(chamado.data || "—")}</span>
+          </div>
         </div>
+      `;
+    });
+
+  } catch (erro) {
+    listaChamados.innerHTML = `
+      <div class="lista-vazia">
+        <p>${esc(erro.message)}</p>
       </div>
     `;
-  });
+  }
 }
 
 renderizarFaq();

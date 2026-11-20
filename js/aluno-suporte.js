@@ -91,13 +91,32 @@ buscaFaq.addEventListener("input", (e) => {
 
 const cursoChamado = document.getElementById("cursoChamado");
 
-function preencherCursos() {
-  const cursos = obterCursosAluno();
+async function preencherCursos() {
+  try {
+    await HS.ready;
 
-  cursos.forEach((curso) => {
-    if (!curso || !curso.nome) return;
-    cursoChamado.innerHTML += `<option value="${esc(curso.nome)}">${esc(curso.nome)}</option>`;
-  });
+    const resposta = await API.get("/aluno/matriculas");
+
+    const cursos = Array.isArray(resposta.cursos)
+      ? resposta.cursos
+      : [];
+
+    cursoChamado.innerHTML =
+      '<option value="">Não relacionado a um curso</option>';
+
+    cursos.forEach((curso) => {
+      if (!curso || !curso.nome) return;
+
+      const option = document.createElement("option");
+      option.value = curso.nome;
+      option.textContent = curso.nome;
+
+      cursoChamado.appendChild(option);
+    });
+
+  } catch (erro) {
+    console.error("Erro ao carregar cursos do aluno:", erro);
+  }
 }
 
 const assuntoChamado = document.getElementById("assuntoChamado");

@@ -332,22 +332,37 @@
       return;
     }
 
+    const curso = cursosRecomendadosAluno.find(
+      (c) => Number(c.id) === idCurso
+    );
+
+    if (!curso) {
+      alert("Curso não encontrado.");
+      return;
+    }
+
+    const gratuito = Number(curso.preco) <= 0;
+
     btn.disabled = true;
-    btn.textContent = "Processando pagamento...";
+    btn.textContent = gratuito
+      ? "Realizando matrícula..."
+      : "Processando pagamento...";
 
     try {
-      // Primeiro: simula a aprovação do pagamento.
-      const pagamento = await API.post("/pagamentos/simular", {
-        id_curso: idCurso
-      });
+      // Cursos pagos precisam passar pelo pagamento.
+      if (!gratuito) {
+        const pagamento = await API.post("/pagamentos/simular", {
+          id_curso: idCurso
+        });
 
-      if (!pagamento.sucesso || pagamento.pagamento !== "aprovado") {
-        throw new Error(
-          pagamento.erro || "O pagamento simulado não foi aprovado."
-        );
+        if (!pagamento.sucesso || pagamento.pagamento !== "aprovado") {
+          throw new Error(
+            pagamento.erro || "O pagamento simulado não foi aprovado."
+          );
+        }
       }
 
-      // Segundo: realiza a matrícula após a aprovação.
+      // Realiza a matrícula do aluno.
       btn.textContent = "Confirmando matrícula...";
 
       const matricula = await API.post("/aluno/matriculas", {
@@ -356,23 +371,27 @@
 
       if (!matricula.sucesso) {
         throw new Error(
-          matricula.erro || "Pagamento aprovado, mas a matrícula não foi concluída."
+          matricula.erro || "Não foi possível realizar a matrícula."
         );
       }
 
-      alert("Pagamento simulado aprovado! Matrícula realizada com sucesso.");
+      alert(
+        gratuito
+          ? "Matrícula realizada com sucesso!"
+          : "Pagamento simulado aprovado! Matrícula realizada com sucesso."
+      );
 
       setTimeout(() => {
         location.href = "aluno-meus-cursos.html";
       }, 2000);
 
     } catch (erro) {
-      console.error("Erro na compra do curso:", erro);
+      console.error("Erro ao realizar matrícula:", erro);
 
-      alert(erro.message || "Não foi possível concluir a compra.");
+      alert(erro.message || "Não foi possível concluir a matrícula.");
 
       btn.disabled = false;
-      btn.textContent = "Tentar novamente";
+      btn.textContent = "Matricular-se";
     }
   });
 

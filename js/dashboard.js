@@ -52,6 +52,7 @@
       matriculasDashboard = dados.matriculas || [];
 
       criarGrafico();
+      renderizarUsuariosDashboard();
     } catch (erro) {
       console.error("Erro ao carregar matrículas:", erro);
       matriculasDashboard = [];
@@ -173,29 +174,37 @@
     const lista = document.getElementById("listaUsuariosDashboard");
     if (!lista) return;
 
-    const usuarios = HS.alunos();
-    if (!usuarios.length) {
-      lista.innerHTML = `<p>Nenhum usuário encontrado.</p>`;
+    if (!matriculasDashboard.length) {
+      lista.innerHTML = "<p>Nenhum usuário encontrado.</p>";
       return;
     }
 
-    lista.innerHTML = usuarios
-      .slice(0, 5)
-      .map((usuario) => {
-        const nome = usuario.nome || "Aluno";
-        const avatar =
-          usuario.foto ||
-          (typeof window.HSAvatar === "function" ? window.HSAvatar(nome) : "./img/perfil.svg");
-        return `
-      <div class="usuario-dashboard">
-        <img src="${esc(avatar)}" alt="${esc(nome)}" />
-        <div class="usuario-info">
-          <strong>${esc(nome)}</strong>
-          <small>${esc(usuario.cursoNome || "—")}</small>
-        </div>
-      </div>`;
+    const recentes = matriculasDashboard
+      .slice()
+      .sort((a, b) => {
+        return new Date(b.dataMatricula) - new Date(a.dataMatricula);
       })
-      .join("");
+      .slice(0, 5);
+
+    lista.innerHTML = recentes.map((matricula) => {
+      const nome = matricula.nome || "Aluno";
+
+      const avatar =
+        typeof window.HSAvatar === "function"
+          ? window.HSAvatar(nome)
+          : "./img/perfil.svg";
+
+      return `
+        <div class="usuario-dashboard">
+          <img src="${esc(avatar)}" alt="${esc(nome)}" />
+
+          <div class="usuario-info">
+            <strong>${esc(nome)}</strong>
+            <small>${esc(matricula.cursoNome || "—")}</small>
+          </div>
+        </div>
+      `;
+    }).join("");
   }
 
   /* ---------- Gráfico ---------- */

@@ -2430,3 +2430,82 @@ body {
   font-size: 13px;
   color: #9caec5;
 }
+
+/* Correção do tamanho do gráfico na página Finanças */
+.content:has(#graficoGanhos) .grafico-financeiro {
+    position: relative;
+    width: 100%;
+    height: 320px;
+    min-height: 320px;
+    max-height: 320px;
+    overflow: hidden;
+}
+
+.content:has(#graficoGanhos) #graficoGanhos {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Finanças: impedir rolagem horizontal */
+.content:has(#graficoGanhos) {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.content:has(#graficoGanhos) *,
+.content:has(#graficoGanhos) *::before,
+.content:has(#graficoGanhos) *::after {
+    box-sizing: border-box;
+}
+
+/* Indicadores devem caber na largura disponível */
+.content:has(#graficoGanhos) .metricas-financeiras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+}
+
+.content:has(#graficoGanhos) .card-metrica {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.content:has(#graficoGanhos) .card-metrica strong {
+    overflow-wrap: anywhere;
+}
+
+/* Colunas sem largura excedente */
+.content:has(#graficoGanhos) .finance-grid,
+.content:has(#graficoGanhos) .finance-bottom {
+    grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr);
+    width: 100%;
+    min-width: 0;
+}
+
+.content:has(#graficoGanhos) .grafico-financeiro,
+.content:has(#graficoGanhos) .resumo-financeiro,
+.content:has(#graficoGanhos) .historico-card,
+.content:has(#graficoGanhos) .pagamento-card {
+    min-width: 0;
+    max-width: 100%;
+}
+
+/* Tabela não deve alargar a página */
+.content:has(#graficoGanhos) .historico-card {
+    overflow-x: auto;
+}
+
+@media (max-width: 1050px) {
+    .content:has(#graficoGanhos) .metricas-financeiras {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .content:has(#graficoGanhos) .finance-grid,
+    .content:has(#graficoGanhos) .finance-bottom {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

@@ -200,6 +200,51 @@ CREATE TABLE chamado_suporte (
         (id_aluno IS NOT NULL)
 ) ENGINE=InnoDB;
 
+-- Dados bancários de cada professor
+CREATE TABLE IF NOT EXISTS dados_bancarios_professor (
+    id_dados INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_professor INT UNSIGNED NOT NULL,
+    banco VARCHAR(100) NOT NULL,
+    agencia VARCHAR(30) NOT NULL,
+    conta VARCHAR(40) NOT NULL,
+    data_atualizacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_dados),
+    UNIQUE KEY uk_dados_bancarios_professor (id_professor),
+
+    CONSTRAINT fk_dados_bancarios_professor
+        FOREIGN KEY (id_professor)
+        REFERENCES professor (id_professor)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+
+-- Solicitações de saque dos professores
+CREATE TABLE IF NOT EXISTS solicitacao_saque (
+    id_saque INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_professor INT UNSIGNED NOT NULL,
+    valor DECIMAL(10,2) NOT NULL,
+    status ENUM(
+        'solicitado',
+        'aprovado',
+        'pago',
+        'recusado'
+    ) NOT NULL DEFAULT 'solicitado',
+    data_solicitacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_saque),
+    INDEX idx_saque_professor (id_professor),
+    INDEX idx_saque_status (status),
+
+    CONSTRAINT fk_saque_professor
+        FOREIGN KEY (id_professor)
+        REFERENCES professor (id_professor)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_saque_valor CHECK (valor > 0)
+) ENGINE=InnoDB;
+
 CREATE TABLE notificacao (
     id_notificacao  INT UNSIGNED NOT NULL AUTO_INCREMENT,
     id_aluno        INT UNSIGNED NULL,
@@ -368,6 +413,66 @@ CREATE TABLE IF NOT EXISTS conquista_professor (
         REFERENCES professor (id_professor)
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+-- Configurações dos níveis de certificação
+CREATE TABLE IF NOT EXISTS configuracoes_niveis (
+    id_config INT UNSIGNED NOT NULL DEFAULT 1,
+    configuracao JSON NOT NULL,
+    data_atualizacao DATETIME NOT NULL
+        DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_config)
+) ENGINE=InnoDB;
+
+-- Configuração inicial dos níveis
+INSERT INTO configuracoes_niveis (
+    id_config,
+    configuracao
+)
+VALUES (
+    1,
+    JSON_OBJECT(
+        'operacional', JSON_OBJECT(
+            'trilha', 'Qualificação e Capacitação',
+            'nome', 'Nível Operacional',
+            'chMin', 4,
+            'chMax', 8,
+            'precoMin', 49,
+            'precoMax', 97,
+            'docente', 85,
+            'aprovacao', 70,
+            'notaMin', 6.0,
+            'prazo', 3
+        ),
+        'estrategico', JSON_OBJECT(
+            'trilha', 'Atualização e Aperfeiçoamento',
+            'nome', 'Nível Estratégico',
+            'chMin', 12,
+            'chMax', 20,
+            'precoMin', 197,
+            'precoMax', 397,
+            'docente', 90,
+            'aprovacao', 75,
+            'notaMin', 7.5,
+            'prazo', 7
+        ),
+        'expert', JSON_OBJECT(
+            'trilha', 'Proficiência Avançada',
+            'nome', 'Nível Expert',
+            'chMin', 30,
+            'chMax', 9999,
+            'precoMin', 497,
+            'precoMax', 997,
+            'docente', 92,
+            'aprovacao', 80,
+            'notaMin', 8.0,
+            'prazo', 15
+        )
+    )
+)
+ON DUPLICATE KEY UPDATE
+    id_config = id_config;
 
 -- ações
 SHOW TABLES;            

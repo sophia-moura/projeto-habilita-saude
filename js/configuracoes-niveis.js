@@ -188,41 +188,124 @@
     if (status.classList.contains("erro")) limparStatus();
   });
 
-  btnSalvar.addEventListener("click", () => {
+  btnSalvar.addEventListener("click", async () => {
     const cfg = coletar();
     const erros = validar(cfg);
 
     if (erros.length) {
       const invalidos = new Set(erros.map((erro) => erro.input).filter(Boolean));
-      mostrarStatus(`Revise ${invalidos.size === 1 ? "o campo destacado" : "os campos destacados"} antes de salvar.`, "erro");
+
+      mostrarStatus(
+        `Revise ${invalidos.size === 1 ? "o campo destacado" : "os campos destacados"} antes de salvar.`,
+        "erro"
+      );
+
       const primeiro = form.querySelector('[aria-invalid="true"]');
       if (primeiro) primeiro.focus();
+
       return;
     }
 
     const numerico = {};
+
     Object.keys(cfg).forEach((nivel) => {
       numerico[nivel] = { ...cfg[nivel] };
-      CAMPOS.forEach((c) => {
-        numerico[nivel][c.chave] = Number(cfg[nivel][c.chave]);
+
+      CAMPOS.forEach((campo) => {
+        numerico[nivel][campo.chave] = Number(cfg[nivel][campo.chave]);
       });
     });
 
-    if (window.HS && typeof HS.salvarNiveis === "function") {
-      HS.salvarNiveis(numerico);
-      mostrarStatus("Parâmetros atualizados com sucesso.", "sucesso");
+    if (!window.HS || typeof HS.salvarNiveis !== "function") {
+      mostrarStatus("API de configurações indisponível.", "erro");
+      return;
+    }
+
+    btnSalvar.disabled = true;
+    btnRestaurar.disabled = true;
+    mostrarStatus("Salvando configurações...", "");
+
+    try {
+      await HS.salvarNiveis(numerico);
+
       montar();
-    } else {
-      mostrarStatus("Não foi possível salvar. Recarregue a página e tente novamente.", "erro");
+      mostrarStatus("Parâmetros atualizados com sucesso.", "sucesso");
+
+    } catch (erro) {
+      console.error("Erro ao salvar níveis:", erro);
+      mostrarStatus(
+        erro.message || "Não foi possível salvar as configurações.",
+        "erro"
+      );
+
+    } finally {
+      btnSalvar.disabled = false;
+      btnRestaurar.disabled = false;
     }
   });
 
-  btnRestaurar.addEventListener("click", () => {
-    if (!confirm("Restaurar os valores originais do documento? As alterações salvas serão perdidas.")) return;
-    if (window.HS && typeof HS.restaurarNiveis === "function") HS.restaurarNiveis();
-    montar();
-    mostrarStatus("Valores padrão restaurados.", "sucesso");
+  btnRestaurar.addEventListener("click", async () => {
+    if (!confirm("Restaurar os valores originais? As alterações salvas serão perdidas.")) {
+      return;
+    }
+
+    if (!window.HS || typeof HS.restaurarNiveis !== "function") {
+      mostrarStatus("API de configurações indisponível.", "erro");
+      return;
+    }
+
+    btnSalvar.disabled = true;
+    btnRestaurar.disabled = true;
+    mostrarStatus("Restaurando configurações...", "");
+
+    try {
+      await HS.restaurarNiveis();
+
+      montar();
+      mostrarStatus("Valores padrão restaurados com sucesso.", "sucesso");
+
+    } catch (erro) {
+      console.error("Erro ao restaurar níveis:", erro);
+      mostrarStatus(
+        erro.message || "Não foi possível restaurar os valores.",
+        "erro"
+      );
+
+    } finally {
+      btnSalvar.disabled = false;
+      btnRestaurar.disabled = false;
+    }
   });
 
-  montar();
+  async function inicializar() {
+    btnSalvar.disabled = true;
+    btnRestaurar.disabled = true;
+
+    mostrarStatus("Carregando configurações...", "");
+
+    try {
+      await HS.carregarNiveis();
+
+      montar();
+      limparStatus();
+
+    } catch (erro) {
+      console.error("Erro ao carregar configurações:", erro);
+
+      form.innerHTML = `
+        <p class="config-vazio">
+          Não foi possível carregar as configurações do servidor.
+          Verifique sua conexão e tente novamente.
+        </p>
+      `;
+
+      mostrarStatus("Erro ao carregar configurações.", "erro");
+
+    } finally {
+      btnSalvar.disabled = false;
+      btnRestaurar.disabled = false;
+    }
+  }
+
+  inicializar();
 })();

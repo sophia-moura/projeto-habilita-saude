@@ -616,6 +616,178 @@ function exigirProfessor(req, res, next) {
 }
 
 // ==========================================
+// CONFIGURAÇÕES DOS NÍVEIS DE CERTIFICAÇÃO
+// ==========================================
+
+// Consultar configurações dos níveis
+app.get("/api/configuracoes/niveis", exigirProfessor, async (req, res) => {
+    try {
+        const [resultado] = await banco.execute(`
+            SELECT configuracao
+            FROM configuracoes_niveis
+            WHERE id_config = 1
+            LIMIT 1
+        `);
+
+        if (!resultado.length) {
+            return res.status(404).json({
+                sucesso: false,
+                erro: "Configurações dos níveis não encontradas."
+            });
+        }
+
+        let configuracao = resultado[0].configuracao;
+
+        if (typeof configuracao === "string") {
+            configuracao = JSON.parse(configuracao);
+        }
+
+        return res.json({
+            sucesso: true,
+            configuracao
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar configurações dos níveis:", erro);
+
+        return res.status(500).json({
+            sucesso: false,
+            erro: "Não foi possível carregar as configurações."
+        });
+    }
+});
+
+
+// Atualizar configurações dos níveis
+app.put("/api/configuracoes/niveis", exigirProfessor, async (req, res) => {
+    try {
+        const configuracaoRecebida = req.body.configuracao;
+
+        const camposPermitidos = {
+            chMin: [1, 9999],
+            chMax: [1, 9999],
+            precoMin: [0, 100000],
+            precoMax: [0, 100000],
+            docente: [0, 100],
+            aprovacao: [0, 100],
+            notaMin: [0, 10],
+            prazo: [1, 365]
+        };
+
+        const niveisPermitidos = [
+            "operacional",
+            "estrategico",
+            "expert"
+        ];
+
+        if (
+            !configuracaoRecebida ||
+            typeof configuracaoRecebida !== "object" ||
+            Array.isArray(configuracaoRecebida)
+        ) {
+            return res.status(400).json({
+                sucesso: false,
+                erro: "Configuração inválida."
+            });
+        }
+
+        const [atual] = await banco.execute(`
+            SELECT configuracao
+            FROM configuracoes_niveis
+            WHERE id_config = 1
+            LIMIT 1
+        `);
+
+        if (!atual.length) {
+            return res.status(404).json({
+                sucesso: false,
+                erro: "Configurações não encontradas."
+            });
+        }
+
+        let configuracaoAtual = atual[0].configuracao;
+
+        if (typeof configuracaoAtual === "string") {
+            configuracaoAtual = JSON.parse(configuracaoAtual);
+        }
+
+        const novaConfiguracao = JSON.parse(
+            JSON.stringify(configuracaoAtual)
+        );
+
+        for (const nivel of niveisPermitidos) {
+            if (
+                !configuracaoRecebida[nivel] ||
+                typeof configuracaoRecebida[nivel] !== "object"
+            ) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: `Configuração inválida para ${nivel}.`
+                });
+            }
+
+            for (const [campo, limites] of Object.entries(camposPermitidos)) {
+                const valor = Number(configuracaoRecebida[nivel][campo]);
+
+                if (
+                    configuracaoRecebida[nivel][campo] === "" ||
+                    !Number.isFinite(valor) ||
+                    valor < limites[0] ||
+                    valor > limites[1]
+                ) {
+                    return res.status(400).json({
+                        sucesso: false,
+                        erro: `Valor inválido para ${campo} no nível ${nivel}.`
+                    });
+                }
+
+                novaConfiguracao[nivel][campo] = valor;
+            }
+
+            if (
+                novaConfiguracao[nivel].chMax <
+                novaConfiguracao[nivel].chMin
+            ) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: `A carga horária máxima do nível ${nivel} não pode ser menor que a mínima.`
+                });
+            }
+
+            if (
+                novaConfiguracao[nivel].precoMax <
+                novaConfiguracao[nivel].precoMin
+            ) {
+                return res.status(400).json({
+                    sucesso: false,
+                    erro: `O preço máximo do nível ${nivel} não pode ser menor que o mínimo.`
+                });
+            }
+        }
+
+        await banco.execute(`
+            UPDATE configuracoes_niveis
+            SET configuracao = ?
+            WHERE id_config = 1
+        `, [JSON.stringify(novaConfiguracao)]);
+
+        return res.json({
+            sucesso: true,
+            mensagem: "Configurações atualizadas com sucesso.",
+            configuracao: novaConfiguracao
+        });
+
+    } catch (erro) {
+        console.error("Erro ao atualizar configurações dos níveis:", erro);
+
+        return res.status(500).json({
+            sucesso: false,
+            erro: "Não foi possível atualizar as configurações."
+        });
+    }
+});
+
+// ==========================================
 // ÁREA DO ALUNO — SUPORTE
 // ==========================================
 
@@ -2163,6 +2335,475 @@ app.get("/api/professor/relatorios", exigirProfessor, async (req, res) => {
 
         return res.status(500).json({
             erro: "Não foi possível carregar os relatórios."
+        });
+    }
+});
+
+// Dados financeiros do professor autenticado
+app.get("/api/professor/financas", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+        const mes = req.query.mes || "";
+
+        // Validar o mês recebido no formato AAAA-MM
+        if (mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+            return res.status(400).json({
+                erro: "Mês inválido."
+            });
+        }
+
+        const parametros = [idProfessor];
+        let filtroMes = "";
+
+        if (mes) {
+            filtroMes = `
+                AND cp.data_compra >= ?
+                AND cp.data_compra < DATE_ADD(?, INTERVAL 1 MONTH)
+            `;
+
+            parametros.push(`${mes}-01`, `${mes}-01`);
+        }
+
+        // Vendas pagas agrupadas por curso
+        const [cursos] = await banco.execute(`
+            SELECT
+                c.id_curso AS cursoId,
+                c.nome_curso AS cursoNome,
+                c.nivel AS nivel,
+                MAX(cp.data_compra) AS ultimaVenda,
+                COUNT(DISTINCT cp.id_compra) AS vendas,
+                COALESCE(SUM(ic.valor_unitario), 0) AS faturamentoBruto
+
+            FROM curso c
+
+            INNER JOIN item_compra ic
+                ON ic.id_curso = c.id_curso
+
+            INNER JOIN compra cp
+                ON cp.id_compra = ic.id_compra
+
+            WHERE c.id_professor = ?
+              AND cp.status = 'paga'
+              ${filtroMes}
+
+            GROUP BY
+                c.id_curso,
+                c.nome_curso,
+                c.nivel
+
+            ORDER BY ultimaVenda DESC
+        `, parametros);
+
+        // Total de compras pagas do professor no período.
+        // COUNT DISTINCT evita contar duas vezes uma compra com vários cursos.
+        const parametrosTotal = [idProfessor];
+        let filtroMesTotal = "";
+
+        if (mes) {
+            filtroMesTotal = `
+                AND cp.data_compra >= ?
+                AND cp.data_compra < DATE_ADD(?, INTERVAL 1 MONTH)
+            `;
+
+            parametrosTotal.push(`${mes}-01`, `${mes}-01`);
+        }
+
+        const [totalVendas] = await banco.execute(`
+            SELECT COUNT(DISTINCT cp.id_compra) AS total
+            FROM compra cp
+            INNER JOIN item_compra ic
+                ON ic.id_compra = cp.id_compra
+            INNER JOIN curso c
+                ON c.id_curso = ic.id_curso
+            WHERE c.id_professor = ?
+              AND cp.status = 'paga'
+              ${filtroMesTotal}
+        `, parametrosTotal);
+
+        // Busca os percentuais configurados dos níveis.
+        const [configuracoes] = await banco.execute(`
+            SELECT configuracao
+            FROM configuracoes_niveis
+            WHERE id_config = 1
+            LIMIT 1
+        `);
+
+        if (!configuracoes.length) {
+            throw new Error("Configurações de níveis não encontradas.");
+        }
+
+        const niveis = typeof configuracoes[0].configuracao === "string"
+            ? JSON.parse(configuracoes[0].configuracao)
+            : configuracoes[0].configuracao;
+
+        const percentualOperacional =
+            (Number(niveis.operacional?.docente || 0) - 15) / 100;
+
+        const percentualEstrategico =
+            (Number(niveis.estrategico?.docente || 0) - 15) / 100;
+
+        const percentualExpert =
+            (Number(niveis.expert?.docente || 0) - 15) / 100;
+
+        // Calcula a receita líquida de todas as vendas pagas,
+        // sem aplicar o filtro mensal.
+        const [receitaGeral] = await banco.execute(`
+            SELECT COALESCE(SUM(
+                ic.valor_unitario *
+                CASE LOWER(TRIM(c.nivel))
+                    WHEN 'operacional' THEN ?
+                    WHEN 'estrategico' THEN ?
+                    WHEN 'expert' THEN ?
+                    ELSE 0
+                END
+            ), 0) AS total
+            FROM curso c
+            INNER JOIN item_compra ic
+                ON ic.id_curso = c.id_curso
+            INNER JOIN compra cp
+                ON cp.id_compra = ic.id_compra
+            WHERE c.id_professor = ?
+              AND cp.status = 'paga'
+        `, [
+            percentualOperacional,
+            percentualEstrategico,
+            percentualExpert,
+            idProfessor
+        ]);
+
+        // Desconta os saques que já comprometem o saldo.
+        const [saques] = await banco.execute(`
+            SELECT COALESCE(SUM(valor), 0) AS total
+            FROM solicitacao_saque
+            WHERE id_professor = ?
+              AND status IN ('solicitado', 'aprovado', 'pago')
+        `, [idProfessor]);
+
+        const saldoDisponivel = Math.max(
+            0,
+            Number(receitaGeral[0].total || 0) -
+            Number(saques[0].total || 0)
+        );
+
+        return res.json({
+            sucesso: true,
+            mes: mes || null,
+            totalVendas: Number(totalVendas[0].total) || 0,
+            saldoDisponivel: Number(saldoDisponivel.toFixed(2)),
+            cursos: cursos.map(curso => ({
+                cursoId: Number(curso.cursoId),
+                cursoNome: curso.cursoNome,
+                nivel: curso.nivel,
+                ultimaVenda: curso.ultimaVenda,
+                vendas: Number(curso.vendas) || 0,
+                faturamentoBruto: Number(curso.faturamentoBruto) || 0
+            }))
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar finanças do professor:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar os dados financeiros."
+        });
+    }
+});
+
+// Consultar dados bancários do professor autenticado
+app.get("/api/professor/dados-bancarios", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        const [dados] = await banco.execute(`
+            SELECT banco, agencia, conta
+            FROM dados_bancarios_professor
+            WHERE id_professor = ?
+            LIMIT 1
+        `, [idProfessor]);
+
+        return res.json({
+            sucesso: true,
+            dados: dados.length ? dados[0] : null
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar dados bancários:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível consultar os dados bancários."
+        });
+    }
+});
+
+
+// Cadastrar ou atualizar dados bancários do professor
+app.put("/api/professor/dados-bancarios", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        const bancoNome = String(req.body.banco || "").trim();
+        const agencia = String(req.body.agencia || "").trim();
+        const conta = String(req.body.conta || "").trim();
+
+        if (!bancoNome || !agencia || !conta) {
+            return res.status(400).json({
+                erro: "Preencha banco, agência e conta."
+            });
+        }
+
+        if (
+            bancoNome.length > 100 ||
+            agencia.length > 30 ||
+            conta.length > 40
+        ) {
+            return res.status(400).json({
+                erro: "Um ou mais campos ultrapassaram o tamanho permitido."
+            });
+        }
+
+        await banco.execute(`
+            INSERT INTO dados_bancarios_professor
+                (id_professor, banco, agencia, conta)
+            VALUES (?, ?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                banco = VALUES(banco),
+                agencia = VALUES(agencia),
+                conta = VALUES(conta)
+        `, [idProfessor, bancoNome, agencia, conta]);
+
+        return res.json({
+            sucesso: true,
+            mensagem: "Dados bancários salvos com sucesso."
+        });
+
+    } catch (erro) {
+        console.error("Erro ao salvar dados bancários:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível salvar os dados bancários."
+        });
+    }
+});
+
+// Solicitar saque do professor autenticado
+app.post("/api/professor/solicitar-saque", exigirProfessor, async (req, res) => {
+    let conexao;
+
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        conexao = await banco.getConnection();
+        await conexao.beginTransaction();
+
+        // Busca os percentuais configurados para cada nível.
+        const [configuracoes] = await conexao.execute(`
+            SELECT configuracao
+            FROM configuracoes_niveis
+            WHERE id_config = 1
+            LIMIT 1
+        `);
+
+        if (!configuracoes.length) {
+            throw new Error("Configurações de níveis não encontradas.");
+        }
+
+        const niveis = typeof configuracoes[0].configuracao === "string"
+            ? JSON.parse(configuracoes[0].configuracao)
+            : configuracoes[0].configuracao;
+
+        const percentualOperacional =
+            (Number(niveis.operacional?.docente || 0) - 15) / 100;
+
+        const percentualEstrategico =
+            (Number(niveis.estrategico?.docente || 0) - 15) / 100;
+
+        const percentualExpert =
+            (Number(niveis.expert?.docente || 0) - 15) / 100;
+
+        // Bloqueia o registro do professor para evitar saques simultâneos.
+        await conexao.execute(`
+            SELECT id_professor
+            FROM professor
+            WHERE id_professor = ?
+            FOR UPDATE
+        `, [idProfessor]);
+
+        // Verifica se existem dados bancários cadastrados.
+        const [dadosBancarios] = await conexao.execute(`
+            SELECT banco, agencia, conta
+            FROM dados_bancarios_professor
+            WHERE id_professor = ?
+            LIMIT 1
+        `, [idProfessor]);
+
+        if (
+            !dadosBancarios.length ||
+            !dadosBancarios[0].banco ||
+            !dadosBancarios[0].agencia ||
+            !dadosBancarios[0].conta
+        ) {
+            await conexao.rollback();
+
+            return res.status(400).json({
+                sucesso: false,
+                erro: "Cadastre seus dados bancários antes de solicitar o saque."
+            });
+        }
+
+        // Calcula a receita líquida de todas as vendas pagas.
+        const [resultadoFinanceiro] = await conexao.execute(`
+            SELECT
+                COALESCE(
+                    SUM(
+                        ic.valor_unitario *
+                        (
+                            CASE LOWER(TRIM(c.nivel))
+                                WHEN 'operacional' THEN ?
+                                WHEN 'estrategico' THEN ?
+                                WHEN 'expert' THEN ?
+                                ELSE 0
+                            END
+                        )
+                    ), 0
+                ) AS receita_liquida
+
+            FROM curso c
+
+            INNER JOIN item_compra ic
+                ON ic.id_curso = c.id_curso
+
+            INNER JOIN compra cp
+                ON cp.id_compra = ic.id_compra
+
+            WHERE c.id_professor = ?
+                AND cp.status = 'paga'
+            `, [
+                percentualOperacional,
+                percentualEstrategico,
+                percentualExpert,
+                idProfessor
+            ]);
+
+        const receitaLiquida =
+            Number(resultadoFinanceiro[0].receita_liquida) || 0;
+
+        // Soma os saques que comprometem o saldo.
+        const [resultadoSaques] = await conexao.execute(`
+            SELECT COALESCE(SUM(valor), 0) AS total_saques
+            FROM solicitacao_saque
+            WHERE id_professor = ?
+              AND status IN ('solicitado', 'aprovado', 'pago')
+        `, [idProfessor]);
+
+        const totalSaques =
+            Number(resultadoSaques[0].total_saques) || 0;
+
+        const saldoDisponivel = Math.max(
+            0,
+            Number((receitaLiquida - totalSaques).toFixed(2))
+        );
+
+        if (saldoDisponivel <= 0) {
+            await conexao.rollback();
+
+            return res.status(400).json({
+                sucesso: false,
+                erro: "Não há saldo disponível para saque."
+            });
+        }
+
+        // Registra a solicitação do valor disponível.
+        await conexao.execute(`
+            INSERT INTO solicitacao_saque (
+                id_professor,
+                valor,
+                status
+            )
+            VALUES (?, ?, 'solicitado')
+        `, [idProfessor, saldoDisponivel]);
+
+        await conexao.commit();
+
+        return res.json({
+            sucesso: true,
+            mensagem: "Solicitação de saque registrada com sucesso.",
+            valor: saldoDisponivel
+        });
+
+    } catch (erro) {
+        if (conexao) {
+            await conexao.rollback();
+        }
+
+        console.error("Erro ao solicitar saque:", erro);
+
+        return res.status(500).json({
+            sucesso: false,
+            erro: "Não foi possível processar sua solicitação de saque."
+        });
+
+    } finally {
+        if (conexao) {
+            conexao.release();
+        }
+    }
+});
+
+ // Histórico de saques do professor autenticado
+app.get("/api/professor/saques", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+        const mes = req.query.mes || "";
+
+        // Validar o mês recebido no formato AAAA-MM
+        if (mes && !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) {
+            return res.status(400).json({
+                sucesso: false,
+                erro: "Mês inválido."
+            });
+        }
+
+        const parametros = [idProfessor];
+        let filtroMes = "";
+
+        // Filtrar o histórico pelo mês selecionado, se houver
+        if (mes) {
+            filtroMes = `
+                AND data_solicitacao >= ?
+                AND data_solicitacao < DATE_ADD(?, INTERVAL 1 MONTH)
+            `;
+
+            parametros.push(`${mes}-01`, `${mes}-01`);
+        }
+
+        const [saques] = await banco.execute(`
+            SELECT
+                id_saque AS idSaque,
+                valor,
+                status,
+                data_solicitacao AS dataSolicitacao
+            FROM solicitacao_saque
+            WHERE id_professor = ?
+            ${filtroMes}
+            ORDER BY data_solicitacao DESC, id_saque DESC
+        `, parametros);
+
+        return res.json({
+            sucesso: true,
+            saques: saques.map(saque => ({
+                idSaque: Number(saque.idSaque),
+                valor: Number(saque.valor),
+                status: saque.status,
+                dataSolicitacao: saque.dataSolicitacao
+            }))
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar histórico de saques:", erro);
+
+        return res.status(500).json({
+            sucesso: false,
+            erro: "Não foi possível carregar o histórico de saques."
         });
     }
 });

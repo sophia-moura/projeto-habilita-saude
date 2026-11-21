@@ -425,6 +425,94 @@ app.get("/api/usuario-logado", (req, res) => {
     });
 });
 
+ // Consultar se o usuário já assistiu ao vídeo de boas-vindas.
+app.get("/api/preferencias/boas-vindas", async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+
+        if (!usuario) {
+            return res.status(401).json({
+                erro: "Faça login para consultar suas preferências."
+            });
+        }
+
+        if (!["aluno", "professor"].includes(usuario.tipo)) {
+            return res.status(403).json({
+                erro: "Tipo de usuário inválido."
+            });
+        }
+
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : "id_professor";
+
+        const [preferencias] = await banco.execute(`
+            SELECT boas_vindas_vista
+            FROM preferencias_usuario
+            WHERE ${coluna} = ?
+            LIMIT 1
+        `, [usuario.id]);
+
+        return res.json({
+            boasVindasVista: preferencias.length > 0
+                && Boolean(preferencias[0].boas_vindas_vista)
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar preferência:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível consultar a preferência."
+        });
+    }
+});
+
+
+// Registrar que o usuário já assistiu ao vídeo de boas-vindas.
+app.put("/api/preferencias/boas-vindas", async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+
+        if (!usuario) {
+            return res.status(401).json({
+                erro: "Faça login para atualizar suas preferências."
+            });
+        }
+
+        if (!["aluno", "professor"].includes(usuario.tipo)) {
+            return res.status(403).json({
+                erro: "Tipo de usuário inválido."
+            });
+        }
+
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : "id_professor";
+
+        await banco.execute(`
+            INSERT INTO preferencias_usuario (
+                ${coluna},
+                boas_vindas_vista
+            )
+            VALUES (?, TRUE)
+            ON DUPLICATE KEY UPDATE
+                boas_vindas_vista = TRUE
+        `, [usuario.id]);
+
+        return res.json({
+            sucesso: true,
+            boasVindasVista: true
+        });
+
+    } catch (erro) {
+        console.error("Erro ao salvar preferência:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível salvar a preferência."
+        });
+    }
+});
+
 app.put("/api/perfil", async (req, res) => {
     try {
         if (!req.session.usuario) {
@@ -4634,6 +4722,276 @@ app.post("/api/aluno/aulas/:id/quiz-perfeito", exigirLogin, exigirAluno, async (
 
     } finally {
         conexao.release();
+    }
+});
+
+// Consultar a posição salva de um vídeo.
+app.get("/api/aluno/aulas/:id/progresso-video", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+        const idAula = Number(req.params.id);
+
+        if (!Number.isInteger(idAula) || idAula <= 0) {
+            return res.status(400).json({
+                erro: "Identificador da aula inválido."
+            });
+        }
+
+        const [aulas] = await banco.execute(`
+            SELECT a.id_aula
+            FROM aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            INNER JOIN matricula ma ON ma.id_curso = m.id_curso
+            WHERE a.id_aula = ?
+              AND a.tipo = 'video'
+              AND ma.id_aluno = ?
+            LIMIT 1
+        `, [idAula, idAluno]);
+
+        if (!aulas.length) {
+            return res.status(404).json({
+                erro: "Vídeo não encontrado ou acesso não autorizado."
+            });
+        }
+
+        const [resultados] = await banco.execute(`
+            SELECT posicao_segundos
+            FROM progresso_video_aluno
+            WHERE id_aluno = ? AND id_aula = ?
+            LIMIT 1
+        `, [idAluno, idAula]);
+
+        return res.json({
+            posicao: resultados.length
+                ? Number(resultados[0].posicao_segundos)
+                : 0
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar posição do vídeo:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível consultar a posição do vídeo."
+        });
+    }
+});
+
+
+// Salvar a posição atual de um vídeo.
+app.put("/api/aluno/aulas/:id/progresso-video", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+        const idAula = Number(req.params.id);
+        const posicao = Number(req.body.posicao);
+
+        if (
+            !Number.isInteger(idAula) ||
+            idAula <= 0 ||
+            !Number.isFinite(posicao) ||
+            posicao < 0
+        ) {
+            return res.status(400).json({
+                erro: "Dados de progresso inválidos."
+            });
+        }
+
+        const [aulas] = await banco.execute(`
+            SELECT a.id_aula
+            FROM aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            INNER JOIN matricula ma ON ma.id_curso = m.id_curso
+            WHERE a.id_aula = ?
+              AND a.tipo = 'video'
+              AND ma.id_aluno = ?
+            LIMIT 1
+        `, [idAula, idAluno]);
+
+        if (!aulas.length) {
+            return res.status(404).json({
+                erro: "Vídeo não encontrado ou acesso não autorizado."
+            });
+        }
+
+        await banco.execute(`
+            INSERT INTO progresso_video_aluno (
+                id_aluno,
+                id_aula,
+                posicao_segundos
+            )
+            VALUES (?, ?, ?)
+            ON DUPLICATE KEY UPDATE
+                posicao_segundos = VALUES(posicao_segundos),
+                data_atualizacao = CURRENT_TIMESTAMP
+        `, [idAluno, idAula, Math.floor(posicao)]);
+
+        return res.json({
+            sucesso: true,
+            posicao: Math.floor(posicao)
+        });
+
+    } catch (erro) {
+        console.error("Erro ao salvar posição do vídeo:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível salvar a posição do vídeo."
+        });
+    }
+});
+
+// Consultar o histórico de tentativas de um quiz.
+app.get("/api/aluno/aulas/:id/quiz-historico", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+        const idAula = Number(req.params.id);
+
+        if (!Number.isInteger(idAula) || idAula <= 0) {
+            return res.status(400).json({
+                erro: "Identificador do quiz inválido."
+            });
+        }
+
+        const [aulas] = await banco.execute(`
+            SELECT a.id_aula
+            FROM aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            INNER JOIN matricula ma ON ma.id_curso = m.id_curso
+            WHERE a.id_aula = ?
+              AND a.tipo = 'quiz'
+              AND ma.id_aluno = ?
+            LIMIT 1
+        `, [idAula, idAluno]);
+
+        if (!aulas.length) {
+            return res.status(404).json({
+                erro: "Quiz não encontrado ou acesso não autorizado."
+            });
+        }
+
+        const [resultados] = await banco.execute(`
+            SELECT
+                tentativas,
+                melhor_nota AS melhorNota
+            FROM quiz_resultado_aluno
+            WHERE id_aluno = ? AND id_aula = ?
+            LIMIT 1
+        `, [idAluno, idAula]);
+
+        return res.json({
+            tentativas: resultados[0]?.tentativas || 0,
+            melhorNota: resultados[0]?.melhorNota === null ||
+                resultados[0]?.melhorNota === undefined
+                ? null
+                : Number(resultados[0].melhorNota)
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar histórico do quiz:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível consultar o histórico do quiz."
+        });
+    }
+});
+
+
+// Registrar uma tentativa e atualizar a melhor nota.
+app.post("/api/aluno/aulas/:id/quiz-historico", exigirLogin, exigirAluno, async (req, res) => {
+    try {
+        const idAluno = req.session.usuario.id;
+        const idAula = Number(req.params.id);
+        const respostas = req.body.respostas;
+
+        if (
+            !Number.isInteger(idAula) ||
+            idAula <= 0 ||
+            !Array.isArray(respostas)
+        ) {
+            return res.status(400).json({
+                erro: "Dados da tentativa inválidos."
+            });
+        }
+
+        const [aulas] = await banco.execute(`
+            SELECT a.metadados
+            FROM aula a
+            INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+            INNER JOIN matricula ma ON ma.id_curso = m.id_curso
+            WHERE a.id_aula = ?
+              AND a.tipo = 'quiz'
+              AND ma.id_aluno = ?
+            LIMIT 1
+        `, [idAula, idAluno]);
+
+        if (!aulas.length) {
+            return res.status(404).json({
+                erro: "Quiz não encontrado ou acesso não autorizado."
+            });
+        }
+
+        const metadados = typeof aulas[0].metadados === "string"
+            ? JSON.parse(aulas[0].metadados)
+            : aulas[0].metadados;
+
+        const perguntas = metadados?.perguntas;
+
+        if (
+            !Array.isArray(perguntas) ||
+            perguntas.length === 0 ||
+            respostas.length !== perguntas.length ||
+            respostas.some((resposta, indice) =>
+                !Number.isInteger(resposta) ||
+                resposta < 0 ||
+                resposta >= perguntas[indice].opcoes.length
+            )
+        ) {
+            return res.status(400).json({
+                erro: "Respostas incompletas ou inválidas."
+            });
+        }
+
+        const acertos = respostas.filter((resposta, indice) =>
+            resposta === Number(perguntas[indice].correta)
+        ).length;
+
+        const nota = Math.round((acertos / perguntas.length) * 100);
+
+        await banco.execute(`
+            INSERT INTO quiz_resultado_aluno (
+                id_aluno,
+                id_aula,
+                tentativas,
+                melhor_nota,
+                data_ultima_tentativa
+            )
+            VALUES (?, ?, 1, ?, CURRENT_TIMESTAMP)
+            ON DUPLICATE KEY UPDATE
+                tentativas = tentativas + 1,
+                melhor_nota = GREATEST(melhor_nota, VALUES(melhor_nota)),
+                data_ultima_tentativa = CURRENT_TIMESTAMP
+        `, [idAluno, idAula, nota]);
+
+        const [resultados] = await banco.execute(`
+            SELECT
+                tentativas,
+                melhor_nota AS melhorNota
+            FROM quiz_resultado_aluno
+            WHERE id_aluno = ? AND id_aula = ?
+            LIMIT 1
+        `, [idAluno, idAula]);
+
+        return res.json({
+            sucesso: true,
+            nota,
+            tentativas: resultados[0].tentativas,
+            melhorNota: Number(resultados[0].melhorNota)
+        });
+
+    } catch (erro) {
+        console.error("Erro ao registrar tentativa do quiz:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível registrar a tentativa do quiz."
+        });
     }
 });
 

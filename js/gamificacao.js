@@ -1,21 +1,16 @@
-(function () {
-  const u = JSON.parse(localStorage.getItem("usuario") || "null");
+(async function () {
+  const u = await HS.carregarUsuario();
   if (!u || u.tipo !== "aluno") return;
 
-  const CHAVE = "gam_" + u.email;
   const XP_NIVEL = 100;
-  const hoje = () => new Date().toISOString().slice(0, 10);
-  const ler = () => JSON.parse(localStorage.getItem(CHAVE) || "null") || { xp: 0, conquistas: [], sequencia: 0, ultimoDia: "", historico: [] };
-  const salvar = (g) => localStorage.setItem(CHAVE, JSON.stringify(g));
-  const meusCursos = () => JSON.parse(localStorage.getItem("cursosAluno_v2") || "[]");
 
   const CONQUISTAS = [
-    { id: "matricula", icone: "🎓", nome: "Primeiro passo", desc: "Matricule-se em um curso", ok: () => meusCursos().length >= 1 },
-    { id: "tres", icone: "📚", nome: "Curioso", desc: "Esteja em 3 cursos", ok: () => meusCursos().length >= 3 },
-    { id: "concluido", icone: "🏅", nome: "Formado", desc: "Conclua 1 curso", ok: () => meusCursos().filter((c) => c.status === "concluido").length >= 1 },
-    { id: "tresconcl", icone: "🏆", nome: "Dedicado", desc: "Conclua 3 cursos", ok: () => meusCursos().filter((c) => c.status === "concluido").length >= 3 },
-    { id: "seq3", icone: "🔥", nome: "Em chamas", desc: "3 dias seguidos", ok: (g) => g.sequencia >= 3 },
-    { id: "nivel3", icone: "⭐", nome: "Veterano", desc: "Chegue ao nível 3", ok: (g) => g.xp >= XP_NIVEL * 2 },
+    { id: "matricula", icone: "🎓", nome: "Primeiro passo", desc: "Matricule-se em um curso" },
+    { id: "tres", icone: "📚", nome: "Curioso", desc: "Esteja em 3 cursos" },
+    { id: "concluido", icone: "🏅", nome: "Formado", desc: "Conclua 1 curso" },
+    { id: "tresconcl", icone: "🏆", nome: "Dedicado", desc: "Conclua 3 cursos" },
+    { id: "seq3", icone: "🔥", nome: "Em chamas", desc: "3 dias seguidos" },
+    { id: "nivel3", icone: "⭐", nome: "Veterano", desc: "Chegue ao nível 3" }
   ];
 
   function toast(msg) {
@@ -24,30 +19,6 @@
     t.style.cssText = "position:fixed;right:20px;bottom:20px;z-index:9999;background:#0055c3;color:#fff;padding:14px 18px;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.25);font:600 14px Inter,sans-serif;animation:toastIn .45s cubic-bezier(.2,1.4,.4,1) both";
     document.body.appendChild(t);
     setTimeout(() => t.remove(), 3500);
-  }
-
-  function conferirConquistas(g) {
-    CONQUISTAS.forEach((c) => {
-      if (!g.conquistas.includes(c.id) && c.ok(g)) {
-        g.conquistas.push(c.id);
-        toast(`${c.icone} Conquista desbloqueada: ${c.nome}!`);
-        HS.confete && HS.confete();
-        HS.notificar("Nova conquista", `${c.icone} Você desbloqueou "${c.nome}".`, "certificado", "aluno");
-      }
-    });
-  }
-
-  function xp(qtd, motivo) {
-    const g = ler();
-    const nivelAntes = Math.floor(g.xp / XP_NIVEL) + 1;
-    g.xp += qtd;
-    g.historico.unshift({ qtd, motivo, data: new Date().toLocaleString("pt-BR") });
-    g.historico = g.historico.slice(0, 20);
-    toast(`+${qtd} XP · ${motivo}`);
-    const nivel = Math.floor(g.xp / XP_NIVEL) + 1;
-    if (nivel > nivelAntes) { toast(`🎉 Você subiu para o nível ${nivel}!`); HS.confete && HS.confete(); }
-    conferirConquistas(g);
-    salvar(g);
   }
 
   async function checkin() {
@@ -64,49 +35,6 @@
       } catch (erro) {
           console.error("Erro no check-in diário:", erro);
       }
-  }
-
-  function ranking() {
-    const demo = [
-      { nome: "Mariana S.", xp: 420 },
-      { nome: "Carlos P.", xp: 260 },
-      { nome: "Beatriz L.", xp: 150 }
-    ];
-
-    const matriculas = JSON.parse(
-      localStorage.getItem("matriculas") || "[]"
-    );
-
-    const reais = Object.keys(localStorage)
-      .filter((k) => k.startsWith("gam_") && k !== CHAVE)
-      .map((k) => {
-        try {
-          const dados = JSON.parse(localStorage.getItem(k) || "null");
-
-          if (!dados || typeof dados.xp !== "number") {
-            return null;
-          }
-
-          const outro = matriculas.find(
-            (m) => "gam_" + m.email === k
-          );
-
-          return {
-            nome: outro ? outro.nome : k.slice(4),
-            xp: dados.xp
-          };
-        } catch (erro) {
-          console.warn("Registro de XP inválido:", k);
-          return null;
-        }
-      })
-      .filter(Boolean);
-
-    return [
-      ...demo,
-      ...reais,
-      { nome: u.nome + " (você)", xp: ler().xp, eu: true }
-    ].sort((a, b) => b.xp - a.xp);
   }
 
   async function renderizar(idContainer) {
@@ -172,6 +100,6 @@
       </div>`;
   }
 
-  window.HS.gam = { xp, checkin, renderizar };
+  window.HS.gam = { checkin, renderizar };
   checkin();
 })();

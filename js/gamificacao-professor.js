@@ -1,6 +1,7 @@
-(function () {
-  const u = JSON.parse(localStorage.getItem("usuario") || "null");
+(async function () {
+  const u = await HS.carregarUsuario();
   const el = document.getElementById("painelGamificacaoProf");
+
   if (!u || u.tipo !== "professor" || !el) return;
 
   const XP_NIVEL = 150;

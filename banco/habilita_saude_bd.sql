@@ -474,6 +474,49 @@ VALUES (
 ON DUPLICATE KEY UPDATE
     id_config = id_config;
 
+CREATE TABLE IF NOT EXISTS quiz_resultado_aluno (
+    id_aluno INT UNSIGNED NOT NULL,
+    id_aula INT UNSIGNED NOT NULL,
+    tentativas INT UNSIGNED NOT NULL DEFAULT 0,
+    melhor_nota DECIMAL(5,2) NULL,
+    data_ultima_tentativa DATETIME NULL,
+
+    PRIMARY KEY (id_aluno, id_aula),
+
+    CONSTRAINT fk_quiz_resultado_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno (id_aluno)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_quiz_resultado_aula
+        FOREIGN KEY (id_aula)
+        REFERENCES aula (id_aula)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_quiz_melhor_nota
+        CHECK (melhor_nota IS NULL OR melhor_nota BETWEEN 0 AND 100)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS progresso_video_aluno (
+    id_aluno INT UNSIGNED NOT NULL,
+    id_aula INT UNSIGNED NOT NULL,
+    posicao_segundos INT UNSIGNED NOT NULL DEFAULT 0,
+    data_atualizacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    PRIMARY KEY (id_aluno, id_aula),
+
+    CONSTRAINT fk_progresso_video_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno (id_aluno)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_progresso_video_aula
+        FOREIGN KEY (id_aula)
+        REFERENCES aula (id_aula)
+        ON DELETE CASCADE
+) ENGINE=InnoDB;
+
 -- ações
 SHOW TABLES;            
 DESCRIBE matricula;     

@@ -82,32 +82,6 @@ window.API = {
       "'": "&#39;"
     })[c]);
 
-  // Compatibilidade com as funções antigas do sistema.
-  // Leitura de dados do localStorage.
-  function ls(chave, padrao = null) {
-    try {
-      const valor = localStorage.getItem(chave);
-
-      if (valor === null) return padrao;
-
-      return JSON.parse(valor);
-    } catch (erro) {
-      console.error(`Erro ao ler ${chave}:`, erro);
-      return padrao;
-    }
-  }
-
-  // Gravação de dados no localStorage.
-  function salvar(chave, valor) {
-    try {
-      localStorage.setItem(chave, JSON.stringify(valor));
-      return true;
-    } catch (erro) {
-      console.error(`Erro ao salvar ${chave}:`, erro);
-      return false;
-    }
-  }
-
   const pagina = location.pathname.split("/").pop() || "index.html";
 
   let usuario = null;
@@ -168,60 +142,20 @@ window.API = {
   const HS = {
     esc,
     visivel,
-    cursosPublicados: () => ls("cursos", []).filter((c) => c.status === "Publicado"),
 
-    // Conteúdos de um curso: os do professor ou, na falta deles, os de exemplo.
-    conteudosDoCurso(id) {
-      const chave = String(id);
-      const prof = ls("cursos", []).find((c) => String(c.id) === chave);
-      if (prof && (prof.conteudos || []).length) return prof.conteudos;
-      return (window.HS_CONTEUDOS_DEMO || {})[id] || (window.HS_CONTEUDOS_DEMO || {})[chave] || [];
-    },
+    async cursosPublicados() {
+    const cursos = await API.get("/cursos");
 
-    matricular(cursoId) {
-      const cursos = ls("cursos", []);
-      const chave = String(cursoId);
-      const c = cursos.find((x) => String(x.id) === chave);
-      const u = ls("usuario", null);
-      if (!c || !u || !u.email) return false;
-
-      const mats = ls("matriculas", []);
-      if (mats.some((m) => m.email === u.email && String(m.cursoId) === chave)) return false;
-
-      const meus = ls("cursosAluno_v2", []);
-      if (meus.some((m) => String(m.id) === chave)) return false;
-
-      mats.push({ id: Date.now(), cursoId: c.id, cursoNome: c.nome, nome: u.nome, email: u.email, foto: u.foto || "", data: new Date().toISOString() });
-      c.alunos = (Number(c.alunos) || 0) + 1;
-      c.vendas = (Number(c.vendas) || 0) + 1;
-      salvar("matriculas", mats);
-      salvar("cursos", cursos);
-
-      meus.push({
-        id: c.id, nome: c.nome, area: c.categoria || "Saúde", categoria: c.nivel || c.categoria || "Curso",
-        imagem: c.imagem, progresso: 0, cargaHoraria: parseInt(c.cargaHoraria, 10) || 0,
-        professor: c.professor || "Professor(a)", dataMatricula: new Date().toISOString().slice(0, 10),
-        ultimoAcesso: null, status: "nao-iniciado", certificado: c.certificado || "",
-      });
-      salvar("cursosAluno_v2", meus);
-
-      notificar("Nova matrícula", `${u.nome} se matriculou em "${c.nome}".`, "curso", "professor");
-      notificar("Matrícula confirmada", `Você agora está matriculado em "${c.nome}".`, "curso", "aluno");
-      return true;
-    },
-
-    matriculas() {
-      const meus = ls("cursosAluno_v2", []);
-      return ls("matriculas", []).map((m) => {
-        const a = meus.find((c) => String(c.id) === String(m.cursoId));
-        return { ...m, progresso: a ? a.progresso : 0, status: a ? a.status : "nao-iniciado" };
-      });
-    },
-
-    alunos() {
-      const vistos = new Set();
-      return ls("matriculas", []).slice().reverse().filter((m) => !vistos.has(m.email) && vistos.add(m.email));
-    },
+    return cursos.map((c) => ({
+        id: c.id_curso,
+        nome: c.nome_curso,
+        descricao: c.descricao,
+        preco: c.preco,
+        status: c.status,
+        imagem: c.imagem_url,
+        professor: c.nome_professor
+    }));
+  },
 
     notificar,
     atualizarSino
@@ -391,12 +325,17 @@ window.API = {
 
   if (!document.querySelector('link[rel="icon"]')) document.head.insertAdjacentHTML("beforeend", '<link rel="icon" href="./img/favicon.png">');
 
-  document.querySelectorAll('a[href$="criar-curso.html"]').forEach((a) =>
-    a.addEventListener("click", () => localStorage.removeItem("cursoEditando")));
+  HS.boasVindas = async function (forcar) {
+    let boasVindasVista = false;
 
-  HS.boasVindas = function (forcar) {
-    const chave = `boasVindas_${usuario.email}`;
-    if (!forcar && localStorage.getItem(chave)) return;
+    try {
+        const preferencias = await API.get("/preferencias/boas-vindas");
+        boasVindasVista = preferencias.boasVindasVista;
+    } catch (erro) {
+        console.error("Erro ao consultar preferência de boas-vindas:", erro);
+    }
+
+    if (!forcar && boasVindasVista) return;
     const ov = document.createElement("div");
     ov.id = "bvOverlay";
     ov.innerHTML = `
@@ -420,7 +359,16 @@ window.API = {
     document.body.appendChild(ov);
     const v = ov.querySelector("#bvVideo");
     v.play().catch(() => {});
-    const fechar = () => { v.pause(); ov.remove(); localStorage.setItem(chave, "1"); };
+    const fechar = async () => {
+    v.pause();
+    ov.remove();
+
+    try {
+        await API.put("/preferencias/boas-vindas", {});
+    } catch (erro) {
+        console.error("Erro ao salvar preferência de boas-vindas:", erro);
+    }
+  };
     ov.querySelector("#bvPular").onclick = fechar;
     ov.querySelector("#bvComecar").onclick = fechar;
     v.addEventListener("ended", () => setTimeout(fechar, 600));
@@ -440,11 +388,19 @@ window.API = {
   const btnLogout = document.getElementById("btnLogout");
 
   if (btnLogout) {
-      btnLogout.addEventListener("click", async () => {
-          if (!confirm("Deseja realmente sair da plataforma?")) return;
+    btnLogout.addEventListener("click", async () => {
+        if (!confirm("Deseja realmente sair da plataforma?")) return;
 
-          location.href = "index.html";
-      });
+        try {
+            await API.post("/logout", {});
+
+            location.replace("index.html");
+
+        } catch (erro) {
+            console.error("Erro ao encerrar sessão:", erro);
+            alert("Não foi possível encerrar sua sessão. Tente novamente.");
+        }
+    });
   }
 
   // Menu lateral no celular. Algumas páginas antigas não tinham #overlay;

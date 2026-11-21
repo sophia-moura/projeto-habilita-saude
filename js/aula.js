@@ -136,10 +136,21 @@
     return incorporar(url) ? "Vídeo online" : new URL(url).hostname.replace(/^www\./, "");
   }
 
-  const chavePos = (i) => `aulaPos_${u.email}_${id}_${i}`;
+  async function obterPosicaoVideo(idAula) {
+    const resposta = await API.get(
+        `/aluno/aulas/${idAula}/progresso-video`
+    );
 
-  function salvarCurso() {
-    localStorage.setItem("cursosAluno_v2", JSON.stringify(meus));
+    return Number(resposta.posicao) || 0;
+  }
+
+  async function salvarPosicaoVideo(idAula, posicao) {
+      return await API.put(
+          `/aluno/aulas/${idAula}/progresso-video`,
+          {
+              posicao: Math.floor(posicao)
+          }
+      );
   }
 
   /* ---------- Progresso e lista ---------- */
@@ -265,18 +276,31 @@
     }, 3500);
   }
 
-  function renderQuiz(it, i, palco) {
+  async function renderQuiz(it, i, palco) {
     const perguntas = it.perguntas;
     const nota = Math.min(100, Math.max(1, Number(it.notaMinima) || 70));
-    const chaveQ = `quiz_${u.email}_${id}_${i}`;
-    let estado = { tentativas: 0, melhor: null };
+
+    let estado;
+
     try {
-      estado = {
-        ...estado,
-        ...JSON.parse(localStorage.getItem(chaveQ) || "{}")
-      };
+        const historico = await API.get(
+            `/aluno/aulas/${it.id_aula}/quiz-historico`
+        );
+
+        estado = {
+            tentativas: Number(historico.tentativas) || 0,
+            melhor: historico.melhorNota == null
+                ? null
+                : Number(historico.melhorNota)
+        };
     } catch (erro) {
-      console.warn("Não foi possível recuperar o histórico do quiz:", erro);
+        console.error("Erro ao carregar histórico do quiz:", erro);
+        mensagem(
+            palco,
+            "fa-triangle-exclamation",
+            "Não foi possível carregar o histórico do quiz. Tente novamente."
+        );
+        return;
     }
     const raiz = document.createElement("div");
     raiz.className = "quiz";
@@ -316,52 +340,69 @@
       });
     }
 
-    function resultado(respostas) {
-      const acertos = respostas.filter((r, n) => r === perguntas[n].correta).length;
-      const pct = Math.round((acertos / perguntas.length) * 100);
-      const aprovado = pct >= nota;
-      estado.tentativas++;
-      estado.melhor = Math.max(estado.melhor ?? 0, pct);
-      localStorage.setItem(chaveQ, JSON.stringify(estado));
+  async function resultado(respostas) {
+    try {
+        const registro = await API.post(
+            `/aluno/aulas/${it.id_aula}/quiz-historico`,
+            { respostas }
+        );
 
-      raiz.innerHTML = `
-        <div class="quiz-resultado ${aprovado ? "aprovado" : "reprovado"}" role="status">
-          <strong>${aprovado ? "Aprovado" : "Ainda não foi desta vez"}</strong>
-          <span>Você acertou ${acertos} de ${perguntas.length} (${pct}%). Nota mínima: ${nota}%.</span>
-        </div>
-        <ol class="quiz-revisao">
-          ${perguntas
-            .map((p, n) => {
-              const certa = respostas[n] === p.correta;
-              // Só mostra o gabarito e a explicação a quem foi aprovado.
-              const detalhe = aprovado
-                ? `<small>Resposta correta: ${esc(p.opcoes[p.correta])}${p.explicacao ? ". " + esc(p.explicacao) : ""}</small>`
-                : "";
-              return `<li class="${certa ? "certa" : "errada"}"><span>${esc(p.enunciado)}</span><b>${certa ? "Correta" : "Revisar"}</b>${detalhe}</li>`;
-            })
-            .join("")}
-        </ol>
-        <div class="quiz-acoes">
-          <button type="button" class="btn btn-secondary" data-refazer>${aprovado ? "Refazer quiz" : "Tentar novamente"}</button>
-        </div>`;
-      raiz.querySelector("[data-refazer]").addEventListener("click", formulario);
+        const acertos = respostas.filter(
+            (r, n) => r === perguntas[n].correta
+        ).length;
 
-      if (aprovado) {
-        concluir(i, false);
+        const pct = Number(registro.nota);
+        const aprovado = pct >= nota;
 
-        if (pct === 100) {
-          API.post(`/aluno/aulas/${itens[atual].id_aula}/quiz-perfeito`, {
-            respostas
-          })
-            .then((resposta) => {
-              if (resposta.sucesso && resposta.xpRecebido) {
-                mostrarAvisoXP("🎉 Parabéns! Você ganhou 10 XP!");
-              }
-            })
-            .catch((erro) => console.error("Erro ao registrar XP do quiz:", erro));
+        estado.tentativas = Number(registro.tentativas);
+        estado.melhor = Number(registro.melhorNota);
+
+        raiz.innerHTML = `
+            <div class="quiz-resultado ${aprovado ? "aprovado" : "reprovado"}" role="status">
+                <strong>${aprovado ? "Aprovado" : "Ainda não foi desta vez"}</strong>
+                <span>Você acertou ${acertos} de ${perguntas.length} (${pct}%). Nota mínima: ${nota}%.</span>
+                <span>Tentativas: ${estado.tentativas} · Melhor resultado: ${estado.melhor}%</span>
+            </div>
+            <ol class="quiz-revisao">
+                ${perguntas.map((p, n) => {
+                    const certa = respostas[n] === p.correta;
+                    const detalhe = aprovado
+                        ? `<small>Resposta correta: ${esc(p.opcoes[p.correta])}${p.explicacao ? ". " + esc(p.explicacao) : ""}</small>`
+                        : "";
+
+                    return `<li class="${certa ? "certa" : "errada"}"><span>${esc(p.enunciado)}</span><b>${certa ? "Correta" : "Revisar"}</b>${detalhe}</li>`;
+                }).join("")}
+            </ol>
+            <div class="quiz-acoes">
+                <button type="button" class="btn btn-secondary" data-refazer>${aprovado ? "Refazer quiz" : "Tentar novamente"}</button>
+            </div>`;
+
+        raiz.querySelector("[data-refazer]").addEventListener("click", formulario);
+
+        if (aprovado) {
+            concluir(i, false);
+
+            if (pct === 100) {
+                API.post(`/aluno/aulas/${it.id_aula}/quiz-perfeito`, {
+                    respostas
+                })
+                    .then((resposta) => {
+                        if (resposta.sucesso && resposta.xpRecebido) {
+                            mostrarAvisoXP("🎉 Parabéns! Você ganhou 10 XP!");
+                        }
+                    })
+                    .catch((erro) => console.error("Erro ao registrar XP do quiz:", erro));
+            }
         }
-      }
+    } catch (erro) {
+        console.error("Erro ao registrar tentativa:", erro);
+        mensagem(
+            raiz,
+            "fa-triangle-exclamation",
+            "Não foi possível registrar sua tentativa. Verifique sua conexão e tente novamente."
+        );
     }
+  }
 
     formulario();
   }
@@ -386,12 +427,11 @@
     // Marca o curso como iniciado e atualiza o "último acesso".
     meu.ultimoAcesso = new Date().toISOString();
     if (meu.status === "nao-iniciado") meu.status = "andamento";
-    salvarCurso();
 
     if (it.tipo === "texto") {
       renderTexto(it, palco);
     } else if (ehQuiz(it)) {
-      renderQuiz(it, i, palco);
+      await renderQuiz(it, i, palco);
     } else if (it.arquivoId) {
       let blob = null;
       try {
@@ -409,21 +449,43 @@
         v.src = urlObj;
         v.controls = true;
         v.controlsList = "nodownload";
-        v.preload = "metadata";
-        const pos = Number(localStorage.getItem(chavePos(i))) || 0;
+        v.preload = "metadata"; 
+        let pos = 0;
+
+        try {
+            pos = await obterPosicaoVideo(it.id_aula);
+        } catch (erro) {
+            console.error("Erro ao recuperar posição do vídeo:", erro);
+        }
+
+        if (minha !== versao) return;
+
         v.addEventListener("loadedmetadata", () => {
-          if (pos > 3 && pos < v.duration - 3) v.currentTime = pos;
+            if (pos > 3 && pos < v.duration - 3) {
+                v.currentTime = pos;
+            }
         });
+
         let ultimo = 0;
+
         v.addEventListener("timeupdate", () => {
-          if (v.currentTime - ultimo > 5 || v.currentTime < ultimo) {
-            ultimo = v.currentTime;
-            localStorage.setItem(chavePos(i), String(Math.floor(v.currentTime)));
-          }
+            if (v.currentTime - ultimo > 5 || v.currentTime < ultimo) {
+                ultimo = v.currentTime;
+
+                salvarPosicaoVideo(it.id_aula, v.currentTime)
+                    .catch((erro) => {
+                        console.error("Erro ao salvar posição do vídeo:", erro);
+                    });
+            }
         });
+
         v.addEventListener("ended", () => {
-          localStorage.removeItem(chavePos(i));
-          concluir(i, true);
+            salvarPosicaoVideo(it.id_aula, 0)
+                .catch((erro) => {
+                    console.error("Erro ao zerar posição do vídeo:", erro);
+                });
+
+            concluir(i, true);
         });
         palco.appendChild(v);
       } else if (mime === "application/pdf") {

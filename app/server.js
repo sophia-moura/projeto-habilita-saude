@@ -180,6 +180,50 @@ const banco = mysql.createPool({
     connectionLimit: 10
 });
 
+// Registrar XP do professor sem permitir duplicidade de eventos.
+async function registrarXpProfessor(
+    executor,
+    idProfessor,
+    quantidade,
+    motivo,
+    chaveEvento
+) {
+    const [resultado] = await executor.execute(`
+        INSERT IGNORE INTO historico_xp_professor (
+            id_professor,
+            quantidade,
+            motivo,
+            chave_evento
+        )
+        VALUES (?, ?, ?, ?)
+    `, [
+        idProfessor,
+        quantidade,
+        motivo,
+        chaveEvento
+    ]);
+
+    // Atualizar o XP somente se o evento foi registrado.
+    if (resultado.affectedRows > 0) {
+        await executor.execute(`
+            INSERT INTO gamificacao_professor (
+                id_professor,
+                xp
+            )
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE
+                xp = xp + VALUES(xp)
+        `, [
+            idProfessor,
+            quantidade
+        ]);
+
+        return true;
+    }
+
+    return false;
+}
+
 // Testar a conexão
 app.get("/api/status", async (req, res) => {
     try {
@@ -1409,10 +1453,10 @@ app.post(
             }
 
             const [cursos] = await banco.execute(`
-                SELECT id_curso, preco
-                FROM curso
-                WHERE id_curso = ?
-                  AND status = 'publicado'
+                SELECT id_curso, id_professor, preco
+                    FROM curso
+                    WHERE id_curso = ?
+                    AND status = 'publicado'
             `, [idCurso]);
 
             if (!cursos.length) {
@@ -1467,6 +1511,15 @@ app.post(
                 )
                 VALUES (?, ?, 0, 'em_andamento')
             `, [idAluno, idCurso]);
+
+            // Registrar 10 XP para o professor pela matrícula recebida.
+            await registrarXpProfessor(
+                banco,
+                cursos[0].id_professor,
+                10,
+                "Matrícula recebida",
+                `matricula:${resultado.insertId}`
+            );
 
             // Garantir que o aluno tenha um registro de gamificação.
             await banco.execute(`
@@ -1573,13 +1626,17 @@ app.post(
 
             await conexao.beginTransaction();
 
-            // Descobrir a qual curso a aula pertence.
+            // Descobrir o curso e seu professor responsável.
             const [aulas] = await conexao.execute(`
                 SELECT
                     a.id_aula,
-                    m.id_curso
+                    m.id_curso,
+                    c.id_professor
                 FROM aula a
-                INNER JOIN modulo m ON m.id_modulo = a.id_modulo
+                INNER JOIN modulo m
+                    ON m.id_modulo = a.id_modulo
+                INNER JOIN curso c
+                    ON c.id_curso = m.id_curso
                 WHERE a.id_aula = ?
             `, [idAula]);
 
@@ -1696,10 +1753,25 @@ app.post(
             await conexao.execute(`
                 UPDATE matricula
                 SET progresso = ?,
+                    situacao = CASE
+                        WHEN ? >= 100 THEN 'aprovado'
+                        ELSE situacao
+                    END,
                     ultimo_acesso = NOW()
                 WHERE id_aluno = ?
-                  AND id_curso = ?
-            `, [progresso, idAluno, idCurso]);
+                AND id_curso = ?
+            `, [progresso, progresso, idAluno, idCurso]);
+
+            // Conceder 25 XP ao professor pela conclusão do curso.
+            if (progresso >= 100) {
+                await registrarXpProfessor(
+                    conexao,
+                    aulas[0].id_professor,
+                    25,
+                    "Aluno concluiu o curso",
+                    `conclusao:${matriculas[0].id_matricula}`
+                );
+            }
 
             // Emitir certificado automaticamente quando o curso for concluído.
             let certificadoEmitido = false;
@@ -1750,6 +1822,165 @@ app.post(
         }
     }
 );
+
+// Gamificação do professor — dados reais do banco
+app.get("/api/professor/gamificacao", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        const [dados] = await banco.execute(`
+            SELECT
+                COUNT(*) AS totalCursos,
+
+                SUM(
+                    CASE WHEN c.status = 'publicado'
+                    THEN 1 ELSE 0 END
+                ) AS publicados,
+
+                SUM(
+                    CASE WHEN c.status = 'rascunho'
+                    THEN 1 ELSE 0 END
+                ) AS rascunhos,
+
+                COALESCE((
+                    SELECT COUNT(*)
+                    FROM matricula m
+                    INNER JOIN curso c2
+                        ON c2.id_curso = m.id_curso
+                    WHERE c2.id_professor = ?
+                ), 0) AS matriculas,
+
+                COALESCE((
+                    SELECT COUNT(*)
+                    FROM matricula m
+                    INNER JOIN curso c2
+                        ON c2.id_curso = m.id_curso
+                    WHERE c2.id_professor = ?
+                      AND m.progresso >= 100
+                ), 0) AS conclusoes,
+
+                COALESCE((
+                    SELECT COUNT(*)
+                    FROM aula a
+                    INNER JOIN modulo mo
+                        ON mo.id_modulo = a.id_modulo
+                    INNER JOIN curso c2
+                        ON c2.id_curso = mo.id_curso
+                    WHERE c2.id_professor = ?
+                ), 0) AS conteudos,
+
+                COALESCE((
+                    SELECT AVG(av.nota)
+                    FROM avaliacao av
+                    INNER JOIN matricula m
+                        ON m.id_matricula = av.id_matricula
+                    INNER JOIN curso c2
+                        ON c2.id_curso = m.id_curso
+                    WHERE c2.id_professor = ?
+                ), 0) AS mediaAvaliacoes,
+
+                SUM(
+                    CASE
+                        WHEN c.nivel = 'expert'
+                        AND c.status = 'publicado'
+                        THEN 1
+                        ELSE 0
+                    END
+                ) AS cursosExpert
+
+            FROM curso c
+            WHERE c.id_professor = ?
+        `, [
+            idProfessor,
+            idProfessor,
+            idProfessor,
+            idProfessor,
+            idProfessor
+        ]);
+
+        const estatisticas = dados[0];
+
+        // Recupera o XP acumulado no histórico
+        const [resultadoXP] = await banco.execute(`
+            SELECT COALESCE(SUM(quantidade), 0) AS xp
+            FROM historico_xp_professor
+            WHERE id_professor = ?
+        `, [idProfessor]);
+
+        const xp = Number(resultadoXP[0].xp) || 0;
+
+        const nivel = Math.floor(xp / 150) + 1;
+
+        // Verifica as conquistas desbloqueadas
+        const conquistas = [
+            {
+                codigo: "p1",
+                desbloqueada: Number(estatisticas.publicados) >= 1
+            },
+            {
+                codigo: "ref",
+                desbloqueada:
+                    Number(estatisticas.publicados) >= 3 &&
+                    Number(estatisticas.mediaAvaliacoes) >= 4.5
+            },
+            {
+                codigo: "m100",
+                desbloqueada: Number(estatisticas.matriculas) >= 100
+            },
+            {
+                codigo: "exp",
+                desbloqueada: Number(estatisticas.cursosExpert) >= 1
+            },
+            {
+                codigo: "c1",
+                desbloqueada: Number(estatisticas.conclusoes) >= 1
+            },
+            {
+                codigo: "n3",
+                desbloqueada: nivel >= 3
+            }
+        ];
+
+        const novasConquistas = [];
+
+        for (const conquista of conquistas) {
+            if (!conquista.desbloqueada) continue;
+
+            const [resultado] = await banco.execute(`
+                INSERT IGNORE INTO conquista_professor
+                    (id_professor, codigo_conquista)
+                VALUES (?, ?)
+            `, [idProfessor, conquista.codigo]);
+
+            if (resultado.affectedRows > 0) {
+                novasConquistas.push(conquista.codigo);
+            }
+        }
+
+        // Recupera as conquistas persistidas
+        const [conquistasSalvas] = await banco.execute(`
+            SELECT codigo_conquista, data_desbloqueio
+            FROM conquista_professor
+            WHERE id_professor = ?
+            ORDER BY data_desbloqueio ASC
+        `, [idProfessor]);
+
+        res.json({
+            ...estatisticas,
+            xp,
+            nivel,
+            conquistas: conquistasSalvas,
+            novasConquistas
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar gamificação do professor:", erro);
+
+        res.status(500).json({
+            erro: "Não foi possível carregar a gamificação."
+        });
+    }
+});
 
 // Listar cursos do professor autenticado
 app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
@@ -2389,6 +2620,15 @@ app.post("/api/modulos/:id/aulas", exigirProfessor, async (req, res) => {
             Number.isInteger(ordem) && ordem > 0 ? ordem : 1
         ]);
 
+        // Registrar 5 XP pela criação de conteúdo.
+        await registrarXpProfessor(
+            banco,
+            req.session.usuario.id,
+            5,
+            "Criação de conteúdo",
+            `aula:${resultado.insertId}`
+        );
+
         res.status(201).json({
             sucesso: true,
             id_aula: resultado.insertId,
@@ -2632,6 +2872,27 @@ app.post("/api/cursos", exigirProfessor, async (req, res) => {
             situacao
         ]);
 
+        // Registrar XP pela criação do curso
+        const idProfessor = req.session.usuario.id;
+
+        if (situacao === "rascunho") {
+            await registrarXpProfessor(
+                banco,
+                idProfessor,
+                10,
+                "Criação de curso em rascunho",
+                `curso_rascunho:${resultado.insertId}`
+            );
+        } else {
+            await registrarXpProfessor(
+                banco,
+                idProfessor,
+                50,
+                "Publicação de curso",
+                `curso_publicado:${resultado.insertId}`
+            );
+        }
+
         res.status(201).json({
             sucesso: true,
             mensagem: "Curso criado com sucesso.",
@@ -2659,7 +2920,7 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
         }
 
         const [cursosAtuais] = await banco.execute(
-            `SELECT imagem_url
+            `SELECT imagem_url, status
             FROM curso
             WHERE id_curso = ?
             AND id_professor = ?`,
@@ -2673,6 +2934,8 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
         }
 
         const imagemAntiga = cursosAtuais[0].imagem_url;
+
+        const statusAnterior = cursosAtuais[0].status;
 
         const {
             nome_curso,
@@ -2792,6 +3055,20 @@ app.put("/api/cursos/:id", exigirProfessor, async (req, res) => {
             return res.status(404).json({
                 erro: "Curso não encontrado ou não pertence a você."
             });
+        }
+
+        // XP adicional pela publicação de um rascunho
+        if (
+            statusAnterior === "rascunho" &&
+            status === "publicado"
+        ) {
+            await registrarXpProfessor(
+                banco,
+                req.session.usuario.id,
+                40,
+                "Publicação de curso",
+                `curso_publicado:${id}`
+            );
         }
 
         if (imagemAntiga && imagemAntiga !== imagem_url) {

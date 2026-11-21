@@ -4,71 +4,187 @@
   if (!u || u.tipo !== "professor" || !el) return;
 
   const XP_NIVEL = 150;
-  const cursos = JSON.parse(localStorage.getItem("cursos") || "[]");
-  const mats = HS.matriculas();
-  const publicados = cursos.filter((c) => c.status === "Publicado").length;
-  const conclusoes = mats.filter((m) => m.status === "concluido").length;
-  const conteudos = cursos.reduce((t, c) => t + (c.conteudos || []).length, 0);
 
-  const xp = publicados * 50 + (cursos.length - publicados) * 10 + mats.length * 10 + conclusoes * 25 + conteudos * 5;
-  const nivel = Math.floor(xp / XP_NIVEL) + 1;
-  const noNivel = xp % XP_NIVEL;
+  fetch("/api/professor/gamificacao", {
+    credentials: "include",
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error("Erro ao carregar gamificação.");
+      }
 
-  const ativos = cursos.filter((c) => c.status === "Publicado");
-  const media = ativos.length ? ativos.reduce((t, c) => t + (c.avaliacao || 0), 0) / ativos.length : 0;
-  const expert = ativos.some((c) => c.nivel === "expert");
-  const CONQUISTAS = [
-    { id: "p1", icone: "📘", nome: "Autor", desc: "Publique 1 curso", ok: publicados >= 1 },
-    { id: "ref", icone: "🌟", nome: "Professor Referência", desc: "3 cursos ativos e nota média ≥ 4,5", ok: ativos.length >= 3 && media >= 4.5 },
-    { id: "m100", icone: "🚀", nome: "100 matrículas", desc: "Ganhe crédito de tráfego pago", ok: mats.length >= 100 },
-    { id: "exp", icone: "🔓", nome: "Expert aprovado", desc: "Desbloqueia ferramentas avançadas", ok: expert },
-    { id: "c1", icone: "🎓", nome: "Formador", desc: "1 aluno concluiu", ok: conclusoes >= 1 },
-    { id: "n3", icone: "⭐", nome: "Mestre", desc: "Chegue ao nível 3", ok: nivel >= 3 },
-  ];
+      return res.json();
+    })
+    .then((dados) => {
+      const publicados = Number(dados.publicados) || 0;
+      const rascunhos = Number(dados.rascunhos) || 0;
+      const matriculas = Number(dados.matriculas) || 0;
+      const conclusoes = Number(dados.conclusoes) || 0;
+      const conteudos = Number(dados.conteudos) || 0;
+      const media = Number(dados.mediaAvaliacoes) || 0;
+      const cursosExpert = Number(dados.cursosExpert) || 0;
 
-  const chave = "gamprof_" + u.email;
-  const antigas = JSON.parse(localStorage.getItem(chave) || "[]");
-  const atuais = CONQUISTAS.filter((c) => c.ok).map((c) => c.id);
-  CONQUISTAS.filter((c) => c.ok && !antigas.includes(c.id)).forEach((c) => {
-    HS.notificar("Nova conquista", `${c.icone} Você desbloqueou "${c.nome}".`, "relatorio", "professor");
-  });
-  localStorage.setItem(chave, JSON.stringify(atuais));
+      const totalCursos = Number(dados.totalCursos) || 0;
 
-  const alunos = Object.keys(localStorage).filter((k) => k.startsWith("gam_")).map((k) => {
-    const m = mats.find((x) => "gam_" + x.email === k);
-    return m ? { nome: m.nome, xp: JSON.parse(localStorage.getItem(k)).xp } : null;
-  }).filter(Boolean).sort((a, b) => b.xp - a.xp).slice(0, 5);
-  const medalhas = ["🥇", "🥈", "🥉"];
+      const xp = Number(dados.xp) || 0;
+      const nivel = Number(dados.nivel) || 1;
+      const noNivel = xp % XP_NIVEL;
 
-  el.innerHTML = `
-    <style>
-      .gam{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin:20px 0}
-      .gam-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
-      .gam-card h2{margin:0 0 12px;font-size:15px;color:#0055c3}
-      .gam-nivel{display:flex;align-items:center;gap:14px}
-      .gam-nivel b{background:#0055c3;color:#fff;border-radius:50%;width:56px;height:56px;display:grid;place-items:center;font-size:22px}
-      .gam-barra{height:10px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin-top:6px}
-      .gam-barra div{height:100%;background:linear-gradient(90deg,#4f7cff,#0055c3)}
-      .gam-badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
-      .gam-badge{text-align:center;padding:10px 6px;border-radius:12px;background:#f3f6fc;font-size:12px}
-      .gam-badge span{display:block;font-size:26px}
-      .gam-badge.off{opacity:1;filter:grayscale(1);background:#eef2f7;color:#475569}
-      .gam-rank div{display:flex;justify-content:space-between;padding:8px 10px;font-size:14px}
-      @media(max-width:900px){.gam{grid-template-columns:1fr}}
-    </style>
-    <div class="gam">
-      <div class="gam-card">
-        <h2>🎮 Sua jornada como professor</h2>
-        <div class="gam-nivel"><b>${nivel}</b>
-          <div style="flex:1"><strong>Nível ${nivel}</strong> · ${xp} XP
-            <div class="gam-barra"><div style="width:${(noNivel * 100) / XP_NIVEL}%"></div></div>
-            <small>${XP_NIVEL - noNivel} XP para o nível ${nivel + 1}</small></div></div>
-        <div class="gam-badges">${CONQUISTAS.map((c) => `<div class="gam-badge ${c.ok ? "" : "off"}" title="${c.desc}"><span>${c.icone}</span><strong>${c.nome}</strong><br><small>${c.desc}</small></div>`).join("")}</div>
-      </div>
-      <div class="gam-card gam-rank">
-        <h2>🏆 Alunos mais engajados</h2>
-        ${alunos.length ? alunos.map((a, i) => `<div><span>${medalhas[i] || i + 1 + "º"} ${a.nome}</span><span>${a.xp} XP</span></div>`).join("") : "<small>Ainda não há alunos com XP.</small>"}
-        <small style="display:block;margin-top:10px;color:var(--hs-legenda,#5b6b80)">Ganhe XP: curso publicado +50 · rascunho +10 · matrícula +10 · aluno concluiu +25 · conteúdo +5</small>
-      </div>
-    </div>`;
+      const conquistasSalvas = new Set(
+        (dados.conquistas || []).map(
+          (c) => c.codigo_conquista
+        )
+      );
+
+      const CONQUISTAS = [
+        {
+          id: "p1",
+          icone: "📘",
+          nome: "Autor",
+          desc: "Publique 1 curso",
+          ok: publicados >= 1,
+        },
+        {
+          id: "ref",
+          icone: "🌟",
+          nome: "Professor Referência",
+          desc: "3 cursos ativos e nota média ≥ 4,5",
+          ok: publicados >= 3 && media >= 4.5,
+        },
+        {
+          id: "m100",
+          icone: "🚀",
+          nome: "100 matrículas",
+          desc: "Ganhe crédito de tráfego pago",
+          ok: matriculas >= 100,
+        },
+        {
+          id: "exp",
+          icone: "🔓",
+          nome: "Expert aprovado",
+          desc: "Desbloqueia ferramentas avançadas",
+          ok: cursosExpert >= 1,
+        },
+        {
+          id: "c1",
+          icone: "🎓",
+          nome: "Formador",
+          desc: "1 aluno concluiu",
+          ok: conclusoes >= 1,
+        },
+        {
+          id: "n3",
+          icone: "⭐",
+          nome: "Mestre",
+          desc: "Chegue ao nível 3",
+          ok: nivel >= 3,
+        },
+      ];
+
+
+      const novasConquistas = new Set(
+        dados.novasConquistas || []
+      );
+
+      CONQUISTAS
+        .filter((c) => novasConquistas.has(c.id))
+        .forEach((c) => {
+          HS.notificar(
+            "Nova conquista",
+            `${c.icone} Você desbloqueou "${c.nome}".`,
+            "relatorio",
+            "professor"
+          );
+        });
+
+      const medalhas = ["🥇", "🥈", "🥉"];
+
+      el.innerHTML = `
+        <style>
+          .gam{display:grid;grid-template-columns:1.3fr 1fr;gap:20px;margin:20px 0}
+          .gam-card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.06)}
+          .gam-card h2{margin:0 0 12px;font-size:15px;color:#0055c3}
+          .gam-nivel{display:flex;align-items:center;gap:14px}
+          .gam-nivel b{background:#0055c3;color:#fff;border-radius:50%;width:56px;height:56px;display:grid;place-items:center;font-size:22px}
+          .gam-barra{height:10px;background:#e2e8f0;border-radius:8px;overflow:hidden;margin-top:6px}
+          .gam-barra div{height:100%;background:linear-gradient(90deg,#4f7cff,#0055c3)}
+          .gam-badges{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:16px}
+          .gam-badge{text-align:center;padding:10px 6px;border-radius:12px;background:#f3f6fc;font-size:12px}
+          .gam-badge span{display:block;font-size:26px}
+          .gam-badge.off{opacity:1;filter:grayscale(1);background:#eef2f7;color:#475569}
+          .gam-rank div{display:flex;justify-content:space-between;padding:8px 10px;font-size:14px}
+          @media(max-width:900px){.gam{grid-template-columns:1fr}}
+        </style>
+
+        <div class="gam">
+          <div class="gam-card">
+            <h2>🎮 Sua jornada como professor</h2>
+
+            <div class="gam-nivel">
+              <b>${nivel}</b>
+              <div style="flex:1">
+                <strong>Nível ${nivel}</strong> · ${xp} XP
+
+                <div class="gam-barra">
+                  <div style="width:${(noNivel * 100) / XP_NIVEL}%"></div>
+                </div>
+
+                <small>${XP_NIVEL - noNivel} XP para o nível ${nivel + 1}</small>
+              </div>
+            </div>
+
+            <div class="gam-badges">
+              ${CONQUISTAS.map((c) => `
+                <div class="gam-badge ${c.ok ? "" : "off"}" title="${c.desc}">
+                  <span>${c.icone}</span>
+                  <strong>${c.nome}</strong>
+                  <br>
+                  <small>${c.desc}</small>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+
+          <div class="gam-card gam-rank">
+            <h2>🏆 Seu desempenho</h2>
+
+            <div>
+              <span>Cursos publicados</span>
+              <span>${publicados}</span>
+            </div>
+
+            <div>
+              <span>Matrículas</span>
+              <span>${matriculas}</span>
+            </div>
+
+            <div>
+              <span>Alunos concluintes</span>
+              <span>${conclusoes}</span>
+            </div>
+
+            <div>
+              <span>Conteúdos criados</span>
+              <span>${conteudos}</span>
+            </div>
+
+            <div>
+              <span>Média de avaliações</span>
+              <span>${media.toFixed(1)} ⭐</span>
+            </div>
+
+            <small style="display:block;margin-top:10px;color:var(--hs-legenda,#5b6b80)">
+              XP: curso publicado +50 · rascunho +10 · matrícula +10 · aluno concluiu +25 · conteúdo +5
+            </small>
+          </div>
+        </div>
+      `;
+    })
+    .catch((erro) => {
+      console.error("Erro na gamificação:", erro);
+
+      el.innerHTML = `
+        <p>Não foi possível carregar a gamificação do professor.</p>
+      `;
+    });
 })();

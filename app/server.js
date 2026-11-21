@@ -1982,6 +1982,191 @@ app.get("/api/professor/gamificacao", exigirProfessor, async (req, res) => {
     }
 });
 
+// Dados dos relatórios do professor autenticado
+app.get("/api/professor/relatorios", exigirProfessor, async (req, res) => {
+    try {
+        const idProfessor = req.session.usuario.id;
+
+        // Período permitido: 30, 90 ou 365 dias
+        const periodosPermitidos = [30, 90, 365];
+        const diasInformados = Number(req.query.periodo);
+        const dias = periodosPermitidos.includes(diasInformados)
+            ? diasInformados
+            : 30;
+
+        // Curso selecionado (opcional)
+        const idCurso = req.query.curso
+            ? Number(req.query.curso)
+            : null;
+
+        if (
+            idCurso !== null &&
+            (!Number.isInteger(idCurso) || idCurso <= 0)
+        ) {
+            return res.status(400).json({
+                erro: "Curso inválido."
+            });
+        }
+
+        // Confirma que o curso pertence ao professor
+        if (idCurso !== null) {
+            const [cursoExiste] = await banco.execute(`
+                SELECT id_curso
+                FROM curso
+                WHERE id_curso = ?
+                  AND id_professor = ?
+            `, [idCurso, idProfessor]);
+
+            if (cursoExiste.length === 0) {
+                return res.status(404).json({
+                    erro: "Curso não encontrado."
+                });
+            }
+        }
+
+        const filtroCurso = idCurso !== null
+            ? "AND m.id_curso = ?"
+            : "";
+
+        const parametrosMatriculas = idCurso !== null
+            ? [idProfessor, dias, idCurso]
+            : [idProfessor, dias];
+
+        // Métricas de matrículas
+        const [metricas] = await banco.execute(`
+            SELECT
+                COUNT(*) AS totalInscricoes,
+
+                SUM(
+                    CASE
+                        WHEN m.situacao = 'aprovado'
+                          OR m.progresso >= 100
+                        THEN 1 ELSE 0
+                    END
+                ) AS totalConcluidos,
+
+                SUM(
+                    CASE
+                        WHEN m.situacao = 'em_andamento'
+                         AND m.progresso < 100
+                        THEN 1 ELSE 0
+                    END
+                ) AS alunosEmAndamento
+
+            FROM matricula m
+            INNER JOIN curso c
+                ON c.id_curso = m.id_curso
+
+            WHERE c.id_professor = ?
+              AND m.data_matricula >= DATE_SUB(
+                  CURDATE(),
+                  INTERVAL ? DAY
+              )
+              ${filtroCurso}
+        `, parametrosMatriculas);
+
+        // Receita de compras efetivamente pagas
+        const parametrosReceita = idCurso !== null
+            ? [idProfessor, dias, idCurso]
+            : [idProfessor, dias];
+
+        const filtroReceita = idCurso !== null
+            ? "AND ic.id_curso = ?"
+            : "";
+
+        const [receita] = await banco.execute(`
+            SELECT
+                COALESCE(SUM(ic.valor_unitario), 0) AS receitaTotal
+
+            FROM item_compra ic
+            INNER JOIN compra cp
+                ON cp.id_compra = ic.id_compra
+            INNER JOIN curso c
+                ON c.id_curso = ic.id_curso
+
+            WHERE c.id_professor = ?
+              AND cp.status = 'paga'
+              AND cp.data_compra >= DATE_SUB(
+                  CURDATE(),
+                  INTERVAL ? DAY
+              )
+              ${filtroReceita}
+        `, parametrosReceita);
+
+        // Inscrições agrupadas por curso
+        const [cursos] = await banco.execute(`
+            SELECT
+                c.id_curso AS cursoId,
+                c.nome_curso AS cursoNome,
+                COUNT(m.id_matricula) AS inscricoes,
+
+                SUM(
+                    CASE
+                        WHEN m.situacao = 'aprovado'
+                          OR m.progresso >= 100
+                        THEN 1 ELSE 0
+                    END
+                ) AS concluidos
+
+            FROM curso c
+            LEFT JOIN matricula m
+                ON m.id_curso = c.id_curso
+                AND m.data_matricula >= DATE_SUB(
+                    CURDATE(),
+                    INTERVAL ? DAY
+                )
+
+            WHERE c.id_professor = ?
+              ${idCurso !== null ? "AND c.id_curso = ?" : ""}
+
+            GROUP BY c.id_curso, c.nome_curso
+            ORDER BY inscricoes DESC
+        `, idCurso !== null
+            ? [dias, idProfessor, idCurso]
+            : [dias, idProfessor]
+        );
+
+        const dados = metricas[0];
+
+        const totalInscricoes = Number(dados.totalInscricoes) || 0;
+        const totalConcluidos = Number(dados.totalConcluidos) || 0;
+        const alunosEmAndamento = Number(dados.alunosEmAndamento) || 0;
+
+        return res.json({
+            sucesso: true,
+
+            periodo: dias,
+            curso: idCurso,
+
+            metricas: {
+                totalInscricoes,
+                totalConcluidos,
+                alunosEmAndamento,
+                receitaTotal: Number(receita[0].receitaTotal) || 0
+            },
+
+            status: {
+                concluidos: totalConcluidos,
+                emAndamento: alunosEmAndamento
+            },
+
+            cursos: cursos.map(c => ({
+                cursoId: Number(c.cursoId),
+                cursoNome: c.cursoNome,
+                inscricoes: Number(c.inscricoes) || 0,
+                concluidos: Number(c.concluidos) || 0
+            }))
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar relatórios do professor:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível carregar os relatórios."
+        });
+    }
+});
+
 // Listar cursos do professor autenticado
 app.get("/api/professor/cursos", exigirProfessor, async (req, res) => {
     try {

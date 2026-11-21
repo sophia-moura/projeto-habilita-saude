@@ -400,16 +400,12 @@
         );
       }
 
-      const valor = formatarMoeda(resultado.valor);
-
-      if (window.HS && HS.notificar) {
-        HS.notificar(
-          "Saque solicitado",
-          `Sua solicitação de ${valor} foi enviada com sucesso.`,
-          "alerta",
-          "professor"
-        );
+      // Atualiza o sininho imediatamente após o saque.
+      if (window.HS && typeof HS.atualizarSino === "function") {
+        await HS.atualizarSino();
       }
+
+      const valor = formatarMoeda(resultado.valor);
 
       alert(`Solicitação de saque de ${valor} registrada com sucesso!`);
 

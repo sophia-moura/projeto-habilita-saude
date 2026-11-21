@@ -2722,6 +2722,20 @@ app.post("/api/professor/solicitar-saque", exigirProfessor, async (req, res) => 
             VALUES (?, ?, 'solicitado')
         `, [idProfessor, saldoDisponivel]);
 
+        // Registra uma notificação para o professor.
+        await conexao.execute(`
+            INSERT INTO notificacao (
+                id_professor,
+                titulo,
+                mensagem
+            )
+            VALUES (?, ?, ?)
+        `, [
+            idProfessor,
+            "Saque solicitado",
+            `Sua solicitação de R$ ${saldoDisponivel.toFixed(2).replace(".", ",")} foi enviada com sucesso.`
+        ]);
+
         await conexao.commit();
 
         return res.json({

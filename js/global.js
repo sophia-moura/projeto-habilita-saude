@@ -224,6 +224,7 @@ window.API = {
     },
 
     notificar,
+    atualizarSino
   };
   window.HS = HS;
 

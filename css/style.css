@@ -2474,8 +2474,41 @@ body {
     overflow: hidden;
 }
 
+/* Indicadores financeiros - ajuste final */
+.content:has(#graficoGanhos) .metricas-financeiras {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+.content:has(#graficoGanhos) .card-metrica {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+    padding: 12px;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.content:has(#graficoGanhos) .card-metrica h3 {
+    flex: 0 1 42%;
+    min-width: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.4;
+    overflow-wrap: normal;
+}
+
 .content:has(#graficoGanhos) .card-metrica strong {
-    overflow-wrap: anywhere;
+    flex: 0 0 58%;
+    min-width: 0;
+    font-size: 18px;
+    line-height: 1.3;
+    text-align: right;
+    white-space: nowrap;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 /* Colunas sem largura excedente */

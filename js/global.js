@@ -253,21 +253,21 @@ window.API = {
       }
 
     } else if (pagina === "login.html") {
-      // Se já estiver logado, redireciona para a página inicial
-      try {
-        const dados = await API.get("/usuario-logado");
+        try {
+            const dados = await API.get("/usuario-logado");
 
-        if (dados && dados.usuario) {
-          usuario = dados.usuario;
-          tipo = usuario.tipo;
+            if (dados && dados.usuario) {
+                usuario = dados.usuario;
+                tipo = usuario.tipo;
 
-          location.replace(home(tipo));
-          return false;
+                if (pagina === "login.html") {
+                    location.replace(home(tipo));
+                    return false;
+                }
+            }
+        } catch (erro) {
+            // É normal não haver sessão ativa.
         }
-
-      } catch (erro) {
-        // É normal não haver sessão ativa na página de login.
-      }
     }
 
     return true;
@@ -388,19 +388,10 @@ window.API = {
   const btnLogout = document.getElementById("btnLogout");
 
   if (btnLogout) {
-    btnLogout.addEventListener("click", async () => {
-        if (!confirm("Deseja realmente sair da plataforma?")) return;
-
-        try {
-            await API.post("/logout", {});
-
-            location.replace("index.html");
-
-        } catch (erro) {
-            console.error("Erro ao encerrar sessão:", erro);
-            alert("Não foi possível encerrar sua sessão. Tente novamente.");
-        }
-    });
+      btnLogout.addEventListener("click", (e) => {
+          e.preventDefault();
+          location.replace("index.html");
+      });
   }
 
   // Menu lateral no celular. Algumas páginas antigas não tinham #overlay;

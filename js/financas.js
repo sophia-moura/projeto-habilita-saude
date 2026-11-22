@@ -10,15 +10,6 @@
       "'": "&#39;"
     })[c]));
 
-  const ler = (chave, padrao) => {
-    try {
-      const valor = JSON.parse(localStorage.getItem(chave));
-      return valor ?? padrao;
-    } catch (e) {
-      return padrao;
-    }
-  };
-
   function obterNiveis() {
     return window.HS && typeof HS.niveis === "function"
       ? HS.niveis()

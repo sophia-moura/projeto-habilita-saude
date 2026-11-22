@@ -76,68 +76,6 @@
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }
 
-  function sincronizarDadosRelacionados(emailAntigo, novoNome, novoEmail, novaFoto) {
-    const lerLocal = (chave) => {
-        try {
-            return JSON.parse(localStorage.getItem(chave)) || [];
-        } catch {
-            return [];
-        }
-    };
-
-    const salvarLocal = (chave, dados) => {
-        localStorage.setItem(chave, JSON.stringify(dados));
-    };
-
-    const matriculas = lerLocal("matriculas");
-
-    if (Array.isArray(matriculas)) {
-        let mudou = false;
-
-        matriculas.forEach((m) => {
-            if (String(m.email || "").toLowerCase() !== emailAntigo) return;
-
-            m.email = novoEmail;
-            m.nome = novoNome;
-
-            if (novaFoto) m.foto = novaFoto;
-
-            mudou = true;
-        });
-
-        if (mudou) salvarLocal("matriculas", matriculas);
-    }
-
-    const certificados = lerLocal("certificados");
-
-    if (Array.isArray(certificados)) {
-        let mudou = false;
-
-        certificados.forEach((c) => {
-            if (String(c.email || "").toLowerCase() !== emailAntigo) return;
-
-            c.email = novoEmail;
-            c.aluno = novoNome;
-
-            mudou = true;
-        });
-
-        if (mudou) salvarLocal("certificados", certificados);
-    }
-
-    if (emailAntigo && emailAntigo !== novoEmail) {
-        ["boasVindas_", "gam_", "gamprof_"].forEach((prefixo) => {
-            const chaveAntiga = `${prefixo}${emailAntigo}`;
-            const valor = localStorage.getItem(chaveAntiga);
-
-            if (valor === null) return;
-
-            localStorage.setItem(`${prefixo}${novoEmail}`, valor);
-            localStorage.removeItem(chaveAntiga);
-        });
-    }
-  }
-
   botao.addEventListener("click", () => {
     const nome = campoNome.value.trim().replace(/\s+/g, " ");
     const email = campoEmail.value.trim().toLowerCase();
@@ -191,14 +129,6 @@
                     return;
                 }
             }
-
-            // Mantém os dados locais relacionados sincronizados
-            sincronizarDadosRelacionados(
-                emailAntigo,
-                nome,
-                email,
-                usuario.foto || ""
-            );
 
             mostrarMensagem("Perfil atualizado com sucesso!", false);
 

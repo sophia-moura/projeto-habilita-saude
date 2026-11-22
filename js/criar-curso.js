@@ -204,7 +204,6 @@
             perguntas: metadados.perguntas || [],
             notaMinima: metadados.notaMinima || 70,
             arquivo_url: aula.arquivo_url || null,
-            arquivoId: metadados.arquivoId || null,
             mime: metadados.mime || "",
             tamanho: metadados.tamanho || 0
           };
@@ -222,37 +221,6 @@
 
       window.location.href = "professor-meus-cursos.html";
       return;
-    }
-  } else {
-    try {
-      const rascunho = JSON.parse(
-        localStorage.getItem("rascunhoCurso")
-      );
-
-      if (rascunho) {
-        nomeCurso.value = rascunho.nome || "";
-        subtituloCurso.value = rascunho.subtitulo || "";
-        descricaoCurso.value = rascunho.descricao || "";
-        areaCurso.value = rascunho.area || "";
-        publicoCurso.value = rascunho.publico || "";
-        cargaHoraria.value =
-          parseInt(rascunho.cargaHoraria, 10) || "";
-
-        categoriaCurso.value = rascunho.categoria || "";
-
-        precoCurso.value = rascunho.preco
-          ? moeda(lerPrecoDe(rascunho.preco))
-          : "";
-
-        conteudosCurso = Array.isArray(rascunho.conteudos)
-          ? rascunho.conteudos
-          : [];
-
-        renderNivel();
-        renderizarConteudos();
-      }
-    } catch (erro) {
-      console.error("Erro ao carregar rascunho:", erro);
     }
   }
 
@@ -349,32 +317,6 @@
     carregarImagem(e.dataTransfer.files && e.dataTransfer.files[0]);
   });
 
-  /* ---------- Rascunho ---------- */
-  function dadosDoFormulario() {
-    return {
-      nome: nomeCurso.value.trim(),
-      subtitulo: subtituloCurso.value.trim(),
-      descricao: descricaoCurso.value.trim(),
-      area: areaCurso.value,
-      publico: publicoCurso.value.trim(),
-      cargaHoraria: cargaHoraria.value,
-      categoria: categoriaCurso.value,
-      preco: precoCurso.value,
-      conteudos: conteudosCurso,
-    };
-  }
-
-  function salvarRascunho(silencioso) {
-    try {
-      localStorage.setItem("rascunhoCurso", JSON.stringify(dadosDoFormulario()));
-      if (!silencioso) alert("Rascunho salvo!");
-      return true;
-    } catch (e) {
-      if (!silencioso) alert("Não foi possível salvar o rascunho: o armazenamento do navegador está cheio.");
-      return false;
-    }
-  }
-
   form.addEventListener("input", () => salvarRascunho(true));
 
   precoCurso.addEventListener("input", (e) => {
@@ -455,7 +397,6 @@
         }
         conteudosCurso.push({ tipo: "link", nome: url });
         renderizarConteudos();
-        salvarRascunho(true);
         return;
       }
 
@@ -467,7 +408,6 @@
         HSEditor.abrir(tipoAtual, null, (item) => {
           conteudosCurso.push(item);
           renderizarConteudos();
-          salvarRascunho(true);
         });
         return;
       }
@@ -483,7 +423,6 @@
       if (Number.isInteger(index) && conteudosCurso[index]) {
         conteudosCurso.splice(index, 1);
         renderizarConteudos();
-        salvarRascunho(true);
       }
       return;
     }
@@ -496,7 +435,6 @@
     HSEditor.abrir(item.tipo, item, (novo) => {
       conteudosCurso[index] = novo;
       renderizarConteudos();
-      salvarRascunho(true);
     });
   });
 
@@ -508,32 +446,22 @@
       alert("Selecione um arquivo de vídeo (MP4 ou WebM).");
       return;
     }
-    if (!window.HSVideo) {
-      alert("O armazenamento de arquivos não está disponível neste navegador.");
-      return;
-    }
-    try {
-      const arquivoId = await HSVideo.salvar(arquivo);
-      conteudosCurso.push({
-        tipo: tipoAtual,
-        nome: arquivo.name,
-        arquivoId,
-        mime: arquivo.type,
-        tamanho: arquivo.size,
-      });
-      renderizarConteudos();
-      salvarRascunho(true);
-      HS.notificar(
-        "Arquivo anexado",
-        `"${arquivo.name}" (${(arquivo.size / 1048576).toFixed(1)} MB) foi adicionado ao curso.`,
-        "curso",
-        "professor",
-      );
-    } catch (e) {
-      alert(
-        "Não foi possível salvar o arquivo neste navegador. Use um link do YouTube/Vimeo para vídeos muito grandes.",
-      );
-    }
+    conteudosCurso.push({
+      tipo: tipoAtual,
+      nome: arquivo.name,
+      arquivo,
+      mime: arquivo.type,
+      tamanho: arquivo.size,
+    });
+
+    renderizarConteudos();
+
+    HS.notificar(
+      "Arquivo anexado",
+      `"${arquivo.name}" (${(arquivo.size / 1048576).toFixed(1)} MB) foi adicionado ao curso.`,
+      "curso",
+      "professor",
+    );
   });
 
   function montarCurso(status) {
@@ -623,20 +551,12 @@
       throw new Error("A API não retornou o ID do curso.");
     }
 
-    // Enviar os arquivos locais para o servidor.
+    // Enviar os arquivos diretamente para o servidor.
     for (const item of conteudosCurso) {
-      if (!item.arquivoId || item.arquivo_url) continue;
-
-      const arquivo = await HSVideo.obter(item.arquivoId);
-
-      if (!arquivo) {
-        throw new Error(
-          `Não foi possível recuperar o arquivo "${item.nome}" do navegador.`
-        );
-      }
+      if (!item.arquivo || item.arquivo_url) continue;
 
       const formulario = new FormData();
-      formulario.append("arquivo", arquivo, item.nome);
+      formulario.append("arquivo", item.arquivo, item.nome);
 
       const respostaUpload = await API.request(
         `/cursos/${idCurso}/conteudos/arquivo`,
@@ -718,7 +638,6 @@
                 notaMinima: item.notaMinima || 70
               }
             : {
-                arquivoId: item.arquivoId || null,
                 mime: item.mime || "",
                 tamanho: item.tamanho || 0
               },
@@ -818,9 +737,6 @@
     try {
       await salvarCursoAPI("publicado");
 
-      localStorage.removeItem("cursoEditando");
-      localStorage.removeItem("rascunhoCurso");
-
       sessionStorage.setItem("confete", "1");
 
       alert("Curso publicado com sucesso!");
@@ -848,8 +764,6 @@
 
     try {
       await salvarCursoAPI("rascunho");
-
-      localStorage.removeItem("cursoEditando");
 
       alert("Rascunho salvo no banco de dados!");
 

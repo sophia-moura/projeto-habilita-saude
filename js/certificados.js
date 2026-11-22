@@ -1,12 +1,4 @@
 (function () {
-  const ls = (k, d) => {
-    try {
-      return JSON.parse(localStorage.getItem(k)) ?? d;
-    } catch (e) {
-      return d;
-    }
-  };
-
   const esc = (t) =>
     String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 

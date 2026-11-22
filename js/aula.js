@@ -414,7 +414,10 @@
     const palco = $("palco");
 
     if (urlObj) {
-      URL.revokeObjectURL(urlObj);
+      if (urlObj.startsWith("blob:")) {
+        URL.revokeObjectURL(urlObj);
+      }
+
       urlObj = null;
     }
     $("tituloAula").textContent = `${i + 1}. ${nomeExibido(it)}`;
@@ -432,18 +435,11 @@
       renderTexto(it, palco);
     } else if (ehQuiz(it)) {
       await renderQuiz(it, i, palco);
-    } else if (it.arquivoId) {
-      let blob = null;
-      try {
-        blob = await HSVideo.obter(it.arquivoId);
-      } catch (e) {
-        blob = null;
-      }
+    } else if (it.arquivo_url) {
       if (minha !== versao) return;
-      if (!blob) return mensagem(palco, "fa-triangle-exclamation", "Arquivo não encontrado neste navegador. Ele foi enviado de outro computador ou navegador.");
 
-      urlObj = URL.createObjectURL(blob);
-      const mime = it.mime || blob.type || "";
+      urlObj = it.arquivo_url;
+      const mime = it.mime || "";
       if (mime.startsWith("video/")) {
         const v = document.createElement("video");
         v.src = urlObj;

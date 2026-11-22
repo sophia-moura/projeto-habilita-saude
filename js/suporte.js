@@ -144,25 +144,7 @@
   }
 
   function criarNotificacao(titulo, descricao, tipo) {
-    if (window.HS && HS.notificar) {
-      HS.notificar(titulo, descricao, tipo, "professor");
-      return;
-    }
-    try {
-      const notificacoes = JSON.parse(localStorage.getItem("notificacoes")) || [];
-      notificacoes.unshift({
-        id: Date.now(),
-        titulo,
-        descricao,
-        tipo,
-        para: "professor",
-        lida: false,
-        data: new Date().toLocaleString("pt-BR"),
-      });
-      localStorage.setItem("notificacoes", JSON.stringify(notificacoes));
-    } catch (e) {
-      /* sem notificação, sem problema */
-    }
+    HS.notificar(titulo, descricao, tipo, "professor");
   }
 
   function atualizarMetricas() {

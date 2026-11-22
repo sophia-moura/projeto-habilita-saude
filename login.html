@@ -422,9 +422,6 @@
               : gerarFoto(dadosLogin.usuario.nome)
           };
 
-          localStorage.setItem("usuario", JSON.stringify(usuario));
-          localStorage.setItem("usuarioLogado", "true");
-
           // 3. Redirecionar conforme o perfil.
           window.location.href =
             tipoCadastro === "professor"

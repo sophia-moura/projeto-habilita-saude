@@ -1,21 +1,14 @@
 (async function () {
-  const u = await HS.carregarUsuario();
+  await window.HS.ready;
+
+  const u = window.HS.usuario;
   const el = document.getElementById("painelGamificacaoProf");
 
   if (!u || u.tipo !== "professor" || !el) return;
 
   const XP_NIVEL = 150;
 
-  fetch("/api/professor/gamificacao", {
-    credentials: "include",
-  })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error("Erro ao carregar gamificação.");
-      }
-
-      return res.json();
-    })
+  API.get("/professor/gamificacao")
     .then((dados) => {
       const publicados = Number(dados.publicados) || 0;
       const rascunhos = Number(dados.rascunhos) || 0;
@@ -43,45 +36,38 @@
           icone: "📘",
           nome: "Autor",
           desc: "Publique 1 curso",
-          ok: publicados >= 1,
         },
         {
           id: "ref",
           icone: "🌟",
           nome: "Professor Referência",
           desc: "3 cursos ativos e nota média ≥ 4,5",
-          ok: publicados >= 3 && media >= 4.5,
         },
         {
           id: "m100",
           icone: "🚀",
           nome: "100 matrículas",
           desc: "Ganhe crédito de tráfego pago",
-          ok: matriculas >= 100,
         },
         {
           id: "exp",
           icone: "🔓",
           nome: "Expert aprovado",
           desc: "Desbloqueia ferramentas avançadas",
-          ok: cursosExpert >= 1,
         },
         {
           id: "c1",
           icone: "🎓",
           nome: "Formador",
           desc: "1 aluno concluiu",
-          ok: conclusoes >= 1,
         },
         {
           id: "n3",
           icone: "⭐",
           nome: "Mestre",
           desc: "Chegue ao nível 3",
-          ok: nivel >= 3,
         },
       ];
-
 
       const novasConquistas = new Set(
         dados.novasConquistas || []
@@ -97,8 +83,6 @@
             "professor"
           );
         });
-
-      const medalhas = ["🥇", "🥈", "🥉"];
 
       el.innerHTML = `
         <style>
@@ -136,7 +120,7 @@
 
             <div class="gam-badges">
               ${CONQUISTAS.map((c) => `
-                <div class="gam-badge ${c.ok ? "" : "off"}" title="${c.desc}">
+                <div class="gam-badge ${conquistasSalvas.has(c.id) ? "" : "off"}" title="${c.desc}">
                   <span>${c.icone}</span>
                   <strong>${c.nome}</strong>
                   <br>

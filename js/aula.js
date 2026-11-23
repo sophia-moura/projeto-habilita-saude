@@ -108,7 +108,6 @@
       .filter((indice) => indice !== null)
   );
   let atual = Math.max(0, itens.findIndex((_, i) => !feitas.has(i)));
-  let urlObj = null;
   let versao = 0; // descarta aberturas antigas quando o aluno troca de conteúdo rápido
 
   /* ---------- Utilidades ---------- */
@@ -134,23 +133,6 @@
     const url = urlSegura(it.nome);
     if (!url) return "Link inválido";
     return incorporar(url) ? "Vídeo online" : new URL(url).hostname.replace(/^www\./, "");
-  }
-
-  async function obterPosicaoVideo(idAula) {
-    const resposta = await API.get(
-        `/aluno/aulas/${idAula}/progresso-video`
-    );
-
-    return Number(resposta.posicao) || 0;
-  }
-
-  async function salvarPosicaoVideo(idAula, posicao) {
-      return await API.put(
-          `/aluno/aulas/${idAula}/progresso-video`,
-          {
-              posicao: Math.floor(posicao)
-          }
-      );
   }
 
   /* ---------- Progresso e lista ---------- */
@@ -279,28 +261,21 @@
   async function renderQuiz(it, i, palco) {
     const perguntas = it.perguntas;
     const nota = Math.min(100, Math.max(1, Number(it.notaMinima) || 70));
-
-    let estado;
+    let estado = { tentativas: 0, melhor: null };
 
     try {
-        const historico = await API.get(
-            `/aluno/aulas/${it.id_aula}/quiz-historico`
-        );
+      const historico = await API.get(
+        `/aluno/aulas/${it.id_aula}/quiz-historico`
+      );
 
-        estado = {
-            tentativas: Number(historico.tentativas) || 0,
-            melhor: historico.melhorNota == null
-                ? null
-                : Number(historico.melhorNota)
-        };
+      estado = {
+        tentativas: Number(historico.tentativas) || 0,
+        melhor: historico.melhorNota == null
+          ? null
+          : Number(historico.melhorNota)
+      };
     } catch (erro) {
-        console.error("Erro ao carregar histórico do quiz:", erro);
-        mensagem(
-            palco,
-            "fa-triangle-exclamation",
-            "Não foi possível carregar o histórico do quiz. Tente novamente."
-        );
-        return;
+      console.error("Erro ao carregar histórico do quiz:", erro);
     }
     const raiz = document.createElement("div");
     raiz.className = "quiz";
@@ -324,7 +299,7 @@
           <p class="quiz-erro" role="alert" hidden></p>
           <button type="submit" class="btn btn-primary">Enviar respostas</button>
         </form>`;
-      raiz.querySelector("form").addEventListener("submit", (e) => {
+      raiz.querySelector("form").addEventListener("submit", async (e) => {
         e.preventDefault();
         const respostas = perguntas.map((_, n) => {
           const el = raiz.querySelector(`input[name="q${n}"]:checked`);
@@ -336,73 +311,67 @@
           erro.textContent = "Responda todas as perguntas antes de enviar.";
           return;
         }
-        resultado(respostas);
+        await resultado(respostas);
       });
     }
 
-  async function resultado(respostas) {
-    try {
-        const registro = await API.post(
-            `/aluno/aulas/${it.id_aula}/quiz-historico`,
-            { respostas }
+    async function resultado(respostas) {
+      const acertos = respostas.filter((r, n) => r === perguntas[n].correta).length;
+      const pct = Math.round((acertos / perguntas.length) * 100);
+      const aprovado = pct >= nota;
+      try {
+        await API.post(
+          `/aluno/aulas/${it.id_aula}/quiz-historico`,
+          { respostas }
         );
 
-        const acertos = respostas.filter(
-            (r, n) => r === perguntas[n].correta
-        ).length;
+        estado.tentativas++;
+        estado.melhor = Math.max(estado.melhor ?? 0, pct);
 
-        const pct = Number(registro.nota);
-        const aprovado = pct >= nota;
+      } catch (erro) {
+        console.error("Erro ao salvar histórico do quiz:", erro);
+        alert("Não foi possível registrar sua tentativa. Tente novamente.");
+        return;
+      }
 
-        estado.tentativas = Number(registro.tentativas);
-        estado.melhor = Number(registro.melhorNota);
+      raiz.innerHTML = `
+        <div class="quiz-resultado ${aprovado ? "aprovado" : "reprovado"}" role="status">
+          <strong>${aprovado ? "Aprovado" : "Ainda não foi desta vez"}</strong>
+          <span>Você acertou ${acertos} de ${perguntas.length} (${pct}%). Nota mínima: ${nota}%.</span>
+        </div>
+        <ol class="quiz-revisao">
+          ${perguntas
+            .map((p, n) => {
+              const certa = respostas[n] === p.correta;
+              // Só mostra o gabarito e a explicação a quem foi aprovado.
+              const detalhe = aprovado
+                ? `<small>Resposta correta: ${esc(p.opcoes[p.correta])}${p.explicacao ? ". " + esc(p.explicacao) : ""}</small>`
+                : "";
+              return `<li class="${certa ? "certa" : "errada"}"><span>${esc(p.enunciado)}</span><b>${certa ? "Correta" : "Revisar"}</b>${detalhe}</li>`;
+            })
+            .join("")}
+        </ol>
+        <div class="quiz-acoes">
+          <button type="button" class="btn btn-secondary" data-refazer>${aprovado ? "Refazer quiz" : "Tentar novamente"}</button>
+        </div>`;
+      raiz.querySelector("[data-refazer]").addEventListener("click", formulario);
 
-        raiz.innerHTML = `
-            <div class="quiz-resultado ${aprovado ? "aprovado" : "reprovado"}" role="status">
-                <strong>${aprovado ? "Aprovado" : "Ainda não foi desta vez"}</strong>
-                <span>Você acertou ${acertos} de ${perguntas.length} (${pct}%). Nota mínima: ${nota}%.</span>
-                <span>Tentativas: ${estado.tentativas} · Melhor resultado: ${estado.melhor}%</span>
-            </div>
-            <ol class="quiz-revisao">
-                ${perguntas.map((p, n) => {
-                    const certa = respostas[n] === p.correta;
-                    const detalhe = aprovado
-                        ? `<small>Resposta correta: ${esc(p.opcoes[p.correta])}${p.explicacao ? ". " + esc(p.explicacao) : ""}</small>`
-                        : "";
+      if (aprovado) {
+        concluir(i, false);
 
-                    return `<li class="${certa ? "certa" : "errada"}"><span>${esc(p.enunciado)}</span><b>${certa ? "Correta" : "Revisar"}</b>${detalhe}</li>`;
-                }).join("")}
-            </ol>
-            <div class="quiz-acoes">
-                <button type="button" class="btn btn-secondary" data-refazer>${aprovado ? "Refazer quiz" : "Tentar novamente"}</button>
-            </div>`;
-
-        raiz.querySelector("[data-refazer]").addEventListener("click", formulario);
-
-        if (aprovado) {
-            concluir(i, false);
-
-            if (pct === 100) {
-                API.post(`/aluno/aulas/${it.id_aula}/quiz-perfeito`, {
-                    respostas
-                })
-                    .then((resposta) => {
-                        if (resposta.sucesso && resposta.xpRecebido) {
-                            mostrarAvisoXP("🎉 Parabéns! Você ganhou 10 XP!");
-                        }
-                    })
-                    .catch((erro) => console.error("Erro ao registrar XP do quiz:", erro));
-            }
+        if (pct === 100) {
+          API.post(`/aluno/aulas/${itens[atual].id_aula}/quiz-perfeito`, {
+            respostas
+          })
+            .then((resposta) => {
+              if (resposta.sucesso && resposta.xpRecebido) {
+                mostrarAvisoXP("🎉 Parabéns! Você ganhou 10 XP!");
+              }
+            })
+            .catch((erro) => console.error("Erro ao registrar XP do quiz:", erro));
         }
-    } catch (erro) {
-        console.error("Erro ao registrar tentativa:", erro);
-        mensagem(
-            raiz,
-            "fa-triangle-exclamation",
-            "Não foi possível registrar sua tentativa. Verifique sua conexão e tente novamente."
-        );
+      }
     }
-  }
 
     formulario();
   }
@@ -413,13 +382,6 @@
     const it = itens[i];
     const palco = $("palco");
 
-    if (urlObj) {
-      if (urlObj.startsWith("blob:")) {
-        URL.revokeObjectURL(urlObj);
-      }
-
-      urlObj = null;
-    }
     $("tituloAula").textContent = `${i + 1}. ${nomeExibido(it)}`;
     $("tipoAula").textContent = tipoDe(it)[0];
     palco.innerHTML = "";
@@ -438,66 +400,83 @@
     } else if (it.arquivo_url) {
       if (minha !== versao) return;
 
-      urlObj = it.arquivo_url;
-      const mime = it.mime || "";
+      const urlArquivo = new URL(it.arquivo_url, window.location.origin).href;
+      const extensao = new URL(urlArquivo).pathname.split(".").pop().toLowerCase();
+
+      const mime = it.mime || ({
+        mp4: "video/mp4",
+        webm: "video/webm",
+        ogv: "video/ogg",
+        pdf: "application/pdf",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        png: "image/png",
+        gif: "image/gif",
+        webp: "image/webp",
+        svg: "image/svg+xml"
+      }[extensao] || "");
       if (mime.startsWith("video/")) {
         const v = document.createElement("video");
-        v.src = urlObj;
+        v.src = urlArquivo;
         v.controls = true;
         v.controlsList = "nodownload";
-        v.preload = "metadata"; 
+        v.preload = "metadata";
         let pos = 0;
 
         try {
-            pos = await obterPosicaoVideo(it.id_aula);
+          const progressoSalvo = await API.get(
+            `/aluno/aulas/${it.id_aula}/progresso-video`
+          );
+
+          pos = Number(progressoSalvo.posicao) || 0;
+
         } catch (erro) {
-            console.error("Erro ao recuperar posição do vídeo:", erro);
+          console.error("Erro ao recuperar progresso do vídeo:", erro);
         }
 
         if (minha !== versao) return;
 
         v.addEventListener("loadedmetadata", () => {
-            if (pos > 3 && pos < v.duration - 3) {
-                v.currentTime = pos;
-            }
+          if (pos > 3 && pos < v.duration - 3) {
+            v.currentTime = pos;
+          }
         });
-
         let ultimo = 0;
 
-        v.addEventListener("timeupdate", () => {
-            if (v.currentTime - ultimo > 5 || v.currentTime < ultimo) {
-                ultimo = v.currentTime;
+        v.addEventListener("timeupdate", async () => {
+          if (v.currentTime - ultimo > 5 || v.currentTime < ultimo) {
+            ultimo = v.currentTime;
 
-                salvarPosicaoVideo(it.id_aula, v.currentTime)
-                    .catch((erro) => {
-                        console.error("Erro ao salvar posição do vídeo:", erro);
-                    });
+            try {
+              await API.put(
+                `/aluno/aulas/${it.id_aula}/progresso-video`,
+                {
+                  posicao: Math.floor(v.currentTime)
+                }
+              );
+            } catch (erro) {
+              console.error("Erro ao salvar progresso do vídeo:", erro);
             }
+          }
         });
-
         v.addEventListener("ended", () => {
-            salvarPosicaoVideo(it.id_aula, 0)
-                .catch((erro) => {
-                    console.error("Erro ao zerar posição do vídeo:", erro);
-                });
-
-            concluir(i, true);
+          concluir(i, true);
         });
         palco.appendChild(v);
       } else if (mime === "application/pdf") {
         const f = document.createElement("iframe");
-        f.src = urlObj;
+        f.src = urlArquivo;
         f.title = it.nome;
         palco.appendChild(f);
       } else if (mime.startsWith("image/")) {
         const img = document.createElement("img");
-        img.src = urlObj;
+        img.src = urlArquivo;
         img.alt = it.nome;
         palco.appendChild(img);
       } else {
         mensagem(palco, tipoDe(it)[1], "Este conteúdo é um arquivo para download.");
         const a = document.createElement("a");
-        a.href = urlObj;
+        a.href = urlArquivo;
         a.download = it.nome;
         a.textContent = "Baixar " + it.nome;
         palco.querySelector(".palco-msg").appendChild(a);
@@ -560,14 +539,18 @@
 
       // Busca novamente os dados da matrícula e do certificado.
       if (meu.progresso >= 100) {
-        const atualizacao = await API.get("/aluno/matriculas");
+        try {
+          const atualizacao = await API.get("/aluno/matriculas");
 
-        const cursoAtualizado = (atualizacao.cursos || []).find(
-          (curso) => Number(curso.id) === id
-        );
+          const cursoAtualizado = (atualizacao.cursos || []).find(
+            (curso) => Number(curso.id) === id
+          );
 
-        if (cursoAtualizado) {
-          Object.assign(meu, cursoAtualizado);
+          if (cursoAtualizado) {
+            Object.assign(meu, cursoAtualizado);
+          }
+        } catch (erro) {
+          console.error("Erro ao atualizar dados da matrícula:", erro);
         }
       }
 

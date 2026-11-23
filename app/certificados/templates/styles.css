@@ -1,0 +1,805 @@
+:root {
+  --ink: #456380;
+  --accent: #456380;
+  --paper: #fff;
+  --screen-zoom: 0.75;
+  font-family:
+    Arial,
+    Arial,
+    sans-serif;
+  color: #17314a;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #e9eef3;
+}
+[hidden] {
+  display: none !important;
+}
+button,
+select,
+input,
+textarea {
+  font: inherit;
+}
+button,
+select {
+  border: 1px solid #a6b8c7;
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+button {
+  cursor: pointer;
+  background: #fff;
+  color: #17476b;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+#print,
+#apply {
+  background: #144d71;
+  color: #fff;
+}
+.toolbar {
+  padding: 16px 24px;
+  background: #fff;
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  border-bottom: 1px solid #cad5df;
+}
+.toolbar strong {
+  font-size: 21px;
+}
+.toolbar span {
+  display: block;
+  font-size: 13px;
+}
+.toolbar p {
+  font-size: 13px;
+  margin: 0;
+  flex-basis: 100%;
+}
+.toolbar label {
+  margin-left: auto;
+}
+#editor {
+  background: #f9fbfd;
+  padding: 24px;
+  max-width: 1100px;
+  margin: 24px auto;
+  border: 1px solid #bacbd7;
+  border-radius: 10px;
+}
+#editor h1 {
+  font-size: 23px;
+  margin-top: 0;
+}
+#editor p {
+  line-height: 1.5;
+}
+#editor label {
+  display: block;
+  margin: 14px 0 7px;
+}
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 300px;
+  margin-bottom: 16px;
+  font: 14px/1.5 monospace;
+  padding: 12px;
+}
+#error {
+  color: #9b241b;
+  white-space: pre-line;
+}
+#pages {
+  padding: 22px 0;
+}
+.sheet {
+  width: 1536px;
+  height: 864px;
+  margin: 0 auto 28px;
+  box-shadow: 0 6px 28px #25394e26;
+  zoom: var(--screen-zoom);
+  background: #fff;
+}
+.page {
+  width: 1536px;
+  height: 864px;
+  position: relative;
+  overflow: hidden;
+}
+.front {
+  color: var(--ink);
+}
+.artwork {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  inset: 0;
+  pointer-events: none;
+}
+.certificate-header {
+  position: absolute;
+  top: 173px;
+  left: 340px;
+  right: 340px;
+  text-align: center;
+}
+.certificate-header h1 {
+  font-size: 82px;
+  letter-spacing: 8px;
+  font-weight: 400;
+  line-height: 1.05;
+  margin: 0 0 14px;
+}
+.level {
+  display: inline-block;
+  max-width: 100%;
+  padding: 9px 28px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 29px;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+.front-content {
+  position: absolute;
+  top: 350px;
+  left: 350px;
+  right: 350px;
+  text-align: center;
+}
+.front-content p,
+.front-content h2,
+.front-content h3 {
+  margin: 0;
+}
+.intro {
+  font-size: 27px;
+  margin-bottom: 9px !important;
+}
+.student {
+  font-size: 62px;
+  line-height: 1.1;
+  font-weight: 400;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.completion {
+  font-size: 25px;
+  margin-top: 5px !important;
+}
+.course {
+  font-size: 42px;
+  line-height: 1.12;
+  font-weight: 400;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.teacher {
+  font-size: 23px;
+  line-height: 1.15;
+  height: 30px;
+  margin-top: 7px !important;
+  white-space: nowrap;
+}
+.meta {
+  font-size: 23px;
+  margin-top: 9px !important;
+}
+.dates {
+  font-size: 21px;
+  margin-top: 10px !important;
+}
+.cpf {
+  font-size: 17px;
+  margin-top: 8px !important;
+}
+.verification {
+  position: absolute;
+  left: 55px;
+  bottom: 71px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  width: 520px;
+  min-height: 110px;
+}
+.qr {
+  width: 110px;
+  height: 110px;
+  object-fit: contain;
+  background: #fff;
+  flex-shrink: 0;
+}
+.verification span {
+  display: block;
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+.verification strong {
+  display: block;
+  font-size: 15px;
+  max-width: 365px;
+  font-weight: 400;
+  letter-spacing: 0.1px;
+}
+.verification small {
+  display: block;
+  font-size: 15px;
+  margin-top: 8px;
+  max-width: 340px;
+  line-height: 1.3;
+}
+.signatures {
+  position: absolute;
+  bottom: 66px;
+  right: 55px;
+  display: flex;
+  gap: 32px;
+}
+.signature {
+  width: 265px;
+  text-align: center;
+  position: relative;
+  min-height: 90px;
+  padding-top: 18px;
+}
+.signature-line {
+  border-top: 1.5px solid currentColor;
+  margin: 0 0 10px;
+}
+.signature strong {
+  display: block;
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1.2;
+  min-height: 24px;
+  white-space: nowrap;
+}
+.signature span {
+  display: block;
+  font-size: 18px;
+  line-height: 1.2;
+  margin-top: 6px;
+}
+.signature img {
+  position: absolute;
+  width: 210px;
+  height: 60px;
+  object-fit: contain;
+  left: 27px;
+  top: -45px;
+}
+.demo-note {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 1.3px;
+  margin: 0;
+}
+.estrategico {
+  --ink: #063275;
+  --accent: #084ba3;
+}
+.estrategico .certificate-header {
+  top: 166px;
+  left: 365px;
+  right: 365px;
+}
+.estrategico .certificate-header h1 {
+  font-size: 68px;
+  font-weight: 700;
+  letter-spacing: 9px;
+}
+.estrategico .level {
+  border-radius: 30px;
+  background: linear-gradient(90deg, #07316f, #064dac);
+  font-size: 27px;
+}
+.estrategico .front-content {
+  top: 322px;
+  left: 350px;
+  right: 350px;
+}
+.estrategico .intro {
+  font-size: 21px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+.estrategico .student {
+  font-weight: 700;
+  border-bottom: 2px solid #0667da;
+  padding-bottom: 12px;
+  height: 90px;
+}
+.estrategico .completion {
+  text-transform: uppercase;
+  letter-spacing: 1.3px;
+  font-size: 19px;
+  margin-top: 17px !important;
+}
+.estrategico .course {
+  font-weight: 700;
+  font-size: 39px;
+  height: 72px;
+}
+.estrategico .teacher {
+  font-size: 22px;
+}
+.estrategico .meta {
+  font-size: 21px;
+}
+.estrategico .dates {
+  font-size: 20px;
+}
+.expert {
+  --ink: #f3cb77;
+  --accent: #d4a550;
+}
+.expert .front {
+  font-family:
+    Georgia,
+    Georgia,
+    serif;
+}
+.expert .certificate-header {
+  top: 153px;
+  left: 377px;
+  right: 377px;
+}
+.expert .certificate-header h1 {
+  font-size: 56px;
+  line-height: 1.06;
+  font-weight: 400;
+  letter-spacing: 0.7px;
+  margin-bottom: 15px;
+  color: #f5ca79;
+  background: linear-gradient(#ffe0a1, #dca244);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+.expert .level {
+  font-family:
+    Georgia,
+    Georgia,
+    serif;
+  border: 3px solid #e9b85e;
+  border-radius: 40px;
+  background: #001629;
+  color: #f3cb77;
+  font-size: 36px;
+  width: 385px;
+  padding: 5px 22px;
+  box-shadow:
+    0 0 0 2px #081b2c,
+    inset 0 0 0 1px #ffe4a5;
+}
+.expert .front-content {
+  top: 356px;
+  left: 392px;
+  right: 325px;
+}
+.expert .intro {
+  font-size: 27px;
+  color: #f8e8bf;
+}
+.expert .student {
+  font-family:
+    cursive,
+    cursive;
+  font-size: 79px;
+  height: 77px;
+  padding-top: 9px;
+}
+.expert .completion {
+  font-size: 25px;
+  color: #f8e8bf;
+}
+.expert .course {
+  font-size: 43px;
+  height: 71px;
+}
+.expert .teacher {
+  font-family:
+    Arial,
+    Arial,
+    sans-serif;
+  font-size: 21px;
+}
+.expert .meta,
+.expert .dates {
+  font-size: 23px;
+  color: #f8e8bf;
+}
+.expert .cpf {
+  color: #f8e8bf;
+  font-size: 17px;
+}
+.expert .verification {
+  left: 116px;
+  bottom: 90px;
+  width: 450px;
+}
+.expert .verification strong {
+  max-width: 325px;
+  font-size: 14px;
+}
+.expert .verification small {
+  font-size: 14px;
+  max-width: 285px;
+}
+.expert .signatures {
+  right: 76px;
+  bottom: 79px;
+  gap: 30px;
+}
+.expert .signature {
+  width: 255px;
+}
+.expert .signature strong {
+  font-size: 22px;
+}
+.expert .signature span {
+  font-size: 19px;
+}
+.expert .demo-note {
+  bottom: 28px;
+  color: #f8e8bf;
+  font-family:
+    Arial,
+    Arial,
+    sans-serif;
+}
+.back {
+  background: #fff;
+  border-top: 12px solid var(--accent);
+  color: #17314a;
+  font-family:
+    Arial,
+    Arial,
+    sans-serif;
+}
+.back-header {
+  height: 98px;
+  margin: 0 65px;
+  border-bottom: 1px solid #c2cdd7;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px;
+}
+.back-header strong {
+  display: block;
+  font-size: 31px;
+  color: var(--accent);
+}
+.back-header div span {
+  font-size: 17px;
+  display: block;
+  margin-top: 6px;
+}
+.back-header > span {
+  font-size: 24px;
+  color: var(--accent);
+}
+.back-content {
+  padding: 18px 65px 0;
+}
+.back h2 {
+  font-size: 25px;
+  margin: 0 0 12px;
+  font-weight: 700;
+}
+.academic {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 35px;
+  margin: 0;
+}
+.academic div {
+  border-bottom: 1px solid #dce3e9;
+  padding: 0 0 8px;
+  min-height: 54px;
+}
+.academic dt {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: #526879;
+  margin-bottom: 3px;
+}
+.academic dd {
+  font-size: 20px;
+  line-height: 1.2;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.program-area {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 45px;
+  margin-top: 19px;
+  height: 310px;
+}
+.back h3 {
+  font-size: 22px;
+  margin: 0 0 10px;
+  color: var(--accent);
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 18px;
+  line-height: 1.2;
+}
+th {
+  text-align: left;
+}
+thead {
+  background: #eff4f8;
+  font-size: 15px;
+  color: #4f667a;
+}
+td,
+th {
+  padding: 7px 9px;
+  border-bottom: 1px solid #dce4eb;
+}
+td:last-child,
+th:last-child {
+  text-align: right;
+  white-space: nowrap;
+  width: 110px;
+}
+tfoot {
+  font-weight: 700;
+  color: var(--accent);
+}
+.completion-panel {
+  font-size: 19px;
+  line-height: 1.32;
+}
+.completion-panel p {
+  margin: 0 0 14px;
+  overflow-wrap: anywhere;
+}
+.completion-panel h3 {
+  margin: 0 0 7px;
+}
+.completion-panel .masked {
+  font-size: 16px;
+  margin-top: 12px;
+}
+.back-footer {
+  position: absolute;
+  left: 65px;
+  right: 65px;
+  bottom: 29px;
+}
+.validation {
+  border-top: 1px solid #cad5df;
+  padding-top: 13px;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 14px;
+}
+.validation .qr {
+  width: 90px;
+  height: 90px;
+}
+.validation strong {
+  display: block;
+  font-size: 17px;
+}
+.validation code {
+  display: block;
+  font:
+    16px/1.4 Arial,
+    Arial,
+    sans-serif;
+  margin: 3px 0;
+}
+.validation a {
+  display: block;
+  color: #265d87;
+  font-size: 15px;
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  max-width: 1200px;
+}
+.validation span {
+  display: block;
+  font-size: 13px;
+  color: #697a88;
+  margin-top: 5px;
+}
+.legal {
+  font-size: 18px;
+  line-height: 1.36;
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--accent);
+}
+.compact table {
+  font-size: 16px;
+}
+.compact td,
+.compact th {
+  padding: 4px 8px;
+}
+.compact .completion-panel {
+  font-size: 17px;
+}
+.render-error #pages {
+  display: none;
+}
+.render-error .toolbar #status {
+  color: #a1261a;
+}
+.headless .toolbar,
+.headless #editor {
+  display: none;
+}
+.headless #pages {
+  padding: 0;
+}
+.headless .sheet {
+  zoom: 1;
+  margin: 0;
+  box-shadow: none;
+}
+.a4 .sheet {
+  height: 210mm;
+  width: 297mm;
+  background: #fff;
+}
+.a4 .page {
+  transform: scale(0.7308070866);
+  transform-origin: top left;
+  top: 81.7795px;
+}
+@page {
+  size: 320mm 180mm;
+  margin: 0;
+}
+@media print {
+  body {
+    background: #fff;
+  }
+  .toolbar,
+  #editor {
+    display: none !important;
+  }
+  #pages {
+    padding: 0;
+  }
+  .sheet {
+    zoom: 1;
+    width: 320mm;
+    height: 180mm;
+    margin: 0;
+    box-shadow: none;
+    break-after: page;
+    page-break-after: always;
+    overflow: hidden;
+  }
+  .sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+  .page {
+    transform: scale(0.7874015748);
+    transform-origin: top left;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .a4 .sheet {
+    width: 297mm;
+    height: 210mm;
+  }
+  .a4 .page {
+    transform: scale(0.7308070866);
+    top: 81.7795px;
+  }
+  .render-error #pages {
+    display: none;
+  }
+}
+
+/* Espaço para ementas: corte de texto nunca é uma estratégia de paginação. */
+.back-header {
+  height: 90px;
+}
+.back-content {
+  padding-top: 14px;
+}
+.back h2 {
+  margin-bottom: 10px;
+}
+.academic {
+  gap: 8px 35px;
+}
+.academic div {
+  min-height: 50px;
+}
+.program-area {
+  height: auto;
+}
+.compact table {
+  font-size: 15px;
+  line-height: 1.15;
+}
+.compact td,
+.compact th {
+  padding: 2px 8px;
+}
+.signature strong {
+  white-space: normal;
+  min-height: 24px;
+  max-height: 50px;
+  overflow-wrap: anywhere;
+}
+.signature {
+  min-height: 90px;
+}
+
+.expert .certificate-header h1 {
+  background: none;
+  -webkit-text-fill-color: #f3cb77;
+  color: #f3cb77;
+}
+.expert .back h3,
+.expert .back-header strong,
+.expert .back-header > span,
+.expert .back tfoot {
+  color: #88601f;
+}
+
+.back-header {
+  height: 82px;
+}
+.academic {
+  gap: 5px 35px;
+}
+.academic div {
+  min-height: 46px;
+}
+.back h2 {
+  font-size: 23px;
+  margin-bottom: 8px;
+}
+.page {
+  font-variant-ligatures: none;
+}
+
+/* Exibição incorporada na área do aluno; impressão mantém 320 × 180 mm. */
+@media screen {
+  .headless.embedded { background: #edf2f7; }
+  .headless.embedded #pages { padding: 16px 0; }
+  .headless.embedded .sheet { zoom: var(--screen-zoom); margin: 0 auto 24px; box-shadow: 0 8px 20px rgba(18,46,77,.15); }
+}

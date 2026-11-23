@@ -6,14 +6,12 @@
      Assim o tema é aplicado antes da primeira pintura e a página não "pisca".
    - O tema fica no atributo  <html data-theme="dark|light">  e o css/dark.css
      reage a ele.
-   - A escolha da pessoa é salva em localStorage ("hs-tema"). Se ela nunca
-     escolheu, seguimos a preferência do sistema (SEGUIR_SISTEMA).
+   - A escolha da pessoa é salva no banco de dados pela API.
+     Se ela nunca escolheu, seguimos a preferência do sistema.
    - O botão é criado aqui mesmo: não precisa escrever HTML em cada página.
    ========================================================================== */
 (function () {
   "use strict";
-
-  const CHAVE = "hs-tema";
 
   // true  = quem nunca clicou no botão vê o tema do sistema operacional.
   // false = quem nunca clicou no botão sempre começa no tema claro.
@@ -22,68 +20,101 @@
   const raiz = document.documentElement;
   const consultaSistema = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
 
+  
   /* ---------- Leitura / gravação ---------- */
 
+  let temaSalvo = null;
+
   function lerSalvo() {
-    try {
-      const v = localStorage.getItem(CHAVE);
-      return v === "dark" || v === "light" ? v : null;
-    } catch (e) {
-      return null; // localStorage bloqueado (ex.: modo privado restrito)
-    }
-  }
-
-  function gravar(tema) {
-    try { localStorage.setItem(CHAVE, tema); } catch (e) { /* sem persistência, tudo bem */ }
-  }
-
-  function temaInicial() {
-    return lerSalvo() || (SEGUIR_SISTEMA && consultaSistema && consultaSistema.matches ? "dark" : "light");
+    return temaSalvo;
   }
 
   function temaAtual() {
-    return raiz.getAttribute("data-theme") === "dark" ? "dark" : "light";
+    return raiz.getAttribute("data-theme") || temaInicial();
   }
 
-  /* ---------- Logo ----------
-     O logotipo colorido tem fundo branco e a regra de marca pede fundo claro.
-     No tema escuro usamos a versão "claro" (letras brancas, fundo transparente). */
+  async function gravar(tema) {
+    try {
+      await window.HS.ready;
 
-  const LOGO_ESCURO = "logo-claro.png";
-  const LOGOS_TROCAVEIS = /\/(logo-habilita|logo)\.png(\?.*)?$/;
-
-  function trocarLogo(img, tema) {
-    if (!img || img.tagName !== "IMG") return;
-    if (img.closest(".papel, .papel-logo") || img.classList.contains("papel-logo")) return; // certificado é "papel": fica claro
-
-    const original = img.getAttribute("data-logo-original");
-    if (tema === "dark") {
-      const src = img.getAttribute("src") || "";
-      if (!original && LOGOS_TROCAVEIS.test(src)) {
-        img.setAttribute("data-logo-original", src);
-        img.setAttribute("src", src.replace(LOGOS_TROCAVEIS, "/" + LOGO_ESCURO));
+      if (!window.API || !window.HS.usuario) {
+        return;
       }
-    } else if (original) {
-      img.setAttribute("src", original);
-      img.removeAttribute("data-logo-original");
+
+      await API.put("/preferencias/tema", { tema });
+
+      temaSalvo = tema;
+
+    } catch (erro) {
+      console.error("Não foi possível salvar o tema:", erro);
+    }
+  }
+
+  function temaInicial() {
+    return SEGUIR_SISTEMA && consultaSistema && consultaSistema.matches
+      ? "dark"
+      : "light";
+  }
+
+  /* ---------- Logo: suporte global a todas as páginas ---------- */
+  const LOGO_ESCURO = "/img/logo-claro.png";
+
+  function trocarLogo(elemento, tema) {
+    if (!elemento) return;
+
+    // Não altera logos impressas em certificados.
+    if (elemento.closest(".papel, .papel-logo")) return;
+
+    // Caso 1: logo utilizada como imagem de fundo em .logo-wrap
+    if (elemento.classList.contains("logo-wrap")) {
+      const original = elemento.getAttribute("data-logo-original-m");
+
+      if (tema === "dark") {
+        if (!original) {
+          const valorOriginal = elemento.style.getPropertyValue("--m");
+
+          if (!valorOriginal) return;
+
+          elemento.setAttribute("data-logo-original-m", valorOriginal);
+        }
+
+        elemento.style.setProperty(
+          "--m",
+          `url("${LOGO_ESCURO}")`
+        );
+
+      } else if (original !== null) {
+        elemento.style.setProperty("--m", original);
+        elemento.removeAttribute("data-logo-original-m");
+      }
+
+      return;
+    }
+
+    // Caso 2: logo utilizada diretamente em uma tag <img>
+    if (elemento.tagName === "IMG") {
+      const original = elemento.getAttribute("data-logo-original");
+
+      if (tema === "dark") {
+        const src = elemento.getAttribute("src") || "";
+
+        if (!original && /logo-habilita\.png(?:\?.*)?$/i.test(src)) {
+          elemento.setAttribute("data-logo-original", src);
+          elemento.setAttribute("src", LOGO_ESCURO);
+        }
+
+      } else if (original !== null) {
+        elemento.setAttribute("src", original);
+        elemento.removeAttribute("data-logo-original");
+      }
     }
   }
 
   function trocarTodosLogos(tema) {
-    document.querySelectorAll("img").forEach((img) => trocarLogo(img, tema));
+    document.querySelectorAll(".logo-wrap, img").forEach((elemento) => {
+      trocarLogo(elemento, tema);
+    });
   }
-
-  // Enquanto a página ainda está sendo lida, troca as imagens assim que aparecem
-  // (evita um clarão do logo branco antes do swap).
-  const observador = new MutationObserver((mutacoes) => {
-    if (temaAtual() !== "dark") return;
-    mutacoes.forEach((m) => m.addedNodes.forEach((n) => {
-      if (n.nodeType !== 1) return;
-      if (n.tagName === "IMG") trocarLogo(n, "dark");
-      else if (n.querySelectorAll) n.querySelectorAll("img").forEach((i) => trocarLogo(i, "dark"));
-    }));
-  });
-  observador.observe(raiz, { childList: true, subtree: true });
 
   /* ---------- Gráficos (Chart.js) ----------
      O Chart.js desenha em <canvas>, então o CSS não alcança. Ajustamos as cores
@@ -179,6 +210,7 @@
 
     raiz.setAttribute("data-theme", tema);
     raiz.style.colorScheme = tema;
+    trocarTodosLogos(tema);
 
     if (o.persistir) gravar(tema);
 
@@ -202,6 +234,30 @@
 
   // Aplica já, antes de qualquer pintura.
   aplicar(temaInicial());
+
+  async function carregarTemaSalvo() {
+    try {
+      await window.HS.ready;
+
+      if (!window.HS.usuario) return;
+
+      const dados = await API.get("/preferencias/tema");
+
+      if (dados.tema === "dark" || dados.tema === "light") {
+        temaSalvo = dados.tema;
+        aplicar(temaSalvo);
+      }
+
+    } catch (erro) {
+      console.error("Não foi possível carregar o tema:", erro);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", carregarTemaSalvo);
+  } else {
+    carregarTemaSalvo();
+  }
 
   /* ---------- Botão ---------- */
 
@@ -261,7 +317,6 @@
   function iniciar() {
     inserirBotao();
     aplicar(temaAtual());
-    observador.disconnect(); // a partir daqui os logos são tratados em aplicar()
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", iniciar);
@@ -271,11 +326,6 @@
   window.addEventListener("load", atualizarGraficos);
 
   /* ---------- Sincronização ---------- */
-
-  // Outra aba mudou o tema
-  window.addEventListener("storage", (e) => {
-    if (e.key === CHAVE && (e.newValue === "dark" || e.newValue === "light")) aplicar(e.newValue);
-  });
 
   // O sistema mudou e a pessoa nunca escolheu manualmente
   if (consultaSistema) {

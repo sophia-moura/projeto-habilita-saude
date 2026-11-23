@@ -1,6 +1,12 @@
 (function () {
   const esc = (t) =>
-    String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    String(t ?? "").replace(/[&<>"']/g, (c) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[c]);
 
   let cursos = [];
   let concluidos = [];
@@ -41,7 +47,10 @@
       );
 
       emitidos = concluidos.filter(
-        (c) => oferece(c) && c.codigoCertificado
+          (c) =>
+              oferece(c) &&
+              c.codigoCertificado &&
+              c.statusCertificado === "emitido"
       );
 
       proximos = cursos
@@ -62,30 +71,10 @@
     }
   }
 
-  function papel(c) {
-    return `
-      <div class="papel">
-        <div class="papel-folha">
-        <div class="papel-in">
-          <img class="papel-logo" src="./img/logo.png" alt="Habilita Saúde" />
-          <p class="papel-titulo">Certificado de conclusão</p>
-          <p class="papel-txt">Certificamos que</p>
-          <p class="papel-aluno">${esc(nomeAluno)}</p>
-          <p class="papel-txt">concluiu com êxito o curso</p>
-          <p class="papel-curso">${esc(c.nome)}</p>
-          ${horas(c) ? `<p class="papel-txt">Carga horária: ${horas(c)} horas</p>` : ""}
-          <span class="papel-linha"></span>
-          <p class="papel-assina">Habilita Saúde</p>
-        </div>
-        </div>
-      </div>`;
-  }
-
   function cartao(c) {
     const reg = registro(c);
     return `
       <article class="cert-card" id="cert-${c.id}" data-id="${c.id}">
-        <div class="cert-papel">${papel(c)}</div>
 
         <div class="cert-info">
           ${c.area ? `<span class="tag-area">${esc(c.area)}</span>` : ""}
@@ -176,19 +165,14 @@
 
   /* ---------- Ações ---------- */
 
-  async function baixar(c) {
-    if (!window.jspdf || !window.qrcode) {
-      alert("Não foi possível carregar o gerador de PDF. Verifique sua conexão e tente novamente.");
-      return;
-    }
-    try {
-      await baixarCertificado(c, registro(c));
-    } catch (e) {
-      console.error(e);
-      alert("Não foi possível gerar o PDF do certificado.");
-      return;
-    }
-    renderizarCertificados(); // passa a exibir o código de validação recém-gerado
+  function baixar(c) {
+      if (!c || !c.codigoCertificado) {
+          alert("Certificado não encontrado.");
+          return;
+      }
+
+      window.location.href =
+          `/api/aluno/certificados/${encodeURIComponent(c.codigoCertificado)}/pdf`;
   }
 
   const modal = $("certModal");
@@ -196,7 +180,14 @@
 
   function abrirModal(c) {
     abertoId = c.id;
-    $("certModalPapel").innerHTML = papel(c);
+
+    $("certModalPapel").innerHTML = `
+      <iframe
+        src="/api/aluno/certificados/${encodeURIComponent(c.codigoCertificado)}/pdf?visualizar=1"
+        title="Certificado de ${esc(c.nome)}"
+      ></iframe>
+    `;
+
     modal.hidden = false;
     document.body.style.overflow = "hidden";
     $("certModalFechar").focus();

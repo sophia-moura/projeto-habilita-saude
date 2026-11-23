@@ -24,9 +24,41 @@
 
   const esc = (t) => (window.HS && HS.esc ? HS.esc(t) : String(t ?? ""));
 
+  let configuracaoAtual = {};
+
   function niveisAtuais() {
-    if (window.HS && typeof HS.niveis === "function") return HS.niveis();
-    return {};
+    return configuracaoAtual;
+  }
+
+  async function carregarNiveis() {
+    try {
+      mostrarStatus("Carregando configurações...", "");
+
+      const resposta = await API.get("/configuracoes/niveis");
+
+      if (!resposta?.sucesso || !resposta.configuracao) {
+        throw new Error("Não foi possível carregar as configurações.");
+      }
+
+      configuracaoAtual = resposta.configuracao;
+
+      montar();
+      limparStatus();
+
+    } catch (erro) {
+      console.error("Erro ao carregar configurações dos níveis:", erro);
+
+      form.innerHTML = `
+        <p class="config-vazio">
+          Não foi possível carregar os níveis de certificação.
+        </p>
+      `;
+
+      mostrarStatus(
+        erro.message || "Erro ao carregar as configurações.",
+        "erro"
+      );
+    }
   }
 
   function limparStatus() {
@@ -45,7 +77,7 @@
 
   function montar() {
     const cfg = niveisAtuais();
-    const niveis = Object.keys(cfg);
+    const niveis = ["operacional", "estrategico", "expert"];
     if (!niveis.length) {
       form.innerHTML = '<p class="config-vazio">Não foi possível carregar os níveis de certificação.</p>';
       return;
@@ -194,118 +226,72 @@
 
     if (erros.length) {
       const invalidos = new Set(erros.map((erro) => erro.input).filter(Boolean));
-
-      mostrarStatus(
-        `Revise ${invalidos.size === 1 ? "o campo destacado" : "os campos destacados"} antes de salvar.`,
-        "erro"
-      );
-
+      mostrarStatus(`Revise ${invalidos.size === 1 ? "o campo destacado" : "os campos destacados"} antes de salvar.`, "erro");
       const primeiro = form.querySelector('[aria-invalid="true"]');
       if (primeiro) primeiro.focus();
-
       return;
     }
 
     const numerico = {};
-
     Object.keys(cfg).forEach((nivel) => {
       numerico[nivel] = { ...cfg[nivel] };
-
-      CAMPOS.forEach((campo) => {
-        numerico[nivel][campo.chave] = Number(cfg[nivel][campo.chave]);
+      CAMPOS.forEach((c) => {
+        numerico[nivel][c.chave] = Number(cfg[nivel][c.chave]);
       });
     });
 
-    if (!window.HS || typeof HS.salvarNiveis !== "function") {
-      mostrarStatus("API de configurações indisponível.", "erro");
-      return;
-    }
-
-    btnSalvar.disabled = true;
-    btnRestaurar.disabled = true;
-    mostrarStatus("Salvando configurações...", "");
-
     try {
-      await HS.salvarNiveis(numerico);
+      const resposta = await API.put("/configuracoes/niveis", {
+        configuracao: numerico
+      });
 
-      montar();
+      if (!resposta?.sucesso) {
+        throw new Error(resposta?.mensagem || "Não foi possível salvar as configurações.");
+      }
+
+      configuracaoAtual = numerico;
+
       mostrarStatus("Parâmetros atualizados com sucesso.", "sucesso");
+      montar();
 
     } catch (erro) {
-      console.error("Erro ao salvar níveis:", erro);
+      console.error("Erro ao salvar configurações:", erro);
+
       mostrarStatus(
-        erro.message || "Não foi possível salvar as configurações.",
+        erro.message || "Erro ao salvar as configurações.",
         "erro"
       );
-
-    } finally {
-      btnSalvar.disabled = false;
-      btnRestaurar.disabled = false;
     }
   });
 
   btnRestaurar.addEventListener("click", async () => {
-    if (!confirm("Restaurar os valores originais? As alterações salvas serão perdidas.")) {
-      return;
-    }
-
-    if (!window.HS || typeof HS.restaurarNiveis !== "function") {
-      mostrarStatus("API de configurações indisponível.", "erro");
-      return;
-    }
-
-    btnSalvar.disabled = true;
-    btnRestaurar.disabled = true;
-    mostrarStatus("Restaurando configurações...", "");
+    if (!confirm("Restaurar os valores originais? As alterações salvas serão perdidas.")) return;
 
     try {
-      await HS.restaurarNiveis();
+      const padrao = HS.niveisPadrao();
+
+      const resposta = await API.put("/configuracoes/niveis", {
+        configuracao: padrao
+      });
+
+      if (!resposta?.sucesso) {
+        throw new Error(resposta?.mensagem || "Não foi possível restaurar os valores padrão.");
+      }
+
+      configuracaoAtual = padrao;
 
       montar();
       mostrarStatus("Valores padrão restaurados com sucesso.", "sucesso");
 
     } catch (erro) {
-      console.error("Erro ao restaurar níveis:", erro);
+      console.error("Erro ao restaurar configurações:", erro);
+
       mostrarStatus(
-        erro.message || "Não foi possível restaurar os valores.",
+        erro.message || "Erro ao restaurar os valores padrão.",
         "erro"
       );
-
-    } finally {
-      btnSalvar.disabled = false;
-      btnRestaurar.disabled = false;
     }
   });
 
-  async function inicializar() {
-    btnSalvar.disabled = true;
-    btnRestaurar.disabled = true;
-
-    mostrarStatus("Carregando configurações...", "");
-
-    try {
-      await HS.carregarNiveis();
-
-      montar();
-      limparStatus();
-
-    } catch (erro) {
-      console.error("Erro ao carregar configurações:", erro);
-
-      form.innerHTML = `
-        <p class="config-vazio">
-          Não foi possível carregar as configurações do servidor.
-          Verifique sua conexão e tente novamente.
-        </p>
-      `;
-
-      mostrarStatus("Erro ao carregar configurações.", "erro");
-
-    } finally {
-      btnSalvar.disabled = false;
-      btnRestaurar.disabled = false;
-    }
-  }
-
-  inicializar();
+  carregarNiveis();
 })();

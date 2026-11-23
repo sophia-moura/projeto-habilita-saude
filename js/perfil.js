@@ -1,16 +1,9 @@
 (async function () {
-  let usuario = {};
+  await window.HS.ready;
 
-  try {
-      const dados = await API.get("/usuario-logado");
+  let usuario = window.HS.usuario;
 
-      if (!dados || !dados.autenticado || !dados.usuario) {
-          window.location.href = "login.html";
-          return;
-      }
-
-      usuario = dados.usuario;
-  } catch (erro) {
+  if (!usuario) {
       window.location.href = "login.html";
       return;
   }
@@ -37,6 +30,7 @@
   };
 
   let arquivoFoto = null;
+  let urlPreviewFoto = null;
 
   function mostrarMensagem(texto, erro) {
     let aviso = document.getElementById("avisoPerfil");
@@ -58,17 +52,21 @@
 
     if (!/^image\/(png|jpe?g|webp|gif)$/i.test(arquivo.type)) {
       mostrarMensagem("Escolha uma imagem PNG, JPG, WEBP ou GIF.", true);
+      arquivoFoto = null;
       inputFoto.value = "";
       return;
     }
     if (arquivo.size > 3 * 1024 * 1024) {
       mostrarMensagem("A foto deve ter no máximo 3 MB.", true);
+      arquivoFoto = null;
       inputFoto.value = "";
       return;
     }
 
     arquivoFoto = arquivo;
-    preview.src = URL.createObjectURL(arquivo);
+    if (urlPreviewFoto) URL.revokeObjectURL(urlPreviewFoto);
+    urlPreviewFoto = URL.createObjectURL(arquivo);
+    preview.src = urlPreviewFoto;
     mostrarMensagem("Foto selecionada. Clique em “Salvar alterações”.", false);
   });
 
@@ -90,8 +88,6 @@
       campoEmail.focus();
       return;
     }
-
-    const emailAntigo = String(usuario.email || "").toLowerCase();
 
     botao.disabled = true;
     botao.textContent = "Salvando...";
@@ -134,15 +130,19 @@
 
             setTimeout(() => location.reload(), 650);
 
-        } catch (erro) {
-            mostrarMensagem(
-                erro.message || "Não foi possível atualizar o perfil.",
-                true
+            } catch (erro) {
+                mostrarMensagem(
+                    erro.message || "Não foi possível atualizar o perfil.",
+                    true
             );
 
             botao.disabled = false;
             botao.textContent = "Salvar alterações";
         }
     })();
+  });
+
+  window.addEventListener("beforeunload", () => {
+    if (urlPreviewFoto) URL.revokeObjectURL(urlPreviewFoto);
   });
 })();

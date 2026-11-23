@@ -153,13 +153,9 @@
 
   async function carregarNotificacoes() {
     try {
-      const resposta = await fetch("/api/notificacoes");
+      const resposta = await API.get("/notificacoes");
 
-      if (!resposta.ok) {
-        throw new Error("Erro ao carregar notificações.");
-      }
-
-      notificacoes = await resposta.json();
+      notificacoes = resposta;
 
       notificacoes = notificacoes.map((n) => ({
         ...n,
@@ -203,14 +199,9 @@
       const id = botaoLida.dataset.lida;
 
       try {
-        const resposta = await fetch(
-          `/api/notificacoes/${id}/lida`,
-          { method: "PATCH" }
-        );
-
-        if (!resposta.ok) {
-          throw new Error("Não foi possível marcar como lida.");
-        }
+        await API.request(`/notificacoes/${id}/lida`, {
+          method: "PATCH"
+        });
 
         const notificacao = notificacoes.find(
           (n) => String(n.id) === String(id)
@@ -233,14 +224,9 @@
       }
 
       try {
-        const resposta = await fetch(
-          `/api/notificacoes/${id}`,
-          { method: "DELETE" }
-        );
-
-        if (!resposta.ok) {
-          throw new Error("Não foi possível excluir a notificação.");
-        }
+        await API.request(`/notificacoes/${id}`, {
+          method: "DELETE"
+        });
 
         notificacoes = notificacoes.filter(
           (n) => String(n.id) !== String(id)
@@ -269,14 +255,9 @@
       botao.disabled = true;
 
       try {
-        const resposta = await fetch("/api/notificacoes", {
-          method: "DELETE",
-          credentials: "include"
+        await API.request("/notificacoes", {
+          method: "DELETE"
         });
-
-        if (!resposta.ok) {
-          throw new Error("Não foi possível excluir as notificações.");
-        }
 
         notificacoes = [];
 

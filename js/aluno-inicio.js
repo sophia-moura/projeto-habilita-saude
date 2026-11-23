@@ -401,42 +401,21 @@
   });
 
   document.getElementById("listaCertificados")?.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-certificado]");
-    if (!btn) return;
+  const btn = e.target.closest("[data-certificado]");
+  if (!btn) return;
 
-    const idCurso = Number(btn.dataset.certificado);
+  const idCurso = Number(btn.dataset.certificado);
 
-    const curso = cursosAluno.find(
-        (c) => Number(c.id) === idCurso && c.codigoCertificado
-    );
+  const curso = cursosAluno.find(
+    (c) => Number(c.id) === idCurso && c.codigoCertificado
+  );
 
-    if (!curso) {
-        alert("Certificado não encontrado.");
-        return;
-    }
+  if (!curso) {
+    alert("Certificado não encontrado.");
+    return;
+  }
 
-    if (typeof window.baixarCertificado !== "function") {
-        alert("O gerador de certificados não foi carregado.");
-        return;
-    }
-
-    if (!window.jspdf || !window.qrcode) {
-        alert("Não foi possível carregar o gerador de PDF.");
-        return;
-    }
-
-    const registro = {
-        uuid: curso.codigoCertificado,
-        data: curso.dataEmissaoCertificado
-            ? new Date(curso.dataEmissaoCertificado).toLocaleDateString("pt-BR")
-            : ""
-    };
-
-    try {
-        window.baixarCertificado(curso, registro);
-    } catch (erro) {
-        console.error(erro);
-        alert("Não foi possível gerar o PDF do certificado.");
-    }
+  window.location.href =
+    `/api/aluno/certificados/${encodeURIComponent(curso.codigoCertificado)}/pdf`;
   });
 })();

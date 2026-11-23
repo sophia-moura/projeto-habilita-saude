@@ -23,7 +23,11 @@
     .ok{background:#e8f7ec;color:#17692b}.no{background:#fdecec;color:#a12626}
   </style>
     <link rel="stylesheet" href="./css/dark.css" />
+
+    <script src="./js/global.js"></script>
     <script src="./js/tema.js"></script>
+    <link rel="stylesheet" href="./css/assistente.css" />
+    <script defer src="./js/assistente.js"></script>
   </head>
 <body>
   <main class="caixa">
@@ -69,8 +73,8 @@
         if (!resposta.ok || !dados.valido) {
           res.innerHTML = `
             <div class="res no">
-              <b>✖ Certificado não encontrado</b><br>
-              Confira o código e tente novamente.
+              <b>✖ Certificado inválido ou indisponível</b><br>
+              ${esc(dados.mensagem || "Confira o código e tente novamente.")}
             </div>
           `;
           return;

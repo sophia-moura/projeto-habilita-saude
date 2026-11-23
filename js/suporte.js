@@ -24,18 +24,10 @@
 
   async function carregarTickets() {
     try {
-      const resposta = await fetch("/api/professor/suporte", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Accept": "application/json"
-        }
-      });
+      const dados = await API.get("/professor/suporte");
 
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        throw new Error(dados.erro || "Não foi possível carregar os chamados.");
+      if (!Array.isArray(dados)) {
+        throw new Error("A resposta da API possui um formato inválido.");
       }
 
       tickets = dados.map((chamado) => {
@@ -66,6 +58,7 @@
 
     } catch (erro) {
       console.error("Erro ao carregar chamados:", erro);
+
       listaTickets.innerHTML = `
         <div class="ticket-card">
           <h3>Não foi possível carregar os chamados.</h3>
@@ -88,15 +81,6 @@
   let ticketAtual = null;
 
   const mensagensDe = (ticket) => (Array.isArray(ticket?.mensagens) ? ticket.mensagens : []);
-  const salvarTickets = () => {
-    try {
-      localStorage.setItem("tickets", JSON.stringify(tickets));
-      return true;
-    } catch (e) {
-      alert("Não foi possível salvar os tickets neste navegador.");
-      return false;
-    }
-  };
 
   function renderizarTickets() {
     const filtro = filtroStatus?.value || "Todos";
@@ -143,10 +127,6 @@
       .join("");
   }
 
-  function criarNotificacao(titulo, descricao, tipo) {
-    HS.notificar(titulo, descricao, tipo, "professor");
-  }
-
   function atualizarMetricas() {
     const contar = (status) => tickets.filter((ticket) => ticket.status === status).length;
     const mensagens = tickets.reduce(
@@ -181,62 +161,11 @@
 
   btnNovoTicket?.addEventListener("click", () => abrirModal(modalTicket));
 
-  salvarTicket?.addEventListener("click", () => {
-    const titulo = document.getElementById("tituloTicket")?.value.trim() || "";
-    const prioridade = document.getElementById("prioridadeTicket")?.value || "Baixa";
-    const mensagem = document.getElementById("mensagemTicket")?.value.trim() || "";
-
-    if (titulo.length < 3) {
-      alert("Informe um título com pelo menos 3 caracteres.");
-      return;
-    }
-    if (mensagem.length < 10) {
-      alert("Descreva o problema com pelo menos 10 caracteres.");
-      return;
-    }
-
-    tickets.push({
-      id: Date.now(),
-      titulo: titulo.slice(0, 120),
-      prioridade,
-      status: "Aberto",
-      criadoEm: new Date().toLocaleDateString("pt-BR"),
-      mensagens: [{ autor: "usuario", texto: mensagem.slice(0, 2000) }],
-    });
-
-    criarNotificacao("Novo ticket criado", titulo, "ticket");
-    if (!salvarTickets()) return;
-
-    renderizarTickets();
-    atualizarMetricas();
-    fecharModal(modalTicket);
-
-    const tituloTicket = document.getElementById("tituloTicket");
-    const mensagemTicket = document.getElementById("mensagemTicket");
-    if (tituloTicket) tituloTicket.value = "";
-    if (mensagemTicket) mensagemTicket.value = "";
-  });
-
   async function excluirTicket(id) {
     if (!confirm("Deseja realmente excluir este chamado?")) return;
 
     try {
-      const resposta = await fetch(
-        `/api/professor/suporte/${id}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-          headers: {
-            "Accept": "application/json"
-          }
-        }
-      );
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        throw new Error(dados.erro || "Não foi possível excluir o chamado.");
-      }
+      await API.delete(`/professor/suporte/${id}`);
 
       tickets = tickets.filter(
         (ticket) => String(ticket.id) !== String(id)
@@ -290,22 +219,9 @@
     abrirModal(modalChat);
 
     try {
-      const resposta = await fetch(
-        `/api/professor/suporte/${chamadoSelecionado.id}/mensagens`,
-        {
-          method: "GET",
-          credentials: "include",
-          headers: {
-            "Accept": "application/json"
-          }
-        }
+      const dados = await API.get(
+        `/professor/suporte/${chamadoSelecionado.id}/mensagens`
       );
-
-      const dados = await resposta.json();
-
-      if (!resposta.ok) {
-        throw new Error(dados.erro || "Não foi possível carregar a conversa.");
-      }
 
       chamadoSelecionado.mensagens = (dados.mensagens || []).map((msg) => ({
         autor: msg.remetente === "professor" ? "suporte" : "usuario",
@@ -350,26 +266,12 @@
   try {
     btnEnviarMensagem.disabled = true;
 
-    const resposta = await fetch(
-      `/api/professor/suporte/${chamadoSelecionado.id}/mensagens`,
+    await API.post(
+      `/professor/suporte/${chamadoSelecionado.id}/mensagens`,
       {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
-        },
-        body: JSON.stringify({
-          mensagem: texto.slice(0, 2000)
-        })
+        mensagem: texto.slice(0, 2000)
       }
     );
-
-    const dados = await resposta.json();
-
-    if (!resposta.ok) {
-      throw new Error(dados.erro || "Não foi possível enviar a mensagem.");
-    }
 
     if (campoNovaMensagem) {
       campoNovaMensagem.value = "";

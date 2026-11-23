@@ -3,6 +3,12 @@
 
   if (!acessoPermitido) return;
 
+  try {
+    await HS.carregarNiveis();
+  } catch (erro) {
+    console.error("Erro ao carregar níveis:", erro);
+  }
+
   const esc =
     (window.HS && HS.esc) ||
     ((t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]));
@@ -250,6 +256,9 @@
           imagem: curso.imagem_url || "./img/perfil.svg",
 
           preco: Number(curso.preco) || 0,
+          alunos: Number(curso.alunos) || 0,
+          vendas: Number(curso.vendas) || 0,
+          avaliacao: Number(curso.avaliacao) || 0,
 
           status:
             curso.status === "publicado"

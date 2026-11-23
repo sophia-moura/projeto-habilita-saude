@@ -1,0 +1,37 @@
+{
+  "schemaVersion": "2.0",
+  "nivel": "estrategico",
+  "demo": true,
+  "alunoNome": "Mariana Alves de Oliveira",
+  "cpfMascarado": "***.***.***-**",
+  "cursoTitulo": "Protocolos Avançados em Medicina Nuclear",
+  "area": "Medicina Nuclear",
+  "professorNome": "Rafael Costa Almeida",
+  "cargaHoraria": 40,
+  "dataInicio": "2026-10-01",
+  "dataConclusao": "2026-10-30",
+  "dataEmissao": "2026-11-04",
+  "codigo": "4b7a31c1-8a15-4e77-9cd3-2b8f10a5b6c1",
+  "verificationUrl": "https://example.invalid/certificados/4b7a31c1-8a15-4e77-9cd3-2b8f10a5b6c1",
+  "razaoSocial": "Instituição demonstrativa - substituir pelo cadastro oficial",
+  "cnpj": "NÃO CADASTRADO - DEMONSTRAÇÃO",
+  "criterios": "Dados fictícios: conclusão integral das atividades e aprovação na avaliação cadastrada para o curso. Os critérios reais devem vir do registro acadêmico.",
+  "modulos": [
+    {
+      "titulo": "Revisão dos fundamentos e dos protocolos",
+      "horas": 10.0
+    },
+    {
+      "titulo": "Qualidade de imagem e padronização",
+      "horas": 10.0
+    },
+    {
+      "titulo": "Análise de situações e discussão de casos",
+      "horas": 10.0
+    },
+    {
+      "titulo": "Avaliação de aprendizagem",
+      "horas": 10.0
+    }
+  ]
+}

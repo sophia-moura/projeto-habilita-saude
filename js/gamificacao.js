@@ -1,16 +1,19 @@
 (async function () {
-  const u = await HS.carregarUsuario();
+  await window.HS.ready;
+
+  const u = window.HS.usuario;
+
   if (!u || u.tipo !== "aluno") return;
 
   const XP_NIVEL = 100;
 
   const CONQUISTAS = [
-    { id: "matricula", icone: "🎓", nome: "Primeiro passo", desc: "Matricule-se em um curso" },
-    { id: "tres", icone: "📚", nome: "Curioso", desc: "Esteja em 3 cursos" },
-    { id: "concluido", icone: "🏅", nome: "Formado", desc: "Conclua 1 curso" },
-    { id: "tresconcl", icone: "🏆", nome: "Dedicado", desc: "Conclua 3 cursos" },
-    { id: "seq3", icone: "🔥", nome: "Em chamas", desc: "3 dias seguidos" },
-    { id: "nivel3", icone: "⭐", nome: "Veterano", desc: "Chegue ao nível 3" }
+    { id: "matricula", icone: "🎓", nome: "Primeiro passo", desc: "Matricule-se em um curso"},
+    { id: "tres", icone: "📚", nome: "Curioso", desc: "Esteja em 3 cursos"},
+    { id: "concluido", icone: "🏅", nome: "Formado", desc: "Conclua 1 curso"},
+    { id: "tresconcl", icone: "🏆", nome: "Dedicado", desc: "Conclua 3 cursos"},
+    { id: "seq3", icone: "🔥", nome: "Em chamas", desc: "3 dias seguidos"},
+    { id: "nivel3", icone: "⭐", nome: "Veterano", desc: "Chegue ao nível 3"},
   ];
 
   function toast(msg) {
@@ -55,13 +58,17 @@
     }
 
     const g = {
-        xp: dados.xp,
-        sequencia: dados.sequencia,
-        conquistas: dados.conquistas,
-        historico: dados.historico
+      xp: Number(dados.xp) || 0,
+      sequencia: Number(dados.sequencia) || 0,
+      conquistas: Array.isArray(dados.conquistas) ? dados.conquistas : [],
+      historico: Array.isArray(dados.historico) ? dados.historico : []
     };
 
-    const rankingAtual = dados.ranking;
+    const rankingAtual = (Array.isArray(dados.ranking) ? dados.ranking : [])
+      .map((r) => ({
+        ...r,
+        eu: Number(r.id) === Number(u.id)
+      }));
 
     const nivel = Math.floor(g.xp / XP_NIVEL) + 1;
     const noNivel = g.xp % XP_NIVEL;

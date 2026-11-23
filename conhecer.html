@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Conheça a plataforma | Habilita Saúde</title>
+    <meta
+      name="description"
+      content="Plataforma online de educação em saúde: cursos para alunos e um espaço para professores publicarem seus conteúdos."
+    />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <link rel="stylesheet" href="./css/index.css" />
+    <link rel="stylesheet" href="./css/animacoes.css" />
+    <link rel="icon" href="./img/favicon.png" />
+    <link rel="stylesheet" href="./css/dark.css" />
+    <script src="./js/tema.js"></script>
+    <link rel="stylesheet" href="./css/assistente.css" />
+    <script defer src="./js/assistente.js"></script>
+  </head>
+  <body>
+    <header class="navbar">
+      <a class="logo" href="index.html" aria-label="Habilita Saúde - início">
+        <img class="logo-img" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+      </a>
+
+      <button
+        class="menu-mobile"
+        id="menuMobile"
+        aria-label="Abrir menu"
+        aria-expanded="false"
+        aria-controls="menu"
+      >
+        ☰
+      </button>
+
+      <nav id="menu" aria-label="Principal">
+        <a href="index.html">Início</a>
+        <a href="#cursos">Cursos</a>
+        <a href="#funciona">Como funciona</a>
+        <a href="#publico">Alunos e professores</a>
+
+        <span class="menu-indicator"></span>
+
+        <div class="menu-acoes">
+          <a href="login.html" class="btn-outline">Entrar</a>
+          <a href="login.html?cadastro=1" class="btn-primary">Cadastre-se</a>
+        </div>
+      </nav>
+
+      <div class="acoes">
+        <a href="login.html" class="btn-outline">Entrar</a>
+        <a href="login.html?cadastro=1" class="btn-primary">Cadastre-se</a>
+      </div>
+    </header>
+
+    <main>
+      <!-- HERO -->
+      <section id="inicio" class="hero">
+        <div class="hero-left">
+          <span class="tag">Plataforma online de educação em saúde</span>
+
+          <h1>
+            Aprenda mais.<br />
+            Cuide melhor.<br />
+            <span>Evolua sempre.</span>
+          </h1>
+
+          <p>
+            Cursos online e certificações para você desenvolver suas habilidades
+            e crescer na sua jornada profissional na área da saúde.
+          </p>
+
+          <div class="hero-buttons">
+            <a href="login.html?perfil=aluno" class="btn-primary">Explorar cursos →</a>
+            <a href="login.html?perfil=professor" class="btn-ghost">Quero ensinar</a>
+          </div>
+        </div>
+
+        <div class="hero-right">
+          <div class="hero-foto">
+            <img
+              src="./media/boas-vindas.jpg"
+              alt="Professora da área da saúde dando boas-vindas na plataforma"
+            />
+            <div class="hero-chip">
+              <span class="hero-chip-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </span>
+              Aprenda no seu ritmo e acompanhe seu progresso.
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- CURSOS EM DESTAQUE -->
+      <section id="cursos" class="bloco bloco-claro">
+        <div class="secao">
+          <div class="secao-topo">
+            <div>
+              <span class="eyebrow">Em destaque</span>
+              <h2>Cursos mais procurados</h2>
+              <p class="secao-sub">Explore alguns dos cursos disponíveis na plataforma.</p>
+            </div>
+            <a href="login.html?perfil=aluno" class="link-seta">Ver todos os cursos →</a>
+          </div>
+
+          <div class="cursos-grid" id="cursosGrid"></div>
+        </div>
+      </section>
+
+      <!-- COMO FUNCIONA -->
+      <section id="funciona" class="bloco">
+        <div class="secao">
+          <div class="secao-topo">
+            <div>
+              <h2>Como funciona?</h2>
+              <p class="secao-sub">É simples e rápido, seja para estudar ou para ensinar.</p>
+            </div>
+          </div>
+
+          <ol class="passos">
+            <li class="passo">
+              <span class="passo-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4" /><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7" /></svg>
+              </span>
+              <h3><span>01</span> Crie sua conta</h3>
+              <p>Cadastre-se como aluno ou como professor.</p>
+            </li>
+
+            <li class="passo">
+              <span class="passo-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.5C4.5 4 8 4 12 6c4-2 7.5-2 10-.5V19c-2.5-1.5-6-1.5-10 .5-4-2-7.5-2-10-.5z" /><path d="M12 6v13.5" /></svg>
+              </span>
+              <h3><span>02</span> Escolha ou publique</h3>
+              <p>Alunos exploram os cursos. Professores criam e publicam os seus.</p>
+            </li>
+
+            <li class="passo">
+              <span class="passo-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="9" r="6" /><path d="M8.5 14.5 7 22l5-3 5 3-1.5-7.5" /></svg>
+              </span>
+              <h3><span>03</span> Acompanhe a evolução</h3>
+              <p>Alunos acompanham o progresso e recebem certificado. Professores acompanham suas matrículas.</p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <!-- ALUNOS E PROFESSORES -->
+      <section id="publico" class="bloco bloco-claro">
+        <div class="secao">
+          <div class="perfis">
+            <article class="perfil perfil-aluno">
+              <span class="perfil-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m2 9 10-5 10 5-10 5z" /><path d="M6 11.5V16c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" /></svg>
+              </span>
+              <span class="perfil-tag">Para você que é aluno</span>
+              <h3>Sou aluno</h3>
+              <ul>
+                <li>Encontre cursos de diversas áreas da saúde</li>
+                <li>Aprenda no seu ritmo</li>
+                <li>Acompanhe seu progresso e conquiste certificados</li>
+              </ul>
+              <a href="login.html?perfil=aluno" class="btn-azul">Ver cursos →</a>
+            </article>
+
+            <article class="perfil perfil-professor">
+              <span class="perfil-icone" aria-hidden="true">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2" /><path d="M12 16v4M8 20h8M8 9l2.5 2.5L16 7" /></svg>
+              </span>
+              <span class="perfil-tag">Para você que é professor</span>
+              <h3>Sou professor</h3>
+              <ul>
+                <li>Publique seus cursos na plataforma</li>
+                <li>Alcance novos alunos</li>
+                <li>Acompanhe matrículas e desempenho</li>
+              </ul>
+              <a href="login.html?perfil=professor" class="btn-verde">Quero ensinar →</a>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="rodape">
+      <div class="rodape-in">
+        <div class="rodape-marca">
+          <img class="logo-img" src="./img/logo-habilita.png" alt="Habilita Saúde" />
+          <p>Plataforma online de educação em saúde.</p>
+        </div>
+
+        <nav class="rodape-nav" aria-label="Rodapé">
+          <h4>Navegação</h4>
+          <a href="index.html">Início</a>
+          <a href="#cursos">Cursos</a>
+          <a href="#funciona">Como funciona</a>
+          <a href="#publico">Alunos e professores</a>
+        </nav>
+
+        <nav class="rodape-nav" aria-label="Plataforma">
+          <h4>Plataforma</h4>
+          <a href="login.html">Entrar</a>
+          <a href="login.html?cadastro=1">Cadastre-se</a>
+          <a href="validar.html">Validar certificado</a>
+        </nav>
+      </div>
+
+      <div class="rodape-base">
+        <span>© <span id="anoAtual">2026</span> Habilita Saúde. Todos os direitos reservados.</span>
+        <span>Projeto desenvolvido na Residência em TIC do Porto Digital.</span>
+      </div>
+    </footer>
+
+    <script src="./js/global.js"></script>
+    <script src="./js/index.js"></script>
+    <script src="./js/animacoes.js"></script>
+  </body>
+</html>

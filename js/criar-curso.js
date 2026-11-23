@@ -56,7 +56,15 @@
     texto: "Lição em texto",
   };
 
-  const NIVEIS = HS.niveis ? HS.niveis() : {};
+  let NIVEIS = {};
+
+  try {
+    NIVEIS = await HS.carregarNiveis();
+  } catch (erro) {
+    console.error("Erro ao carregar níveis:", erro);
+    alert("Não foi possível carregar as configurações dos níveis. Tente novamente.");
+    return;
+  }
   let conteudosCurso = [];
   let imagemBase64 = "";
   let arquivoImagem = null;
@@ -317,8 +325,6 @@
     carregarImagem(e.dataTransfer.files && e.dataTransfer.files[0]);
   });
 
-  form.addEventListener("input", () => salvarRascunho(true));
-
   precoCurso.addEventListener("input", (e) => {
     const digitos = e.target.value.replace(/\D/g, "");
     e.target.value = digitos ? moeda(Number(digitos) / 100) : "";
@@ -446,22 +452,26 @@
       alert("Selecione um arquivo de vídeo (MP4 ou WebM).");
       return;
     }
-    conteudosCurso.push({
-      tipo: tipoAtual,
-      nome: arquivo.name,
-      arquivo,
-      mime: arquivo.type,
-      tamanho: arquivo.size,
-    });
-
-    renderizarConteudos();
-
-    HS.notificar(
-      "Arquivo anexado",
-      `"${arquivo.name}" (${(arquivo.size / 1048576).toFixed(1)} MB) foi adicionado ao curso.`,
-      "curso",
-      "professor",
-    );
+    try {
+      conteudosCurso.push({
+        tipo: tipoAtual,
+        nome: arquivo.name,
+        arquivo,
+        mime: arquivo.type,
+        tamanho: arquivo.size,
+      });
+      renderizarConteudos();
+      HS.notificar(
+        "Arquivo anexado",
+        `"${arquivo.name}" (${(arquivo.size / 1048576).toFixed(1)} MB) foi adicionado ao curso.`,
+        "curso",
+        "professor",
+      );
+    } catch (e) {
+      alert(
+        "Não foi possível salvar o arquivo neste navegador. Use um link do YouTube/Vimeo para vídeos muito grandes.",
+      );
+    }
   });
 
   function montarCurso(status) {
@@ -551,7 +561,7 @@
       throw new Error("A API não retornou o ID do curso.");
     }
 
-    // Enviar os arquivos diretamente para o servidor.
+    // Enviar arquivos novos para o servidor.
     for (const item of conteudosCurso) {
       if (!item.arquivo || item.arquivo_url) continue;
 
@@ -571,6 +581,7 @@
       }
 
       item.arquivo_url = respostaUpload.arquivo_url;
+      delete item.arquivo;
     }
 
     // Depois do upload, salvar os conteúdos no banco.
@@ -594,6 +605,7 @@
         `/cursos/${idCurso}/modulos`,
         {
           titulo: "Conteúdos do curso",
+          carga_horaria: Number(cargaHoraria.value),
           ordem: 1
         }
       );
@@ -607,6 +619,7 @@
         `/modulos/${modulo.id_modulo}`,
         {
           titulo: "Conteúdos do curso",
+          carga_horaria: Number(cargaHoraria.value),
           ordem: 1
         }
       );
@@ -631,16 +644,9 @@
           item.tipo === "link"
             ? item.nome
             : item.arquivo_url || null,
-        metadados:
-          item.tipo === "quiz"
-            ? {
-                perguntas: item.perguntas || [],
-                notaMinima: item.notaMinima || 70
-              }
-            : {
-                mime: item.mime || "",
-                tamanho: item.tamanho || 0
-              },
+        metadados: item.tipo === "quiz"
+          ? { perguntas: item.perguntas || [], notaMinima: item.notaMinima || 70 }
+          : { mime: item.mime || "", tamanho: item.tamanho || 0 },
         ordem: i + 1
       };
 

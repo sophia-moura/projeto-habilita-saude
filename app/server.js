@@ -12,6 +12,26 @@ const multer = require("multer");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const {
+    generate: gerarPdfCertificado
+} = require("./certificados/gerar-pdf.cjs");
+
+// ==========================================
+// ARMAZENAMENTO PRIVADO DOS CERTIFICADOS
+// ==========================================
+
+const pastaCertificados = process.env.CERTIFICADOS_DIR
+    ? path.resolve(process.env.CERTIFICADOS_DIR)
+    : path.join(
+        __dirname,
+        "..",
+        "uploads",
+        "storage-privado",
+        "certificados"
+    );
+
+fs.mkdirSync(pastaCertificados, { recursive: true });
+
 // ==========================================
 // UPLOAD DE IMAGENS DOS CURSOS
 // ==========================================
@@ -467,7 +487,6 @@ app.get("/api/preferencias/boas-vindas", async (req, res) => {
     }
 });
 
-
 // Registrar que o usuário já assistiu ao vídeo de boas-vindas.
 app.put("/api/preferencias/boas-vindas", async (req, res) => {
     try {
@@ -509,6 +528,100 @@ app.put("/api/preferencias/boas-vindas", async (req, res) => {
 
         return res.status(500).json({
             erro: "Não foi possível salvar a preferência."
+        });
+    }
+});
+
+app.get("/api/preferencias/tema", async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+
+        if (!usuario) {
+            return res.status(401).json({
+                erro: "Faça login para consultar seu tema."
+            });
+        }
+
+        if (!["aluno", "professor"].includes(usuario.tipo)) {
+            return res.status(403).json({
+                erro: "Tipo de usuário inválido."
+            });
+        }
+
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : "id_professor";
+
+        const [preferencias] = await banco.execute(`
+            SELECT tema
+            FROM preferencias_usuario
+            WHERE ${coluna} = ?
+            LIMIT 1
+        `, [usuario.id]);
+
+        return res.json({
+            tema: preferencias.length > 0
+                ? preferencias[0].tema
+                : null
+        });
+
+    } catch (erro) {
+        console.error("Erro ao consultar tema:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível consultar o tema."
+        });
+    }
+});
+
+app.put("/api/preferencias/tema", async (req, res) => {
+    try {
+        const usuario = req.session.usuario;
+
+        if (!usuario) {
+            return res.status(401).json({
+                erro: "Faça login para salvar seu tema."
+            });
+        }
+
+        if (!["aluno", "professor"].includes(usuario.tipo)) {
+            return res.status(403).json({
+                erro: "Tipo de usuário inválido."
+            });
+        }
+
+        const { tema } = req.body;
+
+        if (!["dark", "light"].includes(tema)) {
+            return res.status(400).json({
+                erro: "Tema inválido. Utilize dark ou light."
+            });
+        }
+
+        const coluna = usuario.tipo === "aluno"
+            ? "id_aluno"
+            : "id_professor";
+
+        await banco.execute(`
+            INSERT INTO preferencias_usuario (
+                ${coluna},
+                tema
+            )
+            VALUES (?, ?)
+            ON DUPLICATE KEY UPDATE
+                tema = VALUES(tema)
+        `, [usuario.id, tema]);
+
+        return res.json({
+            sucesso: true,
+            tema
+        });
+
+    } catch (erro) {
+        console.error("Erro ao salvar tema:", erro);
+
+        return res.status(500).json({
+            erro: "Não foi possível salvar o tema."
         });
     }
 });
@@ -744,7 +857,6 @@ app.get("/api/configuracoes/niveis", exigirProfessor, async (req, res) => {
         });
     }
 });
-
 
 // Atualizar configurações dos níveis
 app.put("/api/configuracoes/niveis", exigirProfessor, async (req, res) => {
@@ -1512,11 +1624,21 @@ app.get("/api/aluno/matriculas", exigirLogin, exigirAluno, async (req, res) => {
                 m.situacao,
                 cert.id_certificado AS idCertificado,
                 cert.codigo_validacao AS codigoCertificado,
-                cert.data_emissao AS dataEmissaoCertificado
+                cert.data_emissao AS dataEmissaoCertificado,
+                cert.status AS statusCertificado
             FROM matricula m
             INNER JOIN curso c ON c.id_curso = m.id_curso
             INNER JOIN professor p ON p.id_professor = c.id_professor
-            LEFT JOIN certificado cert ON cert.id_matricula = m.id_matricula
+            LEFT JOIN certificado cert
+                ON cert.id_certificado = (
+                    SELECT c2.id_certificado
+                    FROM certificado c2
+                    WHERE c2.id_matricula = m.id_matricula
+                        AND c2.status = 'emitido'
+                    ORDER BY c2.versao_conclusao DESC,
+                            c2.data_emissao DESC
+                    LIMIT 1
+                )
             WHERE m.id_aluno = ?
             ORDER BY m.data_matricula DESC, m.id_matricula DESC
         `, [idAluno]);
@@ -1873,6 +1995,8 @@ app.post(
     exigirAluno,
     async (req, res) => {
         const conexao = await banco.getConnection();
+        let caminhoPdfGerado = null;
+        let transacaoConfirmada = false;
 
         try {
             const idAluno = req.session.usuario.id;
@@ -1914,9 +2038,21 @@ app.post(
             const [matriculas] = await conexao.execute(`
                 SELECT
                     m.id_matricula,
-                    c.certificado AS tipoCertificado
+                    m.data_matricula,
+                    c.certificado AS tipoCertificado,
+                    c.nome_curso,
+                    c.area_tematica,
+                    c.carga_horaria,
+                    c.nivel,
+                    al.nome AS nome_aluno,
+                    p.nome AS nome_professor
                 FROM matricula m
-                INNER JOIN curso c ON c.id_curso = m.id_curso
+                INNER JOIN curso c
+                    ON c.id_curso = m.id_curso
+                INNER JOIN aluno al
+                    ON al.id_aluno = m.id_aluno
+                INNER JOIN professor p
+                    ON p.id_professor = c.id_professor
                 WHERE m.id_aluno = ?
                 AND m.id_curso = ?
             `, [idAluno, idCurso]);
@@ -2040,25 +2176,191 @@ app.post(
                 progresso >= 100 &&
                 matriculas[0].tipoCertificado !== "Sem Certificado"
             ) {
-                const codigoValidacao = crypto.randomUUID()
-                    .replace(/-/g, "")
-                    .toUpperCase();
+                // Verificar se já existe certificado para esta matrícula.
+                const [certificadosExistentes] = await conexao.execute(`
+                    SELECT id_certificado
+                    FROM certificado
+                    WHERE id_matricula = ?
+                    LIMIT 1
+                    FOR UPDATE
+                `, [matriculas[0].id_matricula]);
 
-                const [resultadoCertificado] = await conexao.execute(`
-                    INSERT IGNORE INTO certificado (
-                        id_matricula,
-                        codigo_validacao
-                    )
-                    VALUES (?, ?)
-                `, [
-                    matriculas[0].id_matricula,
-                    codigoValidacao
-                ]);
+                // Emitir somente se ainda não existir certificado.
+                if (certificadosExistentes.length === 0) {
+                    const [modulosCertificado] = await conexao.execute(`
+                        SELECT
+                            titulo,
+                            carga_horaria
+                        FROM modulo
+                        WHERE id_curso = ?
+                        ORDER BY ordem, id_modulo
+                    `, [idCurso]);
 
-                certificadoEmitido = resultadoCertificado.affectedRows > 0;
+                    const modulos = modulosCertificado.map(modulo => ({
+                        titulo: modulo.titulo,
+                        horas: Number(modulo.carga_horaria)
+                    }));
+
+                    const cargaHorariaTotal = modulos.reduce(
+                        (total, modulo) => total + modulo.horas,
+                        0
+                    );
+
+                    const cargaHorariaCurso = Number(matriculas[0].carga_horaria);
+
+                    if (
+                        modulos.length === 0 ||
+                        modulos.some(modulo => !Number.isFinite(modulo.horas) || modulo.horas <= 0) ||
+                        Math.abs(cargaHorariaTotal - cargaHorariaCurso) > 0.01
+                    ) {
+                        throw new Error(
+                            "As cargas horárias dos módulos não correspondem à carga horária do curso."
+                        );
+                    }
+
+                    const codigoValidacao = crypto.randomUUID();
+
+                    const dataEmissao = new Date().toISOString().slice(0, 10);
+
+                    const dataInicio = new Date(matriculas[0].data_matricula)
+                        .toISOString()
+                        .slice(0, 10);
+
+                    const ambienteDemonstracao = process.env.NODE_ENV !== "production";
+
+                    const urlPublica = (
+                        process.env.CERTIFICADO_PUBLIC_URL ||
+                        (ambienteDemonstracao ? "http://localhost:3000" : "")
+                    ).replace(/\/+$/, "");
+
+                    if (!urlPublica) {
+                        throw new Error(
+                            "Configure CERTIFICADO_PUBLIC_URL antes de emitir certificados."
+                        );
+                    }
+
+                    const nivelCertificado = String(matriculas[0].nivel || "")
+                        .trim()
+                        .toLowerCase();
+
+                    if (!["operacional", "estrategico", "expert"].includes(nivelCertificado)) {
+                        throw new Error(
+                            "O nível do curso não corresponde a um nível válido de certificado."
+                        );
+                    }
+
+                    const dadosSnapshot = {
+                        schemaVersion: "2.0",
+                        nivel: nivelCertificado,
+                        demo: ambienteDemonstracao,
+
+                        alunoNome: matriculas[0].nome_aluno,
+                        cpfMascarado: "***.***.***-**",
+
+                        cursoTitulo: matriculas[0].nome_curso,
+                        area: matriculas[0].area_tematica,
+                        professorNome: matriculas[0].nome_professor,
+
+                        cargaHoraria: cargaHorariaCurso,
+                        dataInicio,
+                        dataConclusao: dataEmissao,
+                        dataEmissao,
+
+                        codigo: codigoValidacao,
+
+                        verificationUrl:
+                            `${urlPublica}/api/certificados/validar/${codigoValidacao}`,
+
+                        razaoSocial: process.env.INSTITUICAO_RAZAO_SOCIAL || "",
+                        cnpj: process.env.INSTITUICAO_CNPJ || "",
+
+                        criterios:
+                            "Conclusão integral das aulas e aprovação na avaliação cadastrada para o curso.",
+
+                        modulos
+                    };
+
+                    const [resultadoCertificado] = await conexao.execute(`
+                        INSERT INTO certificado (
+                            id_matricula,
+                            codigo_validacao,
+                            versao_conclusao,
+                            status,
+                            versao_template,
+                            dados_snapshot
+                        )
+                        VALUES (?, ?, 1, 'emitido', ?, ?)
+                    `, [
+                        matriculas[0].id_matricula,
+                        codigoValidacao,
+                        "2.0.0",
+                        JSON.stringify(dadosSnapshot)
+                    ]);
+
+                    if (resultadoCertificado.affectedRows > 0) {
+                        caminhoPdfGerado = path.join(
+                            pastaCertificados,
+                            `${codigoValidacao}.pdf`
+                        );
+
+                        try {
+                            const resultadoPdf = await gerarPdfCertificado(
+                                dadosSnapshot,
+                                caminhoPdfGerado
+                            );
+
+                            const hashPdf = crypto
+                                .createHash("sha256")
+                                .update(fs.readFileSync(caminhoPdfGerado))
+                                .digest("hex");
+
+                            await conexao.execute(`
+                                UPDATE certificado
+                                SET
+                                    versao_template = ?,
+                                    hash_pdf = ?,
+                                    caminho_pdf = ?
+                                WHERE id_certificado = ?
+                            `, [
+                                resultadoPdf.versaoTemplate,
+                                hashPdf,
+                                caminhoPdfGerado,
+                                resultadoCertificado.insertId
+                            ]);
+
+                        } catch (erro) {
+                            if (fs.existsSync(caminhoPdfGerado)) {
+                                fs.unlinkSync(caminhoPdfGerado);
+                            }
+
+                            throw erro;
+                        }
+                    }
+
+                    certificadoEmitido = resultadoCertificado.affectedRows > 0;
+
+                    if (certificadoEmitido) {
+                        await conexao.execute(`
+                            INSERT INTO historico_certificado (
+                                id_certificado,
+                                status_anterior,
+                                status_novo,
+                                motivo,
+                                autor_emissao
+                            )
+                            VALUES (?, NULL, 'emitido', ?, ?)
+                        `, [
+                            resultadoCertificado.insertId,
+                            "Emissão automática após conclusão do curso",
+                            "Sistema"
+                        ]);
+                    }
+                }
             }
 
             await conexao.commit();
+
+            transacaoConfirmada = true;
 
             return res.json({
                 sucesso: true,
@@ -2068,8 +2370,28 @@ app.post(
                 totalAulas
             });
 
-        } catch (erro) {
-            await conexao.rollback();
+            } catch (erro) {
+                if (!transacaoConfirmada) {
+                    try {
+                        await conexao.rollback();
+                    } catch (erroRollback) {
+                        console.error("Erro ao desfazer transação:", erroRollback);
+                    }
+
+                    if (
+                        caminhoPdfGerado &&
+                        fs.existsSync(caminhoPdfGerado)
+                    ) {
+                        try {
+                            fs.unlinkSync(caminhoPdfGerado);
+                        } catch (erroArquivo) {
+                            console.error(
+                                "Erro ao remover PDF da emissão:",
+                                erroArquivo
+                            );
+                        }
+                    }
+                }
 
             console.error("Erro ao concluir aula:", erro);
 
@@ -3010,7 +3332,15 @@ app.get("/api/professor/usuarios", exigirProfessor, async (req, res) => {
             INNER JOIN curso c
                 ON c.id_curso = m.id_curso
             LEFT JOIN certificado cert
-                ON cert.id_matricula = m.id_matricula
+                ON cert.id_certificado = (
+                    SELECT c2.id_certificado
+                    FROM certificado c2
+                    WHERE c2.id_matricula = m.id_matricula
+                        AND c2.status = 'emitido'
+                    ORDER BY c2.versao_conclusao DESC,
+                            c2.data_emissao DESC
+                    LIMIT 1
+                )
             WHERE c.id_professor = ?
             ORDER BY m.data_matricula DESC
         `, [idProfessor]);
@@ -3325,7 +3655,19 @@ app.post(
     async (req, res) => {
         try {
             const idCurso = Number(req.params.id);
-            const { titulo, ordem } = req.body;
+            const { titulo, ordem, carga_horaria } = req.body;
+
+            const cargaHoraria = Number(carga_horaria);
+
+            if (
+                !Number.isFinite(cargaHoraria) ||
+                cargaHoraria <= 0 ||
+                cargaHoraria > 9999.99
+            ) {
+                return res.status(400).json({
+                    erro: "Informe uma carga horária válida para o módulo."
+                });
+            }
 
             if (!Number.isInteger(idCurso) || idCurso <= 0) {
                 return res.status(400).json({
@@ -3368,11 +3710,17 @@ app.post(
             }
 
             const [resultado] = await banco.execute(`
-                INSERT INTO modulo (id_curso, titulo, ordem)
-                VALUES (?, ?, ?)
+                INSERT INTO modulo (
+                    id_curso,
+                    titulo,
+                    carga_horaria,
+                    ordem
+                )
+                VALUES (?, ?, ?, ?)
             `, [
                 idCurso,
                 titulo.trim(),
+                cargaHoraria,
                 ordemFinal
             ]);
 
@@ -3396,7 +3744,19 @@ app.post(
 app.put("/api/modulos/:id", exigirProfessor, async (req, res) => {
     try {
         const idModulo = Number(req.params.id);
-        const { titulo, ordem } = req.body;
+        const { titulo, ordem, carga_horaria } = req.body;
+
+        const cargaHoraria = Number(carga_horaria);
+
+        if (
+            !Number.isFinite(cargaHoraria) ||
+            cargaHoraria <= 0 ||
+            cargaHoraria > 9999.99
+        ) {
+            return res.status(400).json({
+                erro: "Informe uma carga horária válida para o módulo."
+            });
+        }
 
         if (
             !Number.isInteger(idModulo) ||
@@ -3413,11 +3773,15 @@ app.put("/api/modulos/:id", exigirProfessor, async (req, res) => {
         const [resultado] = await banco.execute(`
             UPDATE modulo m
             INNER JOIN curso c ON c.id_curso = m.id_curso
-            SET m.titulo = ?, m.ordem = ?
+            SET
+                m.titulo = ?,
+                m.carga_horaria = ?,
+                m.ordem = ?
             WHERE m.id_modulo = ?
-              AND c.id_professor = ?
+            AND c.id_professor = ?
         `, [
             titulo.trim(),
+            cargaHoraria,
             Number.isInteger(ordem) && ordem > 0 ? ordem : 1,
             idModulo,
             req.session.usuario.id
@@ -4082,17 +4446,362 @@ app.delete("/api/cursos/:id", exigirProfessor, async (req, res) => {
 });
 
 // ==========================================
+// REVOGAÇÃO DE CERTIFICADOS
+// ==========================================
+
+app.patch(
+    "/api/professor/certificados/:id/revogar",
+    exigirLogin,
+    exigirProfessor,
+    async (req, res) => {
+        let conexao;
+
+        try {
+            const idCertificado = Number(req.params.id);
+            const idProfessor = req.session.usuario.id;
+            const motivo = String(req.body.motivo || "").trim();
+
+            if (
+                !Number.isInteger(idCertificado) ||
+                idCertificado <= 0
+            ) {
+                return res.status(400).json({
+                    erro: "ID do certificado inválido."
+                });
+            }
+
+            if (!motivo || motivo.length > 500) {
+                return res.status(400).json({
+                    erro: "Informe um motivo com até 500 caracteres."
+                });
+            }
+
+            conexao = await banco.getConnection();
+            await conexao.beginTransaction();
+
+            // Verificar se o certificado pertence a um curso do professor.
+            const [certificados] = await conexao.execute(`
+                SELECT
+                    cert.id_certificado,
+                    cert.status
+                FROM certificado cert
+                INNER JOIN matricula m
+                    ON m.id_matricula = cert.id_matricula
+                INNER JOIN curso c
+                    ON c.id_curso = m.id_curso
+                WHERE cert.id_certificado = ?
+                  AND c.id_professor = ?
+                FOR UPDATE
+            `, [idCertificado, idProfessor]);
+
+            if (certificados.length === 0) {
+                await conexao.rollback();
+
+                return res.status(404).json({
+                    erro: "Certificado não encontrado."
+                });
+            }
+
+            const certificado = certificados[0];
+
+            if (certificado.status !== "emitido") {
+                await conexao.rollback();
+
+                return res.status(409).json({
+                    erro: "Somente certificados emitidos podem ser revogados."
+                });
+            }
+
+            // Atualizar a situação do certificado.
+            await conexao.execute(`
+                UPDATE certificado
+                SET status = 'revogado'
+                WHERE id_certificado = ?
+            `, [idCertificado]);
+
+            // Registrar a alteração no histórico.
+            await conexao.execute(`
+                INSERT INTO historico_certificado (
+                    id_certificado,
+                    status_anterior,
+                    status_novo,
+                    motivo,
+                    autor_emissao
+                )
+                VALUES (?, 'emitido', 'revogado', ?, ?)
+            `, [
+                idCertificado,
+                motivo,
+                req.session.usuario.nome
+            ]);
+
+            await conexao.commit();
+
+            return res.json({
+                sucesso: true,
+                mensagem: "Certificado revogado com sucesso."
+            });
+
+        } catch (erro) {
+            if (conexao) {
+                await conexao.rollback();
+            }
+
+            console.error("Erro ao revogar certificado:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível revogar o certificado."
+            });
+
+        } finally {
+            if (conexao) {
+                conexao.release();
+            }
+        }
+    }
+);
+
+// ==========================================
+// SUBSTITUIÇÃO DE CERTIFICADOS
+// ==========================================
+
+app.patch(
+    "/api/professor/certificados/:id/substituir",
+    exigirLogin,
+    exigirProfessor,
+    async (req, res) => {
+        let conexao;
+        let caminhoPdfNovo = null;
+        let transacaoConfirmada = false;
+
+        try {
+            const idCertificado = Number(req.params.id);
+            const idProfessor = req.session.usuario.id;
+            const motivo = String(req.body.motivo || "").trim();
+
+            if (!Number.isInteger(idCertificado) || idCertificado <= 0) {
+                return res.status(400).json({
+                    erro: "ID do certificado inválido."
+                });
+            }
+
+            if (!motivo || motivo.length > 500) {
+                return res.status(400).json({
+                    erro: "Informe um motivo com até 500 caracteres."
+                });
+            }
+
+            conexao = await banco.getConnection();
+            await conexao.beginTransaction();
+
+            // Verificar propriedade e bloquear o certificado durante a operação.
+            const [certificados] = await conexao.execute(`
+                SELECT
+                    cert.id_certificado,
+                    cert.id_matricula,
+                    cert.status,
+                    cert.versao_conclusao,
+                    cert.versao_template,
+                    cert.dados_snapshot
+                FROM certificado cert
+                INNER JOIN matricula m
+                    ON m.id_matricula = cert.id_matricula
+                INNER JOIN curso c
+                    ON c.id_curso = m.id_curso
+                WHERE cert.id_certificado = ?
+                  AND c.id_professor = ?
+                FOR UPDATE
+            `, [idCertificado, idProfessor]);
+
+            if (certificados.length === 0) {
+                await conexao.rollback();
+
+                return res.status(404).json({
+                    erro: "Certificado não encontrado."
+                });
+            }
+
+            const certificado = certificados[0];
+
+            if (certificado.status !== "emitido") {
+                await conexao.rollback();
+
+                return res.status(409).json({
+                    erro: "Somente certificados emitidos podem ser substituídos."
+                });
+            }
+
+            const novaVersao = certificado.versao_conclusao + 1;
+            const novoCodigo = crypto.randomUUID();
+
+            // Atualizar o certificado anterior.
+            await conexao.execute(`
+                UPDATE certificado
+                SET status = 'substituido'
+                WHERE id_certificado = ?
+            `, [idCertificado]);
+
+            // Registrar a substituição do certificado anterior.
+            await conexao.execute(`
+                INSERT INTO historico_certificado (
+                    id_certificado,
+                    status_anterior,
+                    status_novo,
+                    motivo,
+                    autor_emissao
+                )
+                VALUES (?, 'emitido', 'substituido', ?, ?)
+            `, [
+                idCertificado,
+                motivo,
+                req.session.usuario.nome
+            ]);
+
+            // Criar o snapshot atualizado para a nova versão.
+            const urlPublica = process.env.CERTIFICADO_PUBLIC_URL
+                ?.replace(/\/+$/, "");
+
+            if (!urlPublica) {
+                throw new Error(
+                    "Configure CERTIFICADO_PUBLIC_URL antes de substituir certificados."
+                );
+            }
+
+            const dadosSnapshot = typeof certificado.dados_snapshot === "string"
+                ? JSON.parse(certificado.dados_snapshot)
+                : { ...certificado.dados_snapshot };
+
+            dadosSnapshot.codigo = novoCodigo;
+            dadosSnapshot.verificationUrl =
+                `${urlPublica}/api/certificados/validar/${novoCodigo}`;
+
+            // Criar o novo registro.
+            const [novoCertificado] = await conexao.execute(`
+                INSERT INTO certificado (
+                    id_matricula,
+                    codigo_validacao,
+                    versao_conclusao,
+                    status,
+                    versao_template,
+                    dados_snapshot
+                )
+                VALUES (?, ?, ?, 'emitido', ?, ?)
+            `, [
+                certificado.id_matricula,
+                novoCodigo,
+                novaVersao,
+                certificado.versao_template,
+                JSON.stringify(dadosSnapshot)
+            ]);
+
+            // Gerar o PDF da nova versão.
+            caminhoPdfNovo = path.join(
+                pastaCertificados,
+                `${novoCodigo}.pdf`
+            );
+
+            const resultadoPdf = await gerarPdfCertificado(
+                dadosSnapshot,
+                caminhoPdfNovo
+            );
+
+            // Calcular o hash SHA-256 do PDF.
+            const hashPdf = crypto
+                .createHash("sha256")
+                .update(fs.readFileSync(caminhoPdfNovo))
+                .digest("hex");
+
+            // Atualizar os dados do arquivo no banco.
+            await conexao.execute(`
+                UPDATE certificado
+                SET
+                    versao_template = ?,
+                    hash_pdf = ?,
+                    caminho_pdf = ?,
+                    dados_snapshot = ?
+                WHERE id_certificado = ?
+            `, [
+                resultadoPdf.versaoTemplate,
+                hashPdf,
+                caminhoPdfNovo,
+                JSON.stringify(dadosSnapshot),
+                novoCertificado.insertId
+            ]);
+
+            // Registrar a emissão da nova versão.
+            await conexao.execute(`
+                INSERT INTO historico_certificado (
+                    id_certificado,
+                    status_anterior,
+                    status_novo,
+                    motivo,
+                    autor_emissao
+                )
+                VALUES (?, NULL, 'emitido', ?, ?)
+            `, [
+                novoCertificado.insertId,
+                "Nova versão emitida: " + motivo,
+                req.session.usuario.nome
+            ]);
+
+            await conexao.commit();
+            transacaoConfirmada = true;
+
+            return res.json({
+                sucesso: true,
+                mensagem: "Certificado substituído com sucesso.",
+                certificado: {
+                    id: novoCertificado.insertId,
+                    codigoValidacao: novoCodigo,
+                    versao: novaVersao,
+                    status: "emitido"
+                }
+            });
+
+        } catch (erro) {
+            if (conexao && !transacaoConfirmada) {
+                try {
+                    await conexao.rollback();
+                } catch (erroRollback) {
+                    console.error("Erro ao desfazer transação:", erroRollback);
+                }
+            }
+
+            if (!transacaoConfirmada && caminhoPdfNovo && fs.existsSync(caminhoPdfNovo)) {
+                try {
+                    fs.unlinkSync(caminhoPdfNovo);
+                } catch (erroArquivo) {
+                    console.error("Erro ao remover PDF da substituição:", erroArquivo);
+                }
+            }
+
+            console.error("Erro ao substituir certificado:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível substituir o certificado."
+            });
+
+        } finally {
+            if (conexao) {
+                conexao.release();
+            }
+        }
+    }
+);
+
+// ==========================================
 // VALIDAÇÃO PÚBLICA DE CERTIFICADOS
 // ==========================================
 
 app.get("/api/certificados/validar/:codigo", async (req, res) => {
     try {
-        const codigo = String(req.params.codigo || "")
-            .trim()
-            .toUpperCase();
+        const codigo = String(req.params.codigo || "").trim();
 
-        // O código gerado possui 32 caracteres hexadecimais.
-        if (!/^[A-F0-9]{32}$/.test(codigo)) {
+        // Validação do formato UUID v4.
+        const uuidV4Regex =
+            /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+        if (!uuidV4Regex.test(codigo)) {
             return res.status(404).json({
                 valido: false,
                 mensagem: "Certificado não encontrado."
@@ -4102,6 +4811,7 @@ app.get("/api/certificados/validar/:codigo", async (req, res) => {
         const [certificados] = await banco.execute(`
             SELECT
                 cert.codigo_validacao AS codigo,
+                cert.status AS status,
                 cert.data_emissao AS dataEmissao,
                 a.nome AS aluno,
                 c.nome_curso AS curso,
@@ -4126,6 +4836,19 @@ app.get("/api/certificados/validar/:codigo", async (req, res) => {
 
         const certificado = certificados[0];
 
+        if (certificado.status !== "emitido") {
+            const mensagens = {
+                revogado: "Este certificado foi revogado.",
+                substituido: "Este certificado foi substituído por uma nova versão."
+            };
+
+            return res.status(200).json({
+                valido: false,
+                status: certificado.status,
+                mensagem: mensagens[certificado.status] || "Certificado indisponível."
+            });
+        }
+
         return res.json({
             valido: true,
             mensagem: "Certificado autêntico.",
@@ -4147,6 +4870,75 @@ app.get("/api/certificados/validar/:codigo", async (req, res) => {
         });
     }
 });
+
+app.get(
+    "/api/aluno/certificados/:codigo/pdf",
+    exigirLogin,
+    exigirAluno,
+    async (req, res) => {
+        try {
+            const codigo = String(req.params.codigo || "").trim();
+            const idAluno = req.session.usuario.id;
+
+            const [certificados] = await banco.execute(`
+                SELECT cert.caminho_pdf
+                FROM certificado cert
+                INNER JOIN matricula m
+                    ON m.id_matricula = cert.id_matricula
+                WHERE cert.codigo_validacao = ?
+                AND m.id_aluno = ?
+                AND cert.status = 'emitido'
+                LIMIT 1
+            `, [codigo, idAluno]);
+
+            if (!certificados.length || !certificados[0].caminho_pdf) {
+                return res.status(404).json({
+                    erro: "Certificado não encontrado."
+                });
+            }
+
+            const caminhoPdf = path.resolve(
+                certificados[0].caminho_pdf
+            );
+
+            const caminhoBase = path.resolve(pastaCertificados)
+                + path.sep;
+
+            if (!caminhoPdf.startsWith(caminhoBase)) {
+                return res.status(403).json({
+                    erro: "Acesso ao arquivo não permitido."
+                });
+            }
+
+            if (!fs.existsSync(caminhoPdf)) {
+                return res.status(404).json({
+                    erro: "Arquivo do certificado não encontrado."
+                });
+            }
+
+            const visualizar = req.query.visualizar === "1";
+
+            return res.sendFile(
+                caminhoPdf,
+                {
+                    headers: {
+                        "Content-Type": "application/pdf",
+                        "Content-Disposition": visualizar
+                            ? "inline"
+                            : "attachment"
+                    }
+                }
+            );
+
+        } catch (erro) {
+            console.error("Erro ao baixar certificado:", erro);
+
+            return res.status(500).json({
+                erro: "Não foi possível baixar o certificado."
+            });
+        }
+    }
+);
 
 // ==========================================
 // NOTIFICAÇÕES
@@ -5107,7 +5899,9 @@ app.use((req, res, next) => {
         caminho === "/.git" ||
         caminho.startsWith("/.git/") ||
         caminho === "/banco" ||
-        caminho.startsWith("/banco/")
+        caminho.startsWith("/banco/") ||
+        caminho === "/uploads/storage-privado" ||
+        caminho.startsWith("/uploads/storage-privado/")
     ) {
         return res.sendStatus(404);
     }

@@ -51,10 +51,11 @@ CREATE TABLE curso (
 ) ENGINE=InnoDB;
 
 CREATE TABLE modulo (
-    id_modulo  INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_curso   INT UNSIGNED NOT NULL,
-    titulo     VARCHAR(150) NOT NULL,
-    ordem      INT UNSIGNED NOT NULL,
+    id_modulo  	  INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_curso      INT UNSIGNED NOT NULL,
+    titulo        VARCHAR(150) NOT NULL,
+    carga_horaria DECIMAL(6,2) NOT NULL DEFAULT 0.00,
+    ordem         INT UNSIGNED NOT NULL,
     CONSTRAINT pk_modulo PRIMARY KEY (id_modulo),
     CONSTRAINT fk_modulo_curso FOREIGN KEY (id_curso)
         REFERENCES curso (id_curso) ON DELETE CASCADE
@@ -136,15 +137,74 @@ CREATE TABLE matricula (
 ) ENGINE=InnoDB;
 
 CREATE TABLE certificado (
-    id_certificado    INT UNSIGNED NOT NULL AUTO_INCREMENT,
-    id_matricula      INT UNSIGNED NOT NULL,
-    codigo_validacao  VARCHAR(50) NOT NULL,
-    data_emissao      DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT pk_certificado PRIMARY KEY (id_certificado),
-    CONSTRAINT uk_certificado_matricula UNIQUE (id_matricula),
-    CONSTRAINT uk_certificado_codigo UNIQUE (codigo_validacao),
-    CONSTRAINT fk_certificado_matricula FOREIGN KEY (id_matricula)
-        REFERENCES matricula (id_matricula)
+    id_certificado INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_matricula INT UNSIGNED NOT NULL,
+
+    codigo_validacao CHAR(36) NOT NULL,
+    versao_conclusao SMALLINT UNSIGNED NOT NULL DEFAULT 1,
+
+    status ENUM(
+        'emitido',
+        'revogado',
+        'substituido'
+    ) NOT NULL DEFAULT 'emitido',
+
+    versao_template VARCHAR(20) NOT NULL DEFAULT '2.0.0',
+    dados_snapshot JSON NULL,
+
+    hash_pdf CHAR(64) NULL,
+    caminho_pdf VARCHAR(500) NULL,
+
+    data_emissao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    data_atualizacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_certificado
+        PRIMARY KEY (id_certificado),
+
+    CONSTRAINT uk_certificado_codigo
+        UNIQUE (codigo_validacao),
+
+    CONSTRAINT uk_certificado_versao
+        UNIQUE (id_matricula, versao_conclusao),
+
+    CONSTRAINT fk_certificado_matricula
+        FOREIGN KEY (id_matricula)
+        REFERENCES matricula (id_matricula),
+
+    INDEX idx_certificado_status (status)
+) ENGINE=InnoDB;
+
+CREATE TABLE historico_certificado (
+    id_historico INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    id_certificado INT UNSIGNED NOT NULL,
+
+    status_anterior ENUM(
+        'emitido',
+        'revogado',
+        'substituido'
+    ) NULL,
+
+    status_novo ENUM(
+        'emitido',
+        'revogado',
+        'substituido'
+    ) NOT NULL,
+
+    motivo VARCHAR(500) NOT NULL,
+    autor_emissao VARCHAR(150) NOT NULL,
+
+    data_alteracao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT pk_historico_certificado
+        PRIMARY KEY (id_historico),
+
+    CONSTRAINT fk_historico_certificado
+        FOREIGN KEY (id_certificado)
+        REFERENCES certificado (id_certificado),
+
+    INDEX idx_historico_certificado (id_certificado),
+    INDEX idx_historico_data (data_alteracao)
 ) ENGINE=InnoDB;
 
 CREATE TABLE avaliacao (
@@ -218,7 +278,6 @@ CREATE TABLE IF NOT EXISTS dados_bancarios_professor (
         REFERENCES professor (id_professor)
         ON DELETE CASCADE
 ) ENGINE=InnoDB;
-
 
 -- Solicitações de saque dos professores
 CREATE TABLE IF NOT EXISTS solicitacao_saque (
@@ -355,7 +414,6 @@ CREATE TABLE IF NOT EXISTS conquista_aluno (
         FOREIGN KEY (id_aluno)
         REFERENCES aluno (id_aluno)
 ) ENGINE=InnoDB;
-
 
 -- Dados principais da gamificação de cada professor
 CREATE TABLE IF NOT EXISTS gamificacao_professor (
@@ -515,6 +573,41 @@ CREATE TABLE IF NOT EXISTS progresso_video_aluno (
         FOREIGN KEY (id_aula)
         REFERENCES aula (id_aula)
         ON DELETE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS preferencias_usuario (
+    id_preferencia INT UNSIGNED NOT NULL AUTO_INCREMENT,
+
+    id_aluno INT UNSIGNED NULL,
+    id_professor INT UNSIGNED NULL,
+
+    boas_vindas_vista BOOLEAN NOT NULL DEFAULT FALSE,
+    tema VARCHAR(5) NULL DEFAULT NULL,
+
+    PRIMARY KEY (id_preferencia),
+
+    UNIQUE KEY uk_preferencias_aluno (id_aluno),
+    UNIQUE KEY uk_preferencias_professor (id_professor),
+
+    CONSTRAINT fk_preferencias_aluno
+        FOREIGN KEY (id_aluno)
+        REFERENCES aluno(id_aluno)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_preferencias_professor
+        FOREIGN KEY (id_professor)
+        REFERENCES professor(id_professor)
+        ON DELETE CASCADE,
+
+    CONSTRAINT chk_preferencias_tema
+        CHECK (tema IS NULL OR tema IN ('light', 'dark')),
+
+    CONSTRAINT chk_preferencias_usuario
+        CHECK (
+            (id_aluno IS NOT NULL AND id_professor IS NULL)
+            OR
+            (id_aluno IS NULL AND id_professor IS NOT NULL)
+        )
 ) ENGINE=InnoDB;
 
 -- ações

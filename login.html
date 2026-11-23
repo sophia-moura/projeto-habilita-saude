@@ -34,6 +34,8 @@
     <link rel="stylesheet" href="./css/animacoes.css" />
     <link rel="stylesheet" href="./css/dark.css" />
     <script src="./js/tema.js"></script>
+    <link rel="stylesheet" href="./css/assistente.css" />
+    <script defer src="./js/assistente.js"></script>
   </head>
   <body>
     <main class="login-container">
@@ -411,22 +413,6 @@
           // 2. Voltar para a tela de login após criar a conta.
           window.location.href = `login.html?perfil=${tipoCadastro}`;
           return;
-
-          const usuario = {
-            nome: dadosLogin.usuario.nome,
-            email: dadosLogin.usuario.email,
-            tipo: dadosLogin.usuario.tipo,
-            online: true,
-            foto: dadosLogin.usuario.tipo === "professor"
-              ? "./img/professor.png"
-              : gerarFoto(dadosLogin.usuario.nome)
-          };
-
-          // 3. Redirecionar conforme o perfil.
-          window.location.href =
-            tipoCadastro === "professor"
-              ? "professor-inicio.html"
-              : "aluno-inicio.html";
 
         } catch (erro) {
           console.error("Erro no cadastro:", erro);

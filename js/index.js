@@ -77,32 +77,27 @@
   }
 
   async function iniciarAtalhos() {
-    for (let tentativa = 0; tentativa < 3; tentativa++) {
-      try {
-        const dados = await API.get("/usuario-logado");
+    try {
+      const dados = await API.get("/usuario-logado");
 
-        if (dados?.autenticado && dados.usuario) {
-          usuarioLogado = dados.usuario;
+      if (!dados || !dados.autenticado || !dados.usuario) return;
 
-          professorLogado = usuarioLogado.tipo === "professor";
+      usuarioLogado = dados.usuario;
 
-          homeLogado = professorLogado
-            ? "professor-inicio.html"
-            : "aluno-inicio.html";
+      professorLogado = usuarioLogado.tipo === "professor";
 
-          cursosLogado = professorLogado
-            ? "professor-meus-cursos.html"
-            : "aluno-meus-cursos.html";
+      homeLogado = professorLogado
+        ? "professor-inicio.html"
+        : "aluno-inicio.html";
 
-          configurarAtalhos();
-          return;
-        }
-      } catch (erro) {
+      cursosLogado = professorLogado
+        ? "professor-meus-cursos.html"
+        : "aluno-meus-cursos.html";
+
+      configurarAtalhos();
+    } catch (erro) {
+      if (!erro.message.includes("401")) {
         console.error("Erro ao verificar sessão:", erro);
-      }
-
-      if (tentativa < 2) {
-        await new Promise((resolve) => setTimeout(resolve, 500));
       }
     }
   }

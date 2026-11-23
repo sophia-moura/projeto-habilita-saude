@@ -14,13 +14,9 @@
 
   async function carregarCursos() {
     try {
-      const resposta = await fetch("/api/professor/cursos");
+      const resposta = await API.get("/professor/cursos");
 
-      if (!resposta.ok) {
-        throw new Error("Não foi possível carregar os cursos.");
-      }
-
-      cursos = await resposta.json();
+      cursos = resposta;
 
       if (!Array.isArray(cursos)) {
         throw new Error("Resposta inválida da API.");
@@ -42,15 +38,10 @@
 
   async function carregarMatriculasDashboard() {
     try {
-      const resposta = await fetch("/api/professor/usuarios");
+      const resposta = await API.get("/professor/usuarios");
 
-      if (!resposta.ok) {
-        throw new Error("Não foi possível carregar as matrículas.");
-      }
-
-      const dados = await resposta.json();
-
-      matriculasDashboard = dados.matriculas || [];
+      const dados = resposta;
+      matriculasDashboard = dados.matriculas || []; 
 
       criarGrafico();
       renderizarUsuariosDashboard();

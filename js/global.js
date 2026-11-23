@@ -141,25 +141,9 @@ window.API = {
 
   const HS = {
     esc,
-    visivel,
-
-    async cursosPublicados() {
-    const cursos = await API.get("/cursos");
-
-    return cursos.map((c) => ({
-        id: c.id_curso,
-        nome: c.nome_curso,
-        descricao: c.descricao,
-        preco: c.preco,
-        status: c.status,
-        imagem: c.imagem_url,
-        professor: c.nome_professor
-    }));
-  },
-
-    notificar,
-    atualizarSino
+    notificar
   };
+
   window.HS = HS;
 
   HS.usuarioAtual = null;
@@ -218,7 +202,7 @@ window.API = {
       "certificados.html"
   ];
 
-  const publicas = ["index.html", "login.html", "validar.html"];
+  const publicas = ["index.html", "conhecer.html", "login.html", "validar.html"];
 
   HS.ready = (async () => {
     // Páginas que não exigem autenticação
@@ -253,21 +237,21 @@ window.API = {
       }
 
     } else if (pagina === "login.html") {
-        try {
-            const dados = await API.get("/usuario-logado");
+      // Se já estiver logado, redireciona para a página inicial
+      try {
+        const dados = await API.get("/usuario-logado");
 
-            if (dados && dados.usuario) {
-                usuario = dados.usuario;
-                tipo = usuario.tipo;
+        if (dados && dados.usuario) {
+          usuario = dados.usuario;
+          tipo = usuario.tipo;
 
-                if (pagina === "login.html") {
-                    location.replace(home(tipo));
-                    return false;
-                }
-            }
-        } catch (erro) {
-            // É normal não haver sessão ativa.
+          location.replace(home(tipo));
+          return false;
         }
+
+      } catch (erro) {
+        // É normal não haver sessão ativa na página de login.
+      }
     }
 
     return true;
@@ -325,52 +309,83 @@ window.API = {
 
   if (!document.querySelector('link[rel="icon"]')) document.head.insertAdjacentHTML("beforeend", '<link rel="icon" href="./img/favicon.png">');
 
-  HS.boasVindas = async function (forcar) {
-    let boasVindasVista = false;
+  let boasVindasAberta = false;
 
-    try {
-        const preferencias = await API.get("/preferencias/boas-vindas");
-        boasVindasVista = preferencias.boasVindasVista;
-    } catch (erro) {
-        console.error("Erro ao consultar preferência de boas-vindas:", erro);
+  HS.boasVindas = async function (forcar = false) {
+    if (!usuario || boasVindasAberta) return;
+
+    // Consulta no banco se o usuário já assistiu ao vídeo.
+    if (!forcar) {
+      try {
+        const preferencia = await API.get("/preferencias/boas-vindas");
+
+        if (preferencia.boasVindasVista) return;
+
+      } catch (erro) {
+        console.error(
+          "Erro ao consultar preferência de boas-vindas:",
+          erro
+        );
+      }
     }
 
-    if (!forcar && boasVindasVista) return;
+    boasVindasAberta = true;
+
     const ov = document.createElement("div");
     ov.id = "bvOverlay";
+
     ov.innerHTML = `
       <style>
         #bvOverlay{position:fixed;inset:0;z-index:100000;background:rgba(8,20,60,.82);backdrop-filter:blur(6px);display:grid;place-items:center;padding:20px;animation:bvF .4s ease}
         .bv-box{background:#fff;border-radius:22px;max-width:760px;width:100%;overflow:hidden;box-shadow:0 30px 70px rgba(0,0,0,.45);animation:bvP .6s cubic-bezier(.2,1.4,.4,1)}
         .bv-box video{width:100%;display:block;background:#000;aspect-ratio:16/9}
         .bv-rodape{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:16px 22px;flex-wrap:wrap}
-        .bv-rodape h3{margin:0;color:#0055c3;font-size:18px}.bv-rodape p{margin:2px 0 0;color:#718096;font-size:13px}
+        .bv-rodape h3{margin:0;color:#0055c3;font-size:18px}
+        .bv-rodape p{margin:2px 0 0;color:#718096;font-size:13px}
         .bv-rodape button{border:0;border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:600}
-        #bvPular{background:#eef2fb;color:#0055c3;margin-right:8px}#bvComecar{background:#0055c3;color:#fff}
-        @keyframes bvF{from{opacity:0}}@keyframes bvP{from{opacity:0;transform:translateY(40px) scale(.9)}}
+        #bvPular{background:#eef2fb;color:#0055c3;margin-right:8px}
+        #bvComecar{background:#0055c3;color:#fff}
+        @keyframes bvF{from{opacity:0}}
+        @keyframes bvP{from{opacity:0;transform:translateY(40px) scale(.9)}}
       </style>
       <div class="bv-box">
         <video id="bvVideo" src="./media/boas-vindas.mp4" poster="./media/boas-vindas.jpg" controls playsinline></video>
         <div class="bv-rodape">
-          <div><h3>Bem-vindo(a), ${esc((usuario.nome || "").split(" ")[0])}!</h3><p>${tipo === "professor" ? "Veja como publicar seus cursos e crescer na plataforma." : "Veja como começar sua jornada de aprendizado."}</p></div>
-          <div><button id="bvPular">Pular</button><button id="bvComecar">Começar</button></div>
+          <div>
+            <h3>Bem-vindo(a), ${esc((usuario.nome || "").split(" ")[0])}!</h3>
+            <p>${tipo === "professor" ? "Veja como publicar seus cursos e crescer na plataforma." : "Veja como começar sua jornada de aprendizado."}</p>
+          </div>
+          <div>
+            <button id="bvPular">Pular</button>
+            <button id="bvComecar">Começar</button>
+          </div>
         </div>
       </div>`;
+
     document.body.appendChild(ov);
+
     const v = ov.querySelector("#bvVideo");
     v.play().catch(() => {});
-    const fechar = async () => {
-    v.pause();
-    ov.remove();
 
-    try {
+    const fechar = async () => {
+      if (!ov.isConnected) return;
+
+      v.pause();
+      ov.remove();
+
+      try {
         await API.put("/preferencias/boas-vindas", {});
-    } catch (erro) {
-        console.error("Erro ao salvar preferência de boas-vindas:", erro);
-    }
-  };
+      } catch (erro) {
+        console.error(
+          "Erro ao salvar preferência de boas-vindas:",
+          erro
+        );
+      }
+    };
+
     ov.querySelector("#bvPular").onclick = fechar;
     ov.querySelector("#bvComecar").onclick = fechar;
+
     v.addEventListener("ended", () => setTimeout(fechar, 600));
   };
 
@@ -388,10 +403,17 @@ window.API = {
   const btnLogout = document.getElementById("btnLogout");
 
   if (btnLogout) {
-      btnLogout.addEventListener("click", (e) => {
-          e.preventDefault();
-          location.replace("index.html");
-      });
+      btnLogout.addEventListener("click", async () => {
+        if (!confirm("Deseja realmente sair da plataforma?")) return;
+
+        try {
+            await API.post("/logout");
+            location.href = "index.html";
+        } catch (erro) {
+            console.error("Erro ao encerrar sessão:", erro);
+            alert("Não foi possível sair da plataforma. Tente novamente.");
+        }
+    });
   }
 
   // Menu lateral no celular. Algumas páginas antigas não tinham #overlay;

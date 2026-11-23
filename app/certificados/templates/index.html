@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'none'; base-uri 'none'; object-src 'none'"
+    />
+    <title>Habilita Saúde | Certificados editáveis</title>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+  <body>
+    <header class="toolbar">
+      <div>
+        <strong>Habilita Saúde</strong
+        ><span>Certificados · edição e conferência</span>
+      </div>
+      <label
+        >Modelo
+        <select id="nivel">
+          <option value="operacional">Operacional</option>
+          <option value="estrategico">Estratégico</option>
+          <option value="expert">Expert</option>
+        </select></label
+      >
+      <button id="print" disabled>Imprimir / Salvar PDF</button>
+      <button id="toggle-editor" aria-expanded="false">Editar dados</button>
+      <p id="status" role="status">Preparando prévia…</p>
+    </header>
+    <aside id="editor" hidden>
+      <h1>Preenchimento automático por dados</h1>
+      <p>
+        Edite o JSON ou carregue um arquivo. Os campos serão aplicados à frente
+        e ao verso. Os exemplos são fictícios.
+      </p>
+      <label
+        >Carregar JSON
+        <input id="json-file" type="file" accept=".json,application/json"
+      /></label>
+      <label for="json-editor">Dados do certificado</label
+      ><textarea id="json-editor" spellcheck="false"></textarea>
+      <button id="apply">Aplicar e validar</button
+      ><button id="download-json">Baixar dados JSON</button>
+      <p id="error" role="alert"></p>
+    </aside>
+    <main
+      id="pages"
+      class="operacional"
+      aria-label="Frente e verso do certificado"
+    >
+      <section class="sheet">
+        <div class="page front" id="front">
+          <img
+            id="artwork"
+            class="artwork"
+            alt="Arte original Habilita Saúde"
+            src="assets/arte-operacional.svg"
+          />
+          <header class="certificate-header">
+            <h1 id="heading">CERTIFICADO</h1>
+            <div id="level" class="level"></div>
+          </header>
+          <article class="front-content">
+            <p class="intro">Certificamos que</p>
+            <h2 data-field="alunoNome" class="student" data-fit="32"></h2>
+            <p class="completion">
+              concluiu o curso livre de educação continuada
+            </p>
+            <h3 data-field="cursoTitulo" class="course" data-fit="24"></h3>
+            <p class="teacher" data-fit="16">
+              Ministrado por: <strong data-field="professorNome"></strong>
+            </p>
+            <p class="meta">
+              <span data-field="area"></span> · Carga horária:
+              <strong data-field="horas"></strong>
+            </p>
+            <p class="dates">
+              Conclusão: <span data-field="conclusao"></span> · Emissão:
+              <span data-field="emissao"></span>
+            </p>
+            <p class="cpf">CPF: <span data-field="cpfMascarado"></span></p>
+          </article>
+          <div class="verification">
+            <img
+              class="qr"
+              id="qr"
+              alt="QR Code para consulta do certificado"
+            />
+            <div>
+              <span>Código de verificação</span
+              ><strong data-field="codigo"></strong
+              ><small id="verify-hint"></small>
+            </div>
+          </div>
+          <div class="signatures">
+            <div class="signature">
+              <img
+                id="signature-teacher"
+                alt="Assinatura autorizada do professor"
+                hidden
+              />
+              <div class="signature-line"></div>
+              <strong data-field="professorNome" data-fit="15"></strong
+              ><span>Professor Ministrante</span>
+            </div>
+            <div class="signature">
+              <img
+                id="signature-institution"
+                alt="Assinatura autorizada de Isaac Caixeta"
+                hidden
+              />
+              <div class="signature-line"></div>
+              <strong>Isaac Caixeta</strong
+              ><span>Fundador e Diretor Pedagógico<br />Habilita Saúde</span>
+            </div>
+          </div>
+          <p class="demo-note" data-demo>
+            MODELO DEMONSTRATIVO · DADOS FICTÍCIOS · SEM VALIDADE DE EMISSÃO
+          </p>
+        </div>
+      </section>
+      <section class="sheet">
+        <div class="page back" id="back">
+          <header class="back-header">
+            <div>
+              <strong>Habilita Saúde</strong
+              ><span
+                >Registro acadêmico · Curso livre de educação continuada</span
+              >
+            </div>
+            <span id="back-level"></span>
+          </header>
+          <div class="back-content">
+            <h2>Informações de conclusão</h2>
+            <dl class="academic">
+              <div>
+                <dt>Estudante</dt>
+                <dd data-field="alunoNome"></dd>
+              </div>
+              <div>
+                <dt>Curso</dt>
+                <dd data-field="cursoTitulo"></dd>
+              </div>
+              <div>
+                <dt>Professor ministrante</dt>
+                <dd data-field="professorNome"></dd>
+              </div>
+              <div>
+                <dt>Certificação</dt>
+                <dd id="full-level"></dd>
+              </div>
+              <div>
+                <dt>Área e carga horária</dt>
+                <dd>
+                  <span data-field="area"></span> ·
+                  <span data-field="horas"></span>
+                </dd>
+              </div>
+              <div>
+                <dt>Período de realização · Emissão</dt>
+                <dd>
+                  <span data-field="inicio"></span> a
+                  <span data-field="conclusao"></span> ·
+                  <span data-field="emissao"></span>
+                </dd>
+              </div>
+            </dl>
+            <div class="program-area">
+              <section class="program">
+                <h3>Conteúdo programático</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th scope="col">Módulo / atividade</th>
+                      <th scope="col">Carga horária</th>
+                    </tr>
+                  </thead>
+                  <tbody id="modules"></tbody>
+                  <tfoot>
+                    <tr>
+                      <th>Total</th>
+                      <td data-field="horas"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </section>
+              <section class="completion-panel">
+                <h3>Critérios de conclusão</h3>
+                <p data-field="criterios"></p>
+                <h3>Instituição emissora</h3>
+                <p>
+                  <strong>Habilita Saúde</strong><br /><span
+                    data-field="razaoSocial"
+                  ></span
+                  ><br />CNPJ: <span data-field="cnpj"></span>
+                </p>
+                <p class="masked">
+                  CPF do estudante: <span data-field="cpfMascarado"></span>
+                </p>
+              </section>
+            </div>
+            <footer class="back-footer">
+              <div class="validation">
+                <img
+                  id="qr-back"
+                  class="qr"
+                  alt="QR Code para consulta do certificado"
+                />
+                <div>
+                  <strong>Consulta de autenticidade</strong
+                  ><code data-field="codigo"></code
+                  ><a id="verification-link" rel="noreferrer"></a
+                  ><span data-demo
+                    >DEMONSTRAÇÃO · endereço sem serviço de validação</span
+                  >
+                </div>
+              </div>
+              <p class="legal" id="legal">
+                Este certificado comprova a conclusão de curso livre de educação
+                continuada. Não constitui diploma de graduação ou pós-graduação,
+                título de especialista ou habilitação para o exercício de
+                atividades profissionais regulamentadas.
+              </p>
+            </footer>
+          </div>
+        </div>
+      </section>
+    </main>
+    <script src="assets/qrcode.min.js"></script>
+    <script src="validacao.js"></script>
+    <script src="dados-exemplo.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+/* Assistente de navegação • HabilitaSaúde (escopo isolado) */
+.hsas {position:fixed;z-index:2147483000;right:22px;bottom:22px;font-family:Inter,ui-sans-serif,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.45;color:#182c42;text-align:left;box-sizing:border-box}
+.hsas *, .hsas *::before,.hsas *::after{box-sizing:border-box}
+.hsas button,.hsas input{font-family:inherit}
+.hsas button{cursor:pointer}
+.hsas-launch{display:flex;align-items:center;gap:10px;padding:12px 17px 12px 11px;border:1px solid #0a6bac;background:linear-gradient(125deg,#0864ae,#0d83ad);color:white;font-weight:750;font-size:14px;border-radius:30px;box-shadow:0 8px 24px rgba(10,58,103,.23);transition:transform .15s ease, box-shadow .15s ease}
+.hsas-launch:hover{transform:translateY(-2px);box-shadow:0 11px 30px rgba(10,58,103,.3)}
+.hsas-launch:focus-visible,.hsas button:focus-visible,.hsas a:focus-visible,.hsas input:focus-visible{outline:3px solid #7cc8f6;outline-offset:2px}
+.hsas-launch-icon{background:rgba(255,255,255,.18);width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:21px}
+.hsas-dialog{width:min(394px,calc(100vw - 24px));height:min(610px,calc(100dvh - 105px));min-height:350px;display:flex;flex-direction:column;overflow:hidden;position:absolute;bottom:66px;right:0;background:#fff;border:1px solid #d6e5f2;border-radius:19px;box-shadow:0 24px 80px rgba(13,39,69,.24);isolation:isolate}
+.hsas-dialog[hidden]{display:none!important}
+.hsas-head{display:flex;align-items:center;gap:12px;flex:0 0 auto;padding:18px 17px;background:linear-gradient(115deg,#0b457c,#087fa9);color:#fff;min-height:80px}
+.hsas-logo{width:42px;height:42px;flex:0 0 42px;border-radius:13px;background:#ffffff2e;display:grid;place-items:center;font-size:25px}
+.hsas-head-title{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.hsas-head-title strong{font-size:16px;letter-spacing:-.02em}
+.hsas-head-title small{color:#c5f1ff;font-size:11px;white-space:nowrap}
+.hsas-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#85f1c5;margin-right:4px}
+.hsas-close{background:transparent;color:white;border:0;width:32px;height:32px;font-size:27px;display:grid;place-items:center;border-radius:8px;line-height:1}
+.hsas-close:hover{background:#ffffff25}
+.hsas-mode{padding:11px 15px;border-bottom:1px solid #e9eff4;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-shrink:0;background:#fbfdff}
+.hsas-mode span{font-size:12px;color:#64798b;font-weight:600}
+.hsas-mode>div{display:flex;border-radius:9px;padding:3px;background:#ecf3f9;gap:2px}
+.hsas-mode button{border:0;background:transparent;padding:7px 12px;border-radius:7px;color:#5a7187;font-size:12px;font-weight:700}
+.hsas-mode button.selected{background:#fff;color:#0864ae;box-shadow:0 1px 6px #253c5921}
+.hsas-messages{flex:1;min-height:75px;padding:18px 16px 10px;overflow:auto;background:linear-gradient(#fafcff,#fff)}
+.hsas-message{display:flex;align-items:flex-start;flex-direction:column;margin:0 0 13px;gap:7px;max-width:95%}
+.hsas-me{margin-left:auto;align-items:flex-end}
+.hsas-bubble{padding:11px 13px;border-radius:13px 13px 13px 4px;background:#edf5fc;color:#213d58;line-height:1.5;font-size:13px;overflow-wrap:anywhere}
+.hsas-me .hsas-bubble{background:#0c6fa7;color:#fff;border-radius:13px 13px 4px 13px}
+.hsas-link{display:inline-flex;align-items:center;gap:5px;text-decoration:none!important;padding:8px 11px;border:1px solid #b9dbf6;border-radius:9px;background:#fff;color:#0568a4!important;font-size:12px;font-weight:750}
+.hsas-link:hover{background:#e7f3fb}
+.hsas-suggestions{flex-shrink:0;padding:12px 13px;background:#fff;border-top:1px solid #edf0f5}
+.hsas-suggestions p{color:#6b8194;font-size:11px;text-transform:uppercase;font-weight:800;letter-spacing:.04em;margin:0 0 9px}
+.hsas-chips{display:flex;gap:7px;overflow:auto;padding-bottom:3px;scrollbar-width:thin}
+.hsas-chips button{background:#f1f7fc;color:#245b80;border:1px solid #cce3f5;border-radius:18px;padding:7px 11px;white-space:nowrap;font-weight:650;font-size:12px}
+.hsas-chips button:hover{border-color:#0c80b6;background:#e5f5ff}
+.hsas-form{padding:10px 11px 6px;background:#fff;display:flex;gap:8px;border-top:1px solid #eef2f6}
+.hsas-form input{flex:1;min-width:0;background:#f5f8fc;border:1px solid #dae5ef;color:#172d46;padding:12px;border-radius:10px;font-size:13px;outline:none}
+.hsas-form input:focus{border-color:#1e96c5;background:#fff}
+.hsas-form button{width:42px;flex:0 0 42px;border:0;background:#087eb2;color:#fff;border-radius:10px;font-size:21px;font-weight:700}
+.hsas-form button:hover{background:#096696}
+.hsas-note{font-size:10px;line-height:1.35;text-align:center;color:#73869c;padding:5px 12px 9px;background:#fff}
+.hsas-sr{position:absolute;clip:rect(0,0,0,0);width:1px;height:1px;overflow:hidden;white-space:nowrap}
+@media(max-width:600px){.hsas{right:12px;bottom:12px}.hsas-launch{padding:10px 12px 10px 9px;font-size:12px}.hsas-dialog{right:0;bottom:59px;height:min(590px,calc(100dvh - 90px))}}
+@media(prefers-reduced-motion:reduce){.hsas-launch{transition:none}}

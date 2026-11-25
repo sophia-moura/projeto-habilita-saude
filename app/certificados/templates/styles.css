@@ -398,8 +398,9 @@ textarea {
 }
 .expert .front-content {
   top: 356px;
-  left: 392px;
-  right: 325px;
+  left: 350px;
+  right: 350px;
+  text-align: center;
 }
 .expert .intro {
   font-size: 27px;
@@ -432,14 +433,16 @@ textarea {
 .expert .dates {
   font-size: 23px;
   color: #f8e8bf;
+  margin-top: 3px;
 }
 .expert .cpf {
   color: #f8e8bf;
   font-size: 17px;
+  margin-top: 2px;
 }
 .expert .verification {
   left: 116px;
-  bottom: 90px;
+  bottom: 71px;
   width: 450px;
 }
 .expert .verification strong {
@@ -452,7 +455,7 @@ textarea {
 }
 .expert .signatures {
   right: 76px;
-  bottom: 79px;
+  bottom: 40px;
   gap: 30px;
 }
 .expert .signature {
@@ -465,7 +468,7 @@ textarea {
   font-size: 19px;
 }
 .expert .demo-note {
-  bottom: 28px;
+  bottom: 18px;
   color: #f8e8bf;
   font-family:
     Arial,

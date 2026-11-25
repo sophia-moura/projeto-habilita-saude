@@ -81,15 +81,19 @@
   }
 
   /* ---------- Níveis ---------- */
+  const ORDEM_NIVEIS = ["operacional", "estrategico", "expert"];
+
   categoriaCurso.innerHTML =
     '<option value="">Selecione o nível</option>' +
-    Object.entries(NIVEIS)
-      .map(
-        ([k, n], i) =>
-          `<option value="${esc(k)}">Nível ${i + 1} — ${esc(n.trilha)} (${esc(
-            String(n.nome || "").replace("Nível ", ""),
-          )})</option>`,
-      )
+    ORDEM_NIVEIS
+      .filter((k) => NIVEIS[k])
+      .map((k, i) => {
+        const n = NIVEIS[k];
+
+        return `<option value="${esc(k)}">Nível ${i + 1} — ${esc(n.trilha)} (${esc(
+          String(n.nome || "").replace("Nível ", ""),
+        )})</option>`;
+      })
       .join("");
 
   function renderNivel() {

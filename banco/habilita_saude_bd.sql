@@ -615,22 +615,6 @@ SHOW TABLES;
 DESCRIBE matricula;     
 SHOW CREATE TABLE notificacao;
 
--- testes fictícios
-INSERT INTO professor (nome, email, senha_hash) VALUES ('Professor Teste', 'prof@teste.com', 'hash_teste');
-INSERT INTO aluno (nome, email, senha_hash) VALUES ('Aluno Teste', 'aluno@teste.com', 'hash_teste');
-INSERT INTO curso (id_professor, nome_curso, preco, status) VALUES (1, 'Curso de Teste', 100.00, 'publicado');
-
-INSERT INTO compra (id_aluno, valor_total, status) VALUES (1, 100.00, 'paga');
-INSERT INTO item_compra (id_compra, id_curso, valor_unitario) VALUES (1, 1, 100.00);
-INSERT INTO matricula (id_aluno, id_curso) VALUES (1, 1);
-
--- aluno aprovado:
-UPDATE matricula SET situacao = 'aprovado', nota_final = 8.00, progresso = 100 WHERE id_matricula = 1;
-INSERT INTO certificado (id_matricula, codigo_validacao) VALUES (1, 'COD-TESTE-001');
-
--- notificação sem destinatário:  
-INSERT INTO notificacao (titulo, mensagem) VALUES ('Teste', 'Sem destinatário');
-
 -- vendas por professor, calculadas sem tabela de finanças:
 SELECT p.nome, SUM(ic.valor_unitario) AS total_vendas
 FROM item_compra ic
